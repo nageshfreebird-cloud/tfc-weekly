@@ -53,8 +53,8 @@
           </div>
         </div>
 
-        <div class="alert alert-info" style="margin-top:0.5rem;font-size:0.82rem;">
-          ℹ️ Default credentials — User ID: <strong>admin</strong> &nbsp;|&nbsp; Password: <strong>tfc@2014</strong>
+        <div class="alert alert-info" style="margin-bottom:1.5rem;text-align:left;">
+          ℹ️ Enter your manager credentials to access the dashboard.
         </div>
 
         <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:1rem;">
@@ -98,7 +98,7 @@
         setManagerSession();
         window.location.href = "dashboard.html";
       } else {
-        document.getElementById("error-text").textContent = "Invalid User ID or Password. Default: admin / tfc@2014";
+        document.getElementById("error-text").textContent = "Invalid User ID or Password.";
         errEl.classList.remove("hidden");
         btn.textContent = "Login →";
         btn.disabled = false;
