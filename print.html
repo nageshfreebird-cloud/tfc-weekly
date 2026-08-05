@@ -73,9 +73,9 @@
 </div>
 
 <script type="module">
-  import { startClock, requireManagerAuth, TEAM_MEMBERS,
+  import { startClock, requireManagerAuth,
            formatWeekRange, formatFullDate } from "./js/utils.js";
-  import { getWeekSettings, getSummary, getWeekSubmissions } from "./js/db.js";
+  import { getWeekSettings, getSummary, getWeekSubmissions, getTeamMembers } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
@@ -100,7 +100,8 @@
       data = summary.members;
     } else {
       const subs = await getWeekSubmissions(ws.weekStart);
-      TEAM_MEMBERS.forEach(name => {
+      const team = await getTeamMembers();
+      team.forEach(name => {
         if (subs[name]) {
           data[name] = {
             lastWeekReview: subs[name].lastWeekReview || [],
@@ -118,9 +119,10 @@
     document.getElementById("print-footer").classList.remove("hidden");
   }
 
-  function renderReport(data) {
+  async function renderReport(data) {
     const container = document.getElementById("report-content");
-    TEAM_MEMBERS.forEach((name, idx) => {
+    const team = await getTeamMembers();
+    team.forEach((name, idx) => {
       const d   = data[name];
       const div = document.createElement("div");
       div.className = "print-member";

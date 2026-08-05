@@ -93,13 +93,15 @@
       <div id="member-list"></div>
     </div>
 
-    <!-- Member Detail Panel -->
-    <div id="detail-panel" class="card hidden animate-in">
-      <div class="flex-between" style="margin-bottom:1rem;">
-        <h2 id="detail-name" style="font-size:1.1rem;font-weight:800;color:var(--primary);"></h2>
-        <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕ Close</button>
+    <!-- Member Detail Panel (Modal) -->
+    <div id="detail-overlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;padding:1rem;">
+      <div id="detail-panel" class="card animate-in" style="width:100%;max-width:500px;max-height:90vh;overflow-y:auto;margin:0;">
+        <div class="flex-between" style="margin-bottom:1rem;">
+          <h2 id="detail-name" style="font-size:1.1rem;font-weight:800;color:var(--primary);"></h2>
+          <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕ Close</button>
+        </div>
+        <div id="detail-content"></div>
       </div>
-      <div id="detail-content"></div>
     </div>
 
   </div>
@@ -107,17 +109,23 @@
 
 <script type="module">
   import { startClock, requireManagerAuth, clearManagerSession,
-           TEAM_MEMBERS, initials, formatFullDate, formatWeekRange, formatTime } from "./js/utils.js";
-  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen } from "./js/db.js";
+           initials, formatFullDate, formatWeekRange, formatTime } from "./js/utils.js";
+  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
 
   let _weekStart = null;
   let _submissions = {};
+  let _team = [];
 
-  // Listen to week settings
-  listenWeekSettings(settings => {
+  async function init() {
+    _team = await getTeamMembers();
+    // Render initially empty
+    renderMemberList({});
+
+    // Listen to week settings
+    listenWeekSettings(settings => {
     if (!settings) return;
     _weekStart = settings.weekStart;
     document.getElementById("week-dates").textContent = formatWeekRange(settings.weekStart, settings.weekEnd);
@@ -144,6 +152,7 @@
     // Start listening submissions once we have weekStart
     startListeningSubmissions(settings.weekStart);
   });
+  }
 
   let _unsubSub = null;
   function startListeningSubmissions(weekStart) {
@@ -162,7 +171,13 @@
 
     const list = document.getElementById("member-list");
     list.innerHTML = "";
-    TEAM_MEMBERS.forEach(name => {
+    const totalCount = _team.length;
+    document.getElementById("submit-count").textContent = done;
+    document.getElementById("stat-done").textContent = done;
+    document.getElementById("stat-pending").textContent = totalCount - done;
+    document.getElementById("stat-total").textContent = totalCount;
+
+    _team.forEach(name => {
       const sub = subs[name];
       const row = document.createElement("div");
       row.className = "member-row " + (sub ? "submitted" : "pending-row");
@@ -220,12 +235,11 @@
       }
       document.getElementById("detail-content").innerHTML = html || "<p class='text-muted'>No data available.</p>";
     }
-    panel.classList.remove("hidden");
-    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("detail-overlay").classList.remove("hidden");
   }
 
   window.closeDetail = function() {
-    document.getElementById("detail-panel").classList.add("hidden");
+    document.getElementById("detail-overlay").classList.add("hidden");
   };
 
   window.toggleSubmissions = async function(isOpen) {
@@ -242,8 +256,7 @@
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   }
 
-  // Init empty member list
-  renderMemberList({});
+  init();
 </script>
 </body>
 </html>

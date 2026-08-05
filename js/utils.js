@@ -3,10 +3,7 @@
 // ============================================
 
 // ---- Team Members ----
-export const TEAM_MEMBERS = [
-  "Nagesh", "Sai Kiran", "Rajashekar", "Jai Ram",
-  "Suresh", "Vamshi Krishna", "Swamy", "Chandrika", "Pratiksha"
-];
+// Removed: Now fetched dynamically via getTeamMembers() in db.js
 
 // ---- Default Admin Credentials ----
 export const DEFAULT_USER_ID = "admin";

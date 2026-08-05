@@ -47,18 +47,20 @@
 </div>
 
 <script type="module">
-  import { startClock, requireManagerAuth, TEAM_MEMBERS, initials,
+  import { startClock, requireManagerAuth, initials,
            formatWeekRange, formatShortDate } from "./js/utils.js";
   import { getWeekSettings, getWeekSubmissions, getSummary,
-           saveSummary, finalizeSummary } from "./js/db.js";
+           saveSummary, finalizeSummary, getTeamMembers } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
 
   let _weekStart = "";
   let _summaryData = {}; // { memberName: { lastWeekReview, thisWeekTasks, supportNeeded } }
+  let _team = [];
 
   async function init() {
+    _team = await getTeamMembers();
     const ws = await getWeekSettings();
     _weekStart = ws.weekStart;
     document.getElementById("week-label").textContent =
@@ -71,7 +73,7 @@
     const existingSummary = await getSummary(ws.weekStart);
 
     // Build summary data: prefer existing edits, fallback to raw submission
-    TEAM_MEMBERS.forEach(name => {
+    _team.forEach(name => {
       if (existingSummary && existingSummary.members && existingSummary.members[name]) {
         _summaryData[name] = existingSummary.members[name];
       } else if (subs[name]) {
@@ -91,7 +93,10 @@
   function renderAll() {
     const container = document.getElementById("summary-list");
     container.innerHTML = "";
-    TEAM_MEMBERS.forEach(name => renderMember(name, container));
+    _team.forEach(name => {
+      const div = renderMember(name, container);
+      container.appendChild(div);
+    });
   }
 
   function renderMember(name, container) {
@@ -190,12 +195,12 @@
     }
 
     div.appendChild(body);
-    container.appendChild(div);
+    return div;
   }
 
   // ---- Mutation helpers ----
   function getMemberByKey(key) {
-    return TEAM_MEMBERS.find(n => safeName(n) === key);
+    return _team.find(n => safeName(n) === key);
   }
 
   window.updateLastWeekTask = function(key, i, field, val) {
@@ -243,8 +248,13 @@
 
   function reRenderMember(name) {
     const old = document.getElementById(`sm-${safeName(name)}`);
-    if (old) old.remove();
-    renderMember(name, document.getElementById("summary-list"));
+    const container = document.getElementById("summary-list");
+    const newDiv = renderMember(name, container);
+    if (old) {
+      old.replaceWith(newDiv);
+    } else {
+      container.appendChild(newDiv);
+    }
   }
 
   let saveTimer = null;

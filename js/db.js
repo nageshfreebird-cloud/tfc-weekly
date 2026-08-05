@@ -51,16 +51,26 @@ export async function updateAdminCredentials(newUserId, newPassword) {
 
 /** Get current week settings */
 export async function getWeekSettings() {
+  const today = new Date();
+  const currentMonday = getMondayOf(today);
+  const defaultEnd = getFridayOf(today);
+
   try {
     const snap = await getDoc(doc(db, "settings", "week"));
-    if (snap.exists()) return snap.data();
+    if (snap.exists()) {
+      const data = snap.data();
+      // Only return saved settings if they belong to the current or future week
+      if (data.weekStart >= currentMonday) {
+        return data;
+      }
+    }
   } catch(e) {}
-  // Return defaults for current week
-  const today = new Date();
+  
+  // Return defaults for current week (auto-advance logic)
   return {
-    weekStart:        getMondayOf(today),
-    weekEnd:          getFridayOf(today),
-    meetingDay:       getMondayOf(today),
+    weekStart:        currentMonday,
+    weekEnd:          defaultEnd,
+    meetingDay:       currentMonday,
     teamNote:         "",
     submissionsOpen:  false
   };
@@ -162,4 +172,32 @@ export async function finalizeSummary(weekStart) {
 export async function getSummary(weekStart) {
   const snap = await getDoc(doc(db, "summaries", weekStart));
   return snap.exists() ? snap.data() : null;
+}
+
+// ============================================
+// TEAM MEMBERS
+// ============================================
+
+const DEFAULT_TEAM = [
+  "Nagesh", "Sai Kiran", "Rajashekar", "Jai Ram",
+  "Suresh", "Vamshi Krishna", "Swamy", "Chandrika", "Pratiksha"
+];
+
+/** Get dynamic team members */
+export async function getTeamMembers() {
+  try {
+    const snap = await getDoc(doc(db, "settings", "team"));
+    if (snap.exists() && snap.data().members) {
+      return snap.data().members;
+    }
+  } catch(e) {}
+  return DEFAULT_TEAM;
+}
+
+/** Save team members */
+export async function saveTeamMembers(members) {
+  await setDoc(doc(db, "settings", "team"), {
+    members,
+    updatedAt: new Date().toISOString()
+  });
 }

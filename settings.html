@@ -70,6 +70,27 @@
       </button>
     </div>
 
+    <!-- ===== MANAGE TEAM MEMBERS ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">👥</span>
+        <h2>Manage Team Members</h2>
+      </div>
+      
+      <div id="team-saved-msg" class="alert alert-success hidden">✅ Team updated!</div>
+
+      <div class="form-group">
+        <div style="display:flex;gap:.5rem;">
+          <input type="text" id="new-member-name" class="form-control" placeholder="New member name..." />
+          <button class="btn btn-secondary" style="white-space:nowrap;background:var(--secondary);color:white;border:none;border-radius:var(--radius-sm);padding:0 1rem;font-weight:600;" onclick="addMember()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="task-list" id="settings-team-list" style="margin-top:1rem;">
+        <!-- Dynamically filled -->
+      </div>
+    </div>
+
     <!-- ===== CHANGE CREDENTIALS ===== -->
     <div class="card">
       <div class="card-header">
@@ -120,7 +141,7 @@
   import { startClock, requireManagerAuth, getMondayOf, getFridayOf,
            toYMD, formatShortDate } from "./js/utils.js";
   import { getWeekSettings, saveWeekSettings, getAdminCredentials,
-           updateAdminCredentials, verifyAdminLogin } from "./js/db.js";
+           updateAdminCredentials, verifyAdminLogin, getTeamMembers, saveTeamMembers } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
@@ -213,7 +234,62 @@
     setTimeout(() => okEl.classList.add("hidden"), 4000);
   };
 
+  // ---- Team Members ----
+  let _team = [];
+
+  async function loadTeam() {
+    _team = await getTeamMembers();
+    renderTeam();
+  }
+
+  function renderTeam() {
+    const list = document.getElementById("settings-team-list");
+    list.innerHTML = "";
+    _team.forEach((name, i) => {
+      const item = document.createElement("div");
+      item.className = "task-item";
+      item.innerHTML = `
+        <span class="task-num" style="min-width:24px;">${i+1}.</span>
+        <div style="flex:1;font-size:0.92rem;font-weight:500;">${escHtml(name)}</div>
+        <button class="task-remove" title="Remove" onclick="removeMember(${i})">✕</button>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  window.addMember = async function() {
+    const inp = document.getElementById("new-member-name");
+    const name = inp.value.trim();
+    if (!name) return;
+    if (_team.includes(name)) { alert("Member already exists!"); return; }
+    
+    _team.push(name);
+    inp.value = "";
+    renderTeam();
+    await saveTeamMembers(_team);
+    showTeamSaved();
+  };
+
+  window.removeMember = async function(idx) {
+    if (!confirm(`Remove ${_team[idx]} from the team?`)) return;
+    _team.splice(idx, 1);
+    renderTeam();
+    await saveTeamMembers(_team);
+    showTeamSaved();
+  };
+
+  function showTeamSaved() {
+    const msg = document.getElementById("team-saved-msg");
+    msg.classList.remove("hidden");
+    setTimeout(() => msg.classList.add("hidden"), 2000);
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
   loadWeek();
+  loadTeam();
 </script>
 </body>
 </html>

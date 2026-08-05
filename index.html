@@ -96,18 +96,21 @@
 </div>
 
 <script type="module">
-  import { startClock, TEAM_MEMBERS, formatWeekRange, formatFullDate } from "./js/utils.js";
-  import { listenWeekSettings } from "./js/db.js";
+  import { startClock, formatWeekRange, formatFullDate } from "./js/utils.js";
+  import { listenWeekSettings, getTeamMembers } from "./js/db.js";
 
   startClock("live-clock");
 
-  // Populate dropdown
-  const sel = document.getElementById("member-name");
-  TEAM_MEMBERS.forEach(name => {
-    const opt = document.createElement("option");
-    opt.value = name; opt.textContent = name;
-    sel.appendChild(opt);
-  });
+  async function initTeamDrop() {
+    const team = await getTeamMembers();
+    const sel = document.getElementById("member-name");
+    team.forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    });
+  }
+  initTeamDrop();
 
   // Load week settings
   listenWeekSettings(settings => {
