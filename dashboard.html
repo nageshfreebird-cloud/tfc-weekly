@@ -110,7 +110,7 @@
 <script type="module">
   import { startClock, requireManagerAuth, clearManagerSession,
            initials, formatFullDate, formatWeekRange, formatTime } from "./js/utils.js";
-  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers } from "./js/db.js";
+  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers, deleteMemberSubmission } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
@@ -233,10 +233,28 @@
       if (sub.supportNeeded) {
         html += `<div class="alert alert-warning" style="margin-top:.85rem;">🆘 <strong>Support needed:</strong> ${escHtml(sub.supportNeeded)}</div>`;
       }
+      // Delete Submission Button
+      html += `
+        <div style="margin-top:1.5rem;text-align:right;">
+          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSub('${name}')">
+            🗑️ Delete Submission (Allow Re-entry)
+          </button>
+        </div>
+      `;
       document.getElementById("detail-content").innerHTML = html || "<p class='text-muted'>No data available.</p>";
     }
     document.getElementById("detail-overlay").classList.remove("hidden");
   }
+
+  window.deleteSub = async function(name) {
+    if (!confirm(`Are you sure you want to delete ${name}'s submission? They will have to re-enter their tasks.`)) return;
+    try {
+      await deleteMemberSubmission(_weekStart, name);
+      closeDetail();
+    } catch(err) {
+      alert("Error deleting submission: " + err.message);
+    }
+  };
 
   window.closeDetail = function() {
     document.getElementById("detail-overlay").classList.add("hidden");

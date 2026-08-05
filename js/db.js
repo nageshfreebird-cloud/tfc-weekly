@@ -124,6 +124,12 @@ export async function getMemberSubmission(weekStart, memberName) {
   return snap.exists() ? snap.data() : null;
 }
 
+/** Delete a member's submission so they can resubmit */
+export async function deleteMemberSubmission(weekStart, memberName) {
+  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
+  await deleteDoc(doc(db, "submissions", id));
+}
+
 /** Get all submissions for a week */
 export async function getWeekSubmissions(weekStart) {
   const q = query(collection(db, "submissions"), where("weekStart", "==", weekStart));
