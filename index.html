@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teach for Change — Weekly Review</title>
+  <meta name="description" content="Weekly work review system for Teach for Change NGO team." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span class="time-icon">🕐</span>
+    <span id="live-clock">Loading...</span>
+  </div>
+</nav>
+
+<!-- Home Page -->
+<div class="page">
+  <div class="container">
+
+    <!-- Logo Hero -->
+    <div style="text-align:center;margin-top:1.5rem;margin-bottom:1rem;">
+      <img src="logo.png" alt="Teach for Change Logo"
+        style="width:140px;height:auto;object-fit:contain;" />
+    </div>
+    <div class="page-title">
+      <h1>Weekly Review System</h1>
+      <p>Select your role to continue</p>
+    </div>
+
+    <!-- Week Info Bar (loaded dynamically) -->
+    <div id="week-bar" class="week-bar hidden">
+      <div>
+        <div class="week-label">Current Week</div>
+        <div class="week-dates" id="week-dates">—</div>
+      </div>
+      <div class="meeting-day" id="meeting-day-bar">Meeting: —</div>
+    </div>
+
+    <!-- Team Note (if any) -->
+    <div id="team-note-wrap" class="alert alert-warning hidden">
+      <span>📢</span>
+      <span id="team-note-text"></span>
+    </div>
+
+    <!-- Role Selection -->
+    <div class="choice-grid">
+      <div class="choice-card" id="manager-card" onclick="goManager()">
+        <div class="choice-icon">👤</div>
+        <div class="choice-title">Manager</div>
+        <div class="choice-sub">Login to dashboard</div>
+      </div>
+      <div class="choice-card" id="team-card" onclick="showTeamDrop()">
+        <div class="choice-icon">👥</div>
+        <div class="choice-title">Team Member</div>
+        <div class="choice-sub">Submit weekly report</div>
+      </div>
+    </div>
+
+    <!-- Team Member Name Drop (hidden until clicked) -->
+    <div id="team-section" class="card hidden animate-in">
+      <div class="card-header">
+        <span class="icon">👥</span>
+        <h2>Select Your Name</h2>
+      </div>
+
+      <!-- Submissions Closed Message -->
+      <div id="closed-msg" class="submissions-closed hidden">
+        <div class="icon">🔒</div>
+        <h2>Submissions Closed</h2>
+        <p>The manager has not opened submissions yet.<br/>Please wait or contact your manager.</p>
+      </div>
+
+      <!-- Name Select + Continue -->
+      <div id="open-form">
+        <div class="form-group">
+          <label class="form-label" for="member-name">Your Name</label>
+          <select class="form-control" id="member-name">
+            <option value="">— Choose your name —</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" onclick="goTeamForm()">
+          Continue →
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { startClock, TEAM_MEMBERS, formatWeekRange, formatFullDate } from "./js/utils.js";
+  import { listenWeekSettings } from "./js/db.js";
+
+  startClock("live-clock");
+
+  // Populate dropdown
+  const sel = document.getElementById("member-name");
+  TEAM_MEMBERS.forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+
+  // Load week settings
+  listenWeekSettings(settings => {
+    if (!settings) return;
+    // Week bar
+    document.getElementById("week-bar").classList.remove("hidden");
+    document.getElementById("week-dates").textContent = formatWeekRange(settings.weekStart, settings.weekEnd);
+    document.getElementById("meeting-day-bar").textContent = "Meeting: " + formatFullDate(settings.meetingDay);
+
+    // Team note
+    if (settings.teamNote) {
+      document.getElementById("team-note-wrap").classList.remove("hidden");
+      document.getElementById("team-note-text").textContent = settings.teamNote;
+    } else {
+      document.getElementById("team-note-wrap").classList.add("hidden");
+    }
+
+    // Submissions status
+    if (document.getElementById("team-section").classList.contains("hidden")) return;
+    if (settings.submissionsOpen) {
+      document.getElementById("closed-msg").classList.add("hidden");
+      document.getElementById("open-form").classList.remove("hidden");
+    } else {
+      document.getElementById("closed-msg").classList.remove("hidden");
+      document.getElementById("open-form").classList.add("hidden");
+    }
+
+    window._weekSettings = settings;
+  });
+
+  window.goManager = function() {
+    window.location.href = "login.html";
+  };
+
+  window.showTeamDrop = function() {
+    const sec = document.getElementById("team-section");
+    const card = document.getElementById("team-card");
+    sec.classList.toggle("hidden");
+    card.classList.toggle("active");
+  };
+
+  window.goTeamForm = function() {
+    const name = document.getElementById("member-name").value;
+    if (!name) { alert("Please select your name."); return; }
+    if (window._weekSettings && !window._weekSettings.submissionsOpen) {
+      alert("Submissions are currently closed. Please contact your manager.");
+      return;
+    }
+    sessionStorage.setItem("tfc_member_name", name);
+    window.location.href = "team.html";
+  };
+</script>
+</body>
+</html>

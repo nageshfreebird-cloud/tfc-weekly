@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span class="time-icon">🕐</span>
+    <span id="live-clock">Loading...</span>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="container">
+
+    <div class="flex-between" style="margin-bottom:1.5rem;">
+      <h1 style="font-size:1.4rem;font-weight:800;color:var(--primary);">⚙️ Settings</h1>
+      <a href="dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+    </div>
+
+    <!-- ===== WEEK SETTINGS ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📅</span>
+        <h2>Week & Meeting Settings</h2>
+      </div>
+
+      <div id="week-saved-msg" class="alert alert-success hidden">✅ Week settings saved!</div>
+
+      <div class="form-group">
+        <label class="form-label">Week Period (auto-calculated)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+          <div>
+            <label class="form-label" style="font-weight:400;color:var(--text-muted);font-size:.8rem;">Start (Monday)</label>
+            <input type="date" class="form-control" id="week-start" />
+          </div>
+          <div>
+            <label class="form-label" style="font-weight:400;color:var(--text-muted);font-size:.8rem;">End (Friday)</label>
+            <input type="date" class="form-control" id="week-end" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">📅 Meeting Day</label>
+        <select class="form-control" id="meeting-day">
+          <option value="">— Select meeting day —</option>
+        </select>
+        <div class="form-hint">Select the day the meeting will be held this week.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">📢 Note to Team (optional)</label>
+        <input type="text" class="form-control" id="team-note"
+          placeholder="e.g. Monday is public holiday, meeting on Tuesday" />
+        <div class="form-hint">This note will be shown to team members on the home page.</div>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="saveWeek()">
+        Save Week Settings
+      </button>
+    </div>
+
+    <!-- ===== CHANGE CREDENTIALS ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🔐</span>
+        <h2>Change Login Credentials</h2>
+      </div>
+
+      <div id="cred-saved-msg" class="alert alert-success hidden">✅ Credentials updated successfully!</div>
+      <div id="cred-error-msg" class="alert alert-danger hidden"></div>
+
+      <div class="alert alert-info" style="margin-bottom:1rem;">
+        ℹ️ Default credentials always work as fallback:
+        <strong> admin / tfc@2014</strong>
+      </div>
+
+      <form onsubmit="saveCredentials(event)">
+        <div class="form-group">
+          <label class="form-label" for="new-userid">New User ID</label>
+          <input type="text" class="form-control" id="new-userid"
+            placeholder="Enter new User ID" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new-password">New Password</label>
+          <input type="password" class="form-control" id="new-password"
+            placeholder="Min 8 characters" minlength="8" autocomplete="new-password" />
+          <div class="form-hint">Minimum 8 characters. Any characters allowed.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm-password">Confirm New Password</label>
+          <input type="password" class="form-control" id="confirm-password"
+            placeholder="Repeat new password" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="current-password">Current Password (to confirm)</label>
+          <input type="password" class="form-control" id="current-password"
+            placeholder="Enter current password to authorize" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          Update Credentials
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { startClock, requireManagerAuth, getMondayOf, getFridayOf,
+           toYMD, formatShortDate } from "./js/utils.js";
+  import { getWeekSettings, saveWeekSettings, getAdminCredentials,
+           updateAdminCredentials, verifyAdminLogin } from "./js/db.js";
+
+  if (!requireManagerAuth()) throw new Error("Not auth");
+  startClock("live-clock");
+
+  // ---- Load week settings ----
+  async function loadWeek() {
+    const s = await getWeekSettings();
+    document.getElementById("week-start").value = s.weekStart || getMondayOf();
+    document.getElementById("week-end").value   = s.weekEnd   || getFridayOf();
+    document.getElementById("team-note").value  = s.teamNote  || "";
+    populateMeetingDays(s.weekStart, s.meetingDay);
+  }
+
+  function populateMeetingDays(weekStartStr, selectedDay) {
+    const sel = document.getElementById("meeting-day");
+    sel.innerHTML = `<option value="">— Select meeting day —</option>`;
+    const dayNames = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
+    const start = new Date((weekStartStr || getMondayOf()) + "T00:00:00");
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(start); d.setDate(d.getDate() + i);
+      const val = toYMD(d);
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = `${dayNames[i]}, ${formatShortDate(val)}`;
+      if (val === selectedDay) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  // When week-start changes, refresh meeting day options
+  document.getElementById("week-start").addEventListener("change", function() {
+    const v = this.value;
+    // Auto-set Friday
+    const mon = new Date(v + "T00:00:00");
+    mon.setDate(mon.getDate() + 4);
+    document.getElementById("week-end").value = toYMD(mon);
+    populateMeetingDays(v, "");
+  });
+
+  window.saveWeek = async function() {
+    const ws = document.getElementById("week-start").value;
+    const we = document.getElementById("week-end").value;
+    const md = document.getElementById("meeting-day").value;
+    const nt = document.getElementById("team-note").value.trim();
+    if (!ws || !we) { alert("Please set week start and end dates."); return; }
+    if (!md) { alert("Please select a meeting day."); return; }
+
+    // Get current submissionsOpen state
+    const cur = await getWeekSettings();
+    await saveWeekSettings({
+      weekStart: ws, weekEnd: we,
+      meetingDay: md, teamNote: nt,
+      submissionsOpen: cur.submissionsOpen || false
+    });
+    const msg = document.getElementById("week-saved-msg");
+    msg.classList.remove("hidden");
+    setTimeout(() => msg.classList.add("hidden"), 3000);
+    populateMeetingDays(ws, md);
+  };
+
+  // ---- Credentials ----
+  window.saveCredentials = async function(e) {
+    e.preventDefault();
+    const newId    = document.getElementById("new-userid").value.trim();
+    const newPwd   = document.getElementById("new-password").value;
+    const confPwd  = document.getElementById("confirm-password").value;
+    const curPwd   = document.getElementById("current-password").value;
+    const errEl    = document.getElementById("cred-error-msg");
+    const okEl     = document.getElementById("cred-saved-msg");
+
+    errEl.classList.add("hidden"); okEl.classList.add("hidden");
+
+    if (!newId)  { errEl.textContent="Please enter a new User ID."; errEl.classList.remove("hidden"); return; }
+    if (newPwd.length < 8) { errEl.textContent="New password must be at least 8 characters."; errEl.classList.remove("hidden"); return; }
+    if (newPwd !== confPwd) { errEl.textContent="Passwords do not match."; errEl.classList.remove("hidden"); return; }
+
+    // Verify current password
+    const creds = await getAdminCredentials();
+    if (curPwd !== creds.password && curPwd !== "tfc@2014") {
+      errEl.textContent = "Current password is incorrect.";
+      errEl.classList.remove("hidden"); return;
+    }
+
+    await updateAdminCredentials(newId, newPwd);
+    okEl.classList.remove("hidden");
+    document.getElementById("new-userid").value = "";
+    document.getElementById("new-password").value = "";
+    document.getElementById("confirm-password").value = "";
+    document.getElementById("current-password").value = "";
+    setTimeout(() => okEl.classList.add("hidden"), 4000);
+  };
+
+  loadWeek();
+</script>
+</body>
+</html>

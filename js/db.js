@@ -1,0 +1,165 @@
+// ============================================
+// TEACH FOR CHANGE — Firebase DB Operations
+// ============================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc,
+  collection, query, where, getDocs, onSnapshot, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import firebaseConfig from "./firebase-config.js";
+import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getFridayOf, toYMD } from "./utils.js";
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ============================================
+// ADMIN AUTH
+// ============================================
+
+/** Get current admin credentials from Firestore. Falls back to defaults. */
+export async function getAdminCredentials() {
+  try {
+    const snap = await getDoc(doc(db, "settings", "admin"));
+    if (snap.exists()) return snap.data();
+  } catch(e) {}
+  return { userId: DEFAULT_USER_ID, password: DEFAULT_PASSWORD };
+}
+
+/** Verify login attempt */
+export async function verifyAdminLogin(userId, password) {
+  const creds = await getAdminCredentials();
+  if (userId === creds.userId && password === creds.password) return true;
+  // Also allow default credentials always
+  if (userId === DEFAULT_USER_ID && password === DEFAULT_PASSWORD) return true;
+  return false;
+}
+
+/** Update admin credentials */
+export async function updateAdminCredentials(newUserId, newPassword) {
+  await setDoc(doc(db, "settings", "admin"), {
+    userId: newUserId,
+    password: newPassword,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+// ============================================
+// WEEK SETTINGS
+// ============================================
+
+/** Get current week settings */
+export async function getWeekSettings() {
+  try {
+    const snap = await getDoc(doc(db, "settings", "week"));
+    if (snap.exists()) return snap.data();
+  } catch(e) {}
+  // Return defaults for current week
+  const today = new Date();
+  return {
+    weekStart:        getMondayOf(today),
+    weekEnd:          getFridayOf(today),
+    meetingDay:       getMondayOf(today),
+    teamNote:         "",
+    submissionsOpen:  false
+  };
+}
+
+/** Save week settings (admin action) */
+export async function saveWeekSettings(settings) {
+  await setDoc(doc(db, "settings", "week"), {
+    ...settings,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+/** Toggle submissions open/closed */
+export async function setSubmissionsOpen(isOpen) {
+  const cur = await getWeekSettings();
+  await setDoc(doc(db, "settings", "week"), {
+    ...cur,
+    submissionsOpen: isOpen,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+/** Listen to week settings changes in real time */
+export function listenWeekSettings(callback) {
+  return onSnapshot(doc(db, "settings", "week"), snap => {
+    if (snap.exists()) callback(snap.data());
+    else callback(null);
+  });
+}
+
+// ============================================
+// SUBMISSIONS
+// ============================================
+
+/** Submit or update a member's weekly report */
+export async function submitMemberReport(weekStart, memberName, data) {
+  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
+  await setDoc(doc(db, "submissions", id), {
+    weekStart,
+    memberName,
+    submittedAt: new Date().toISOString(),
+    ...data
+  });
+}
+
+/** Get one member's submission for a week */
+export async function getMemberSubmission(weekStart, memberName) {
+  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
+  const snap = await getDoc(doc(db, "submissions", id));
+  return snap.exists() ? snap.data() : null;
+}
+
+/** Get all submissions for a week */
+export async function getWeekSubmissions(weekStart) {
+  const q = query(collection(db, "submissions"), where("weekStart", "==", weekStart));
+  const snap = await getDocs(q);
+  const result = {};
+  snap.forEach(d => { result[d.data().memberName] = d.data(); });
+  return result;
+}
+
+/** Listen to all submissions for a week in real time */
+export function listenWeekSubmissions(weekStart, callback) {
+  const q = query(collection(db, "submissions"), where("weekStart", "==", weekStart));
+  return onSnapshot(q, snap => {
+    const result = {};
+    snap.forEach(d => { result[d.data().memberName] = d.data(); });
+    callback(result);
+  });
+}
+
+// ============================================
+// MEETING SUMMARY (editable by admin)
+// ============================================
+
+/** Save edited summary */
+export async function saveSummary(weekStart, summaryData) {
+  await setDoc(doc(db, "summaries", weekStart), {
+    weekStart,
+    members: summaryData,
+    finalized: false,
+    savedAt: new Date().toISOString()
+  });
+}
+
+/** Finalize summary */
+export async function finalizeSummary(weekStart) {
+  const snap = await getDoc(doc(db, "summaries", weekStart));
+  if (snap.exists()) {
+    await updateDoc(doc(db, "summaries", weekStart), {
+      finalized: true,
+      finalizedAt: new Date().toISOString()
+    });
+  }
+}
+
+/** Get summary for a week */
+export async function getSummary(weekStart) {
+  const snap = await getDoc(doc(db, "summaries", weekStart));
+  return snap.exists() ? snap.data() : null;
+}
