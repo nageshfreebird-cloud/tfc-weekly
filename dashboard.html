@@ -225,8 +225,12 @@
       // This week tasks
       if (sub.thisWeekTasks && sub.thisWeekTasks.length > 0) {
         html += `<div class="section-divider"><span>This Week Plan</span></div>`;
+        const completedArr = sub.thisWeekCompleted || [];
         sub.thisWeekTasks.forEach((t,i) => {
-          html += `<div style="padding:.35rem .25rem;font-size:.88rem;">${i+1}. ${escHtml(t)}</div>`;
+          const isDone = completedArr[i] === true;
+          const style = isDone ? 'text-decoration:line-through;color:var(--text-muted);' : '';
+          const icon = isDone ? '✅ ' : `${i+1}. `;
+          html += `<div style="padding:.35rem .25rem;font-size:.88rem;${style}">${icon}${escHtml(t)}</div>`;
         });
       }
       // Support

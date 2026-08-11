@@ -159,12 +159,18 @@
     twLabel.textContent = "📋 This Week Tasks";
     body.appendChild(twLabel);
 
-    (data.thisWeekTasks || []).forEach((t, i) => {
+    const tw = data.thisWeekTasks || [];
+    const completedArr = data.thisWeekCompleted || [];
+    tw.forEach((t, i) => {
+      const isDone = completedArr[i] === true;
+      const bg = isDone ? 'background:#f0fdf4;' : '';
+      const check = isDone ? '<span style="color:var(--success);font-size:1.1rem;margin-right:0.4rem;" title="Completed by member">✅</span>' : '';
       const row = document.createElement("div");
       row.className = "summary-task-row";
+      row.style.cssText = `align-items:center;${bg}`;
       row.innerHTML = `
-        <span class="task-num">${i+1}.</span>
-        <input type="text" value="${escVal(t)}"
+        ${check}
+        <input type="text" value="${escVal(t)}" style="${bg}"
           oninput="updateThisWeekTask('${safeName(name)}',${i},this.value)"
           placeholder="Task..." />
         <button class="task-remove" title="Delete"

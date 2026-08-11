@@ -109,12 +109,45 @@ export function listenWeekSettings(callback) {
 /** Submit or update a member's weekly report */
 export async function submitMemberReport(weekStart, memberName, data) {
   const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
+  // Initialize completed tracking array
+  const completed = data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : [];
+  
   await setDoc(doc(db, "submissions", id), {
     weekStart,
     memberName,
     submittedAt: new Date().toISOString(),
+    thisWeekCompleted: completed,
     ...data
   });
+}
+
+/** Mark a single task as completed during the week */
+export async function markTaskCompleted(weekStart, memberName, taskIndex) {
+  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
+  const ref = doc(db, "submissions", id);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const data = snap.data();
+    let completed = data.thisWeekCompleted || (data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : []);
+    completed[taskIndex] = true;
+    await updateDoc(ref, { thisWeekCompleted: completed });
+    
+    // Also try to update it in the 'summaries' collection if it exists,
+    // so the admin printout syncs up automatically.
+    try {
+      const sumSnap = await getDoc(doc(db, "summaries", weekStart));
+      if (sumSnap.exists()) {
+        const sumData = sumSnap.data();
+        if (sumData.members && sumData.members[memberName]) {
+          let sumCompleted = sumData.members[memberName].thisWeekCompleted || (sumData.members[memberName].thisWeekTasks ? sumData.members[memberName].thisWeekTasks.map(() => false) : []);
+          sumCompleted[taskIndex] = true;
+          // Note: using updateDoc with nested fields requires dot notation
+          const fieldPath = `members.${memberName}.thisWeekCompleted`;
+          await updateDoc(doc(db, "summaries", weekStart), { [fieldPath]: sumCompleted });
+        }
+      }
+    } catch(err) { console.error("Error syncing to summary:", err); }
+  }
 }
 
 /** Get one member's submission for a week */

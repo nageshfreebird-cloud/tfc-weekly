@@ -167,10 +167,14 @@
           title.style.marginTop = ".6rem";
           title.textContent = "This Week Tasks";
           body.appendChild(title);
-          d.thisWeekTasks.forEach(t => {
+          const completedArr = d.thisWeekCompleted || [];
+          d.thisWeekTasks.forEach((t, i) => {
+            const isDone = completedArr[i] === true;
+            const icon = isDone ? '✅ ' : '• ';
             const p = document.createElement("div");
             p.className = "print-task";
-            p.textContent = t;
+            if (isDone) p.style.cssText = "text-decoration:line-through;color:#666;";
+            p.textContent = `${icon}${t}`;
             body.appendChild(p);
           });
         }

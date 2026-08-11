@@ -131,7 +131,7 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatShortDate } from "./js/utils.js";
-  import { getWeekSettings, getMemberSubmission, submitMemberReport, getWeekSubmissions } from "./js/db.js";
+  import { getWeekSettings, getMemberSubmission, submitMemberReport, getWeekSubmissions, markTaskCompleted } from "./js/db.js";
   import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
@@ -320,15 +320,48 @@
       html += `</ul>`;
     }
     if (data.thisWeekTasks && data.thisWeekTasks.length > 0) {
-      html += `<strong>This Week Tasks:</strong><ul style="margin:.4rem 0 0 1rem;">`;
-      data.thisWeekTasks.forEach(t => { html += `<li>→ ${escHtml(t)}</li>`; });
-      html += `</ul>`;
+      html += `<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <strong style="display:block;margin-bottom:0.5rem;color:var(--primary);">🎯 Your Weekly Progress Tracker:</strong>
+        <p class="text-sm text-muted" style="margin-bottom:1rem;">Check off tasks below as you complete them during the week. Once checked, they cannot be unchecked.</p>
+        <div style="text-align:left;">
+      `;
+      const completedArr = data.thisWeekCompleted || [];
+      data.thisWeekTasks.forEach((t, i) => { 
+        const isDone = completedArr[i] === true;
+        html += `
+          <label style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:${isDone ? '#f0fdf4' : 'var(--bg)'};border:1px solid ${isDone ? '#bbf7d0' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:0.5rem;cursor:${isDone ? 'default' : 'pointer'};transition:all 0.2s;">
+            <input type="checkbox" style="margin-top:0.25rem;width:1.2rem;height:1.2rem;accent-color:var(--success);" 
+              ${isDone ? 'checked disabled' : `onclick="markDone(event, ${i}, '${escHtml(t).replace(/'/g,"\\'").replace(/"/g,"&quot;")}')"`} />
+            <span style="${isDone ? 'text-decoration:line-through;color:var(--text-muted);' : 'color:var(--text);'}font-size:0.95rem;line-height:1.4;">${escHtml(t)}</span>
+          </label>
+        `; 
+      });
+      html += `</div></div>`;
     }
     document.getElementById("success-summary").innerHTML = html;
 
     document.querySelectorAll(".step-section").forEach(s => s.classList.remove("active"));
     document.getElementById("step-success").classList.add("active");
   }
+
+  window.markDone = async function(e, idx, taskText) {
+    e.preventDefault(); // Stop checkbox from checking immediately
+    if (confirm(`Are you sure you want to mark this task as completed?\n\n"${taskText}"\n\n(This cannot be undone)`)) {
+      try {
+        const checkbox = e.target;
+        checkbox.checked = true;
+        checkbox.disabled = true;
+        checkbox.parentElement.style.background = '#f0fdf4';
+        checkbox.parentElement.style.borderColor = '#bbf7d0';
+        checkbox.nextElementSibling.style.textDecoration = 'line-through';
+        checkbox.nextElementSibling.style.color = 'var(--text-muted)';
+        
+        await markTaskCompleted(weekSettings.weekStart, memberName, idx);
+      } catch (err) {
+        alert("Error marking task as completed: " + err.message);
+      }
+    }
+  };
 
   window.goStep = function(n) {
     document.querySelectorAll(".step-section").forEach(s => s.classList.remove("active"));
