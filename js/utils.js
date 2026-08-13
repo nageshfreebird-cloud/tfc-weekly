@@ -116,8 +116,16 @@ export function isManagerLoggedIn() {
 }
 export function requireManagerAuth() {
   if (!isManagerLoggedIn()) {
-    window.location.href = "login.html";
+    window.location.href = "index.html";
     return false;
   }
   return true;
+}
+
+export function goBackHome() {
+  if (isManagerLoggedIn()) {
+    window.location.href = "dashboard.html";
+  } else {
+    window.location.href = "index.html";
+  }
 }

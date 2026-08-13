@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manager Setup — Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="container-wide" style="max-width: 1400px;">
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs" style="justify-content:center;margin-bottom:2rem;">
+      <a href="dashboard.html">⚙️ Setup & Directory</a>
+      <a href="summary.html">Weekly Tasks</a>
+      <a href="#">15-Days Teacher Calls</a>
+      <a href="#">Assessments Received</a>
+      <a href="#">Assessments Record in Drive</a>
+      <a href="sheets.html" class="active">Google Sheet Links</a>
+      <a href="settings.html">My Settings</a>
+    </div>
+
+    <div class="setup-panel" style="max-width:800px;margin:0 auto;padding:2rem;">
+      <h2 style="margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem;">
+        🔗 Supervisor Google Sheets
+      </h2>
+      <p class="text-muted" style="margin-bottom:2rem;">
+        View the Google Sheets submitted by your supervisors below. Click the link to open their sheet in a new tab.
+      </p>
+
+      <div id="links-container" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;">
+        <div class="text-muted text-center">Loading links...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
+  import { getAllGoogleSheetLinks, getUsers } from "./js/db.js";
+
+  if (!requireManagerAuth()) throw new Error("Not auth");
+
+  window.doLogout = function() {
+    clearManagerSession();
+    window.location.href = "index.html";
+  };
+
+  async function init() {
+    const container = document.getElementById("links-container");
+    try {
+      const users = await getUsers();
+      const links = await getAllGoogleSheetLinks();
+      
+      let html = `<table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);text-align:left;">
+            <th style="padding:0.75rem;">Supervisor</th>
+            <th style="padding:0.75rem;">Google Sheet Link</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      
+      let hasLinks = false;
+      users.forEach(u => {
+        if (u.role === 'supervisor') {
+          hasLinks = true;
+          const link = links[u.name] || "";
+          html += `<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.75rem;font-weight:600;">${u.name}</td>
+            <td style="padding:0.75rem;">
+              ${link 
+                ? `<a href="${link}" target="_blank" style="color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:0.25rem;">
+                     📄 Open Sheet ↗
+                   </a>` 
+                : `<span class="text-muted text-sm">No link provided yet.</span>`
+              }
+            </td>
+          </tr>`;
+        }
+      });
+      html += `</tbody></table>`;
+      
+      if (!hasLinks) {
+        html = `<div class="text-muted text-center">No supervisors found in the system.</div>`;
+      }
+      
+      container.innerHTML = html;
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = `<div style="color:red;font-weight:bold;">Error loading links: ${e.message}</div>`;
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
