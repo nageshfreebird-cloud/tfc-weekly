@@ -385,23 +385,25 @@ export async function saveYearPlan(supervisorName, plan) {
 }
 
 // ============================================
-// GOOGLE SHEETS LINKS
+// GOOGLE SHEETS LINKS (PHASE 5)
 // ============================================
 
-export async function saveGoogleSheetLink(userName, link) {
-  await setDoc(doc(db, "google_sheets", userName), { link });
+export async function saveSheetLinks(userName, linksArray) {
+  await setDoc(doc(db, "google_sheets", userName), { links: linksArray, updatedAt: Date.now() });
 }
 
-export async function getGoogleSheetLink(userName) {
+export async function getSheetLinks(userName) {
   const snap = await getDoc(doc(db, "google_sheets", userName));
-  return snap.exists() ? snap.data().link : "";
+  return snap.exists() && snap.data().links ? snap.data().links : [];
 }
 
-export async function getAllGoogleSheetLinks() {
+export async function getAllSheetLinks() {
   const snap = await getDocs(collection(db, "google_sheets"));
-  let links = {};
-  snap.forEach(d => links[d.id] = d.data().link);
-  return links;
+  let allLinks = {};
+  snap.forEach(d => {
+    allLinks[d.id] = d.data().links || [];
+  });
+  return allLinks;
 }
 
 // --- PHASE 4: TEACHER CALLS & ASSESSMENTS ---

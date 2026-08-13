@@ -138,6 +138,36 @@ a { text-decoration: none; color: inherit; }
   font-size: 0.92rem;
 }
 
+/* ---- Nav Tabs ---- */
+.nav-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.nav-tabs a {
+  padding: 0.5rem 1rem;
+  background: var(--bg);
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  transition: var(--transition);
+}
+.nav-tabs a:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-light);
+  color: white;
+}
+.nav-tabs a.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+}
+
 /* ---- Buttons ---- */
 .btn {
   display: inline-flex;
@@ -702,7 +732,67 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .gap-1 { gap: 0.5rem; }
 .hidden { display: none !important; }
 
+/* ---- Compact Rows (Phase 5/6) ---- */
+.compact-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.compact-row:hover {
+  border-color: var(--border-focus);
+}
+.compact-col-info {
+  flex: 0 0 25%;
+  min-width: 200px;
+}
+.compact-col-input {
+  flex: 1;
+}
+.compact-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.compact-btn.active.green {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+.compact-btn.active.red {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+.compact-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .compact-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .compact-col-info {
+    flex: none;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
 @media (max-width: 480px) {
   .page { padding: 1.25rem 0.75rem; }
   .card { padding: 1.1rem; }
