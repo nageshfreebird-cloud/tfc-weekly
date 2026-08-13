@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manager Analytics - Drive Records</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .chart-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .chart-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .chart-container {
+      position: relative;
+      height: 150px;
+      width: 150px;
+      margin: 0 auto 1rem auto;
+    }
+    .drilldown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="container-wide" style="max-width: 1400px;">
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs" style="justify-content:center;margin-bottom:2rem;flex-wrap:wrap;">
+      <a href="dashboard.html">⚙️ Setup & Directory</a>
+      <a href="summary.html">Weekly Tasks</a>
+      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">📝 Assessments Received</a>
+      <a href="manager-drive.html" class="active">📁 Assessments Record in Drive</a>
+      <a href="sheets.html">Google Sheet Links</a>
+      <a href="settings.html">My Settings</a>
+    </div>
+
+    <div class="setup-panel">
+      
+      <!-- LEVEL 1: Overview -->
+      <div id="level-1">
+        <div class="drilldown-header">
+          <h2>📁 Assessments Record in Drive (Overview)</h2>
+        </div>
+        <p class="text-muted mb-3">Click on a Supervisor to see their District & Level breakdown.</p>
+        <div id="l1-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;">
+          <div class="text-muted">Loading analytics...</div>
+        </div>
+      </div>
+
+      <!-- LEVEL 2: District & Level -->
+      <div id="level-2" class="hidden">
+        <div class="drilldown-header">
+          <h2 id="l2-title"></h2>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">← Back to Overview</button>
+        </div>
+        <p class="text-muted mb-3">Click on a District_Level to see the raw data for schools.</p>
+        <div id="l2-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;"></div>
+      </div>
+
+      <!-- LEVEL 3: Raw Data Table -->
+      <div id="level-3" class="hidden">
+        <div class="drilldown-header">
+          <h2 id="l3-title"></h2>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">← Back to Supervisor</button>
+        </div>
+        <div id="l3-content" style="overflow-x:auto;"></div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
+  import { getUsers, getSchools, getAllDriveRecords } from "./js/db.js";
+
+  if (!requireManagerAuth()) throw new Error("Not auth");
+
+  window.doLogout = function() {
+    clearManagerSession();
+    window.location.href = "index.html";
+  };
+
+  let globalData = {}; 
+  let chartInstances = [];
+
+  async function init() {
+    const users = await getUsers();
+    const callsData = await getAllDriveRecords(); 
+    
+    let allSchoolsByDist = {};
+    const supervisors = users.filter(u => u.role === 'supervisor');
+    
+    for (let u of supervisors) {
+      if (!u.districts) continue;
+      for (let d of u.districts) {
+        if (!allSchoolsByDist[d]) {
+          allSchoolsByDist[d] = await getSchools(d);
+        }
+      }
+    }
+
+    supervisors.forEach(u => {
+      globalData[u.name] = {};
+      if (!u.districts) return;
+
+      u.districts.forEach(dist => {
+        const distSchools = allSchoolsByDist[dist] || [];
+        let levelsInDist = {};
+        distSchools.forEach(s => {
+          if (!s.Level) return;
+          if (!levelsInDist[s.Level]) levelsInDist[s.Level] = [];
+          levelsInDist[s.Level].push(s);
+        });
+
+        Object.keys(levelsInDist).forEach(lvl => {
+          const distLevelKey = `${dist}_${lvl}`;
+          const schoolsInLvl = levelsInDist[lvl];
+          const savedForThisLvl = callsData[`${u.name}_${distLevelKey}`] || {};
+          
+          let doneCount = 0;
+          let schoolDetails = [];
+          
+          schoolsInLvl.forEach(s => {
+            const sName = s["School Name"];
+            const sData = savedForThisLvl[sName];
+            
+            // "Done" means they logged it as completed
+            const isDone = sData && (sData.status === "completed");
+            if (isDone) doneCount++;
+            
+            schoolDetails.push({
+              name: sName,
+              status: sData ? sData.status : "",
+              remarks: sData ? sData.remarks : "",
+              isDone: !!isDone
+            });
+          });
+
+          globalData[u.name][distLevelKey] = {
+            total: schoolsInLvl.length,
+            done: doneCount,
+            schools: schoolDetails
+          };
+        });
+      });
+    });
+
+    renderLevel1();
+  }
+
+  function destroyCharts() {
+    chartInstances.forEach(c => c.destroy());
+    chartInstances = [];
+  }
+
+  function createChart(canvasId, label, percentage) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    const color = percentage === 100 ? '#10b981' : (percentage > 50 ? '#3b82f6' : '#f59e0b');
+    
+    const chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [percentage, Math.max(0, 100 - percentage)],
+          backgroundColor: [color, '#e2e8f0'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: '75%',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { tooltip: { enabled: false }, legend: { display: false } }
+      },
+      plugins: [{
+        id: 'textCenter',
+        beforeDraw: function(chart) {
+          var width = chart.width, height = chart.height, ctx = chart.ctx;
+          ctx.restore();
+          var fontSize = (height / 100).toFixed(2);
+          ctx.font = "bold " + fontSize + "em sans-serif";
+          ctx.textBaseline = "middle";
+          var text = percentage + "%",
+              textX = Math.round((width - ctx.measureText(text).width) / 2),
+              textY = height / 2;
+          ctx.fillStyle = '#1e293b';
+          ctx.fillText(text, textX, textY);
+          ctx.save();
+        }
+      }]
+    });
+    chartInstances.push(chart);
+  }
+
+  window.showLevel = function(level) {
+    document.getElementById("level-1").classList.add("hidden");
+    document.getElementById("level-2").classList.add("hidden");
+    document.getElementById("level-3").classList.add("hidden");
+    document.getElementById(`level-${level}`).classList.remove("hidden");
+    if (level === 1) renderLevel1();
+  };
+
+  function renderLevel1() {
+    destroyCharts();
+    const container = document.getElementById("l1-grid");
+    container.innerHTML = "";
+    
+    Object.keys(globalData).forEach((supeName, idx) => {
+      let totalSchools = 0;
+      let totalDone = 0;
+      Object.keys(globalData[supeName]).forEach(dl => {
+        totalSchools += globalData[supeName][dl].total;
+        totalDone += globalData[supeName][dl].done;
+      });
+      
+      const pct = totalSchools === 0 ? 0 : Math.round((totalDone / totalSchools) * 100);
+      const cId = `chart-l1-${idx}`;
+      
+      container.innerHTML += `
+        <div class="chart-card" onclick="renderLevel2('${supeName}')">
+          <div class="chart-container"><canvas id="${cId}"></canvas></div>
+          <h3 style="margin:0;font-size:1.1rem;color:var(--primary);">${supeName}</h3>
+          <p class="text-muted text-sm" style="margin-top:0.25rem;">${totalDone} / ${totalSchools} Schools Uploaded</p>
+        </div>
+      `;
+    });
+    
+    setTimeout(() => {
+      Object.keys(globalData).forEach((supeName, idx) => {
+        let ts = 0, td = 0;
+        Object.keys(globalData[supeName]).forEach(dl => { ts += globalData[supeName][dl].total; td += globalData[supeName][dl].done; });
+        createChart(`chart-l1-${idx}`, supeName, ts === 0 ? 0 : Math.round((td / ts) * 100));
+      });
+    }, 50);
+  }
+
+  window.renderLevel2 = function(supeName) {
+    destroyCharts();
+    window.currentSupe = supeName;
+    document.getElementById("l2-title").textContent = `Supervisor: ${supeName}`;
+    const container = document.getElementById("l2-grid");
+    container.innerHTML = "";
+    
+    const supeData = globalData[supeName];
+    const dlKeys = Object.keys(supeData);
+    
+    if (dlKeys.length === 0) {
+      container.innerHTML = `<div class="text-muted">No districts/levels found for this supervisor.</div>`;
+    }
+    
+    dlKeys.forEach((dl, idx) => {
+      const data = supeData[dl];
+      const pct = data.total === 0 ? 0 : Math.round((data.done / data.total) * 100);
+      const cId = `chart-l2-${idx}`;
+      
+      container.innerHTML += `
+        <div class="chart-card" onclick="renderLevel3('${dl}')">
+          <div class="chart-container"><canvas id="${cId}"></canvas></div>
+          <h3 style="margin:0;font-size:1rem;color:var(--text);">${dl}</h3>
+          <p class="text-muted text-sm" style="margin-top:0.25rem;">${data.done} / ${data.total} Schools</p>
+        </div>
+      `;
+    });
+    
+    showLevel(2);
+    
+    setTimeout(() => {
+      dlKeys.forEach((dl, idx) => {
+        const d = supeData[dl];
+        createChart(`chart-l2-${idx}`, dl, d.total === 0 ? 0 : Math.round((d.done / d.total) * 100));
+      });
+    }, 50);
+  };
+
+  window.renderLevel3 = function(dl) {
+    document.getElementById("l3-title").textContent = `${dl} (Raw Data)`;
+    const container = document.getElementById("l3-content");
+    const schools = globalData[window.currentSupe][dl].schools;
+    
+    let html = `<table style="width:100%;border-collapse:collapse;background:var(--bg);border-radius:var(--radius-sm);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <thead style="background:var(--bg-alt);border-bottom:2px solid var(--border);text-align:left;">
+        <tr>
+          <th style="padding:1rem;">School</th>
+          <th style="padding:1rem;">Status</th>
+          <th style="padding:1rem;">Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+    `;
+    
+    schools.forEach(s => {
+      let statusBadge = `<span class="text-muted">-</span>`;
+      if (s.status === "completed") statusBadge = `<span style="background:#dcfce7;color:#166534;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">✅ Completed</span>`;
+      if (s.status === "not_completed") statusBadge = `<span style="background:#fee2e2;color:#991b1b;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">❌ Not Completed</span>`;
+
+      html += `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:1rem;font-weight:600;">
+            ${s.name}
+          </td>
+          <td style="padding:1rem;">
+            ${statusBadge}
+          </td>
+          <td style="padding:1rem;">
+            <span style="font-size:0.9rem;">${s.remarks || '-'}</span>
+          </td>
+        </tr>
+      `;
+    });
+    
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+    
+    showLevel(3);
+  };
+
+  init();
+</script>
+</body>
+</html>

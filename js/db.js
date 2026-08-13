@@ -403,3 +403,53 @@ export async function getAllGoogleSheetLinks() {
   snap.forEach(d => links[d.id] = d.data().link);
   return links;
 }
+
+// --- PHASE 4: TEACHER CALLS & ASSESSMENTS ---
+
+export async function saveTeacherCalls(supervisorName, distLevel, data) {
+  await setDoc(doc(db, "teacher_calls", `${supervisorName}_${distLevel}`), { data, updatedAt: Date.now() });
+}
+
+export async function getTeacherCalls(supervisorName, distLevel) {
+  const snap = await getDoc(doc(db, "teacher_calls", `${supervisorName}_${distLevel}`));
+  return snap.exists() ? snap.data().data : {};
+}
+
+export async function getAllTeacherCalls() {
+  const snap = await getDocs(collection(db, "teacher_calls"));
+  let all = {};
+  snap.forEach(d => all[d.id] = d.data().data);
+  return all;
+}
+
+export async function saveAssessments(supervisorName, distLevel, data) {
+  await setDoc(doc(db, "assessments_received", `${supervisorName}_${distLevel}`), { data, updatedAt: Date.now() });
+}
+
+export async function getAssessments(supervisorName, distLevel) {
+  const snap = await getDoc(doc(db, "assessments_received", `${supervisorName}_${distLevel}`));
+  return snap.exists() ? snap.data().data : {};
+}
+
+export async function getAllAssessments() {
+  const snap = await getDocs(collection(db, "assessments_received"));
+  let all = {};
+  snap.forEach(d => all[d.id] = d.data().data);
+  return all;
+}
+
+export async function saveDriveRecords(supervisorName, distLevel, data) {
+  await setDoc(doc(db, "assessments_drive", `${supervisorName}_${distLevel}`), { data, updatedAt: Date.now() });
+}
+
+export async function getDriveRecords(supervisorName, distLevel) {
+  const snap = await getDoc(doc(db, "assessments_drive", `${supervisorName}_${distLevel}`));
+  return snap.exists() ? snap.data().data : {};
+}
+
+export async function getAllDriveRecords() {
+  const snap = await getDocs(collection(db, "assessments_drive"));
+  let all = {};
+  snap.forEach(d => all[d.id] = d.data().data);
+  return all;
+}

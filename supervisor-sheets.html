@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Sheet Links — Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .link-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+      background: var(--bg);
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+    @media (max-width: 600px) {
+      .link-row { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span id="welcome-name" style="margin-right:1rem;font-weight:600;"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="container-wide" style="max-width: 900px;">
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs" style="margin-bottom:2rem;display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+      <a href="supervisor.html">⚙️ Registry & Year Plan</a>
+      <a href="team.html">Weekly Tasks</a>
+      <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
+      <a href="supervisor-assessments.html">📝 Assessments Received</a>
+      <a href="supervisor-drive.html">📁 Assessments Record in Drive</a>
+      <a href="supervisor-sheets.html" class="active">🔗 Google Sheet Links</a>
+    </div>
+
+    <div class="setup-panel">
+      <h2>🔗 Google Sheet Links</h2>
+      <p class="text-muted mb-3" style="margin-bottom:1.5rem;">Add your Google Sheet links below. You can add multiple sheets.</p>
+
+      <div id="links-container">
+        <div class="text-muted text-center" id="loading-msg">Loading your saved links...</div>
+      </div>
+
+      <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+        <button class="btn btn-outline" onclick="addLinkRow()">+ Add Link</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="saveLinks()">💾 Save All Links</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { getSheetLinks, saveSheetLinks } from "./js/db.js";
+
+  const userName = sessionStorage.getItem("tfc_member_name");
+  const userRole = sessionStorage.getItem("tfc_member_role");
+
+  if (!userName || userRole !== 'supervisor') {
+    window.location.href = "index.html";
+  }
+
+  document.getElementById("welcome-name").textContent = userName;
+
+  async function init() {
+    const savedLinks = await getSheetLinks(userName);
+    const container = document.getElementById("links-container");
+    container.innerHTML = "";
+    
+    if (savedLinks.length === 0) {
+      addLinkRow(); // show at least one empty row
+    } else {
+      savedLinks.forEach(link => {
+        addLinkRow(link.name, link.url);
+      });
+    }
+  }
+
+  window.addLinkRow = function(name = "", url = "") {
+    const container = document.getElementById("links-container");
+    const rowId = `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    
+    // Remove loading msg if exists
+    const loading = document.getElementById("loading-msg");
+    if (loading) loading.remove();
+    
+    const html = `
+      <div class="link-row" id="${rowId}">
+        <div style="flex:1;">
+          <label class="form-label text-sm">Sheet Name</label>
+          <input type="text" class="form-control sheet-name" placeholder="e.g. Master Tracker" value="${name}" />
+        </div>
+        <div style="flex:2;">
+          <label class="form-label text-sm">Google Sheet URL</label>
+          <input type="text" class="form-control sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." value="${url}" />
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);height:42px;margin-top:22px;" onclick="removeLinkRow('${rowId}')">Delete</button>
+        </div>
+      </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', html);
+  };
+
+  window.removeLinkRow = function(rowId) {
+    document.getElementById(rowId).remove();
+  };
+
+  window.saveLinks = async function() {
+    const rows = document.querySelectorAll(".link-row");
+    let linksArray = [];
+    
+    rows.forEach(row => {
+      const name = row.querySelector(".sheet-name").value.trim();
+      const url = row.querySelector(".sheet-url").value.trim();
+      if (name || url) {
+        linksArray.push({ name, url });
+      }
+    });
+
+    try {
+      await saveSheetLinks(userName, linksArray);
+      alert("Google Sheet Links saved successfully!");
+    } catch (e) {
+      alert("Error saving links.");
+      console.error(e);
+    }
+  };
+
+  window.doLogout = function() {
+    sessionStorage.removeItem("tfc_member_name");
+    sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  };
+
+  init();
+</script>
+</body>
+</html>

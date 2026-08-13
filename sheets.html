@@ -3,8 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manager Setup — Teach for Change</title>
+  <title>Google Sheet Links — Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .supe-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+    }
+    .supe-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .link-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .link-row:last-child {
+      border-bottom: none;
+    }
+  </style>
 </head>
 <body>
 
@@ -14,35 +39,52 @@
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime">
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+    <span class="time-icon">🕐</span>
+    <span id="live-clock">Loading...</span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="margin-left:1rem;">Logout</button>
   </div>
 </nav>
 
 <div class="page">
-  <div class="container-wide" style="max-width: 1400px;">
+  <div class="container-wide" style="max-width:1000px;">
 
     <!-- Navigation Tabs -->
-    <div class="nav-tabs" style="justify-content:center;margin-bottom:2rem;">
+    <div class="nav-tabs" style="justify-content:center;margin-bottom:2rem;flex-wrap:wrap;">
       <a href="dashboard.html">⚙️ Setup & Directory</a>
       <a href="summary.html">Weekly Tasks</a>
-      <a href="#">15-Days Teacher Calls</a>
-      <a href="#">Assessments Received</a>
-      <a href="#">Assessments Record in Drive</a>
+      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">📝 Assessments Received</a>
+      <a href="manager-drive.html">📁 Assessments Record in Drive</a>
       <a href="sheets.html" class="active">Google Sheet Links</a>
       <a href="settings.html">My Settings</a>
     </div>
 
-    <div class="setup-panel" style="max-width:800px;margin:0 auto;padding:2rem;">
-      <h2 style="margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem;">
-        🔗 Supervisor Google Sheets
-      </h2>
-      <p class="text-muted" style="margin-bottom:2rem;">
-        View the Google Sheets submitted by your supervisors below. Click the link to open their sheet in a new tab.
-      </p>
-
-      <div id="links-container" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;">
-        <div class="text-muted text-center">Loading links...</div>
+    <div class="setup-panel">
+      
+      <!-- LEVEL 1: Select Supervisor -->
+      <div id="level-1">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+          <h2>🔗 Google Sheet Links</h2>
+        </div>
+        <p class="text-muted mb-3">Select a Supervisor to view their linked Google Sheets.</p>
+        
+        <div id="supe-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.5rem;">
+          <div class="text-muted">Loading supervisors...</div>
+        </div>
       </div>
+
+      <!-- LEVEL 2: View Links -->
+      <div id="level-2" class="hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+          <h2 id="l2-title"></h2>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">← Back to Supervisors</button>
+        </div>
+        
+        <div id="links-container" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-md);">
+          <!-- Links go here -->
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -50,60 +92,95 @@
 
 <script type="module">
   import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
-  import { getAllGoogleSheetLinks, getUsers } from "./js/db.js";
+  import { getUsers, getAllSheetLinks } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
+
+  let allSupervisors = [];
+  let allLinksData = {};
+
+  async function init() {
+    const users = await getUsers();
+    allSupervisors = users.filter(u => u.role === 'supervisor');
+    allLinksData = await getAllSheetLinks();
+    
+    renderLevel1();
+  }
+
+  function renderLevel1() {
+    const container = document.getElementById("supe-grid");
+    container.innerHTML = "";
+    
+    if (allSupervisors.length === 0) {
+      container.innerHTML = `<div class="text-muted">No supervisors found in the system.</div>`;
+      return;
+    }
+
+    allSupervisors.forEach(u => {
+      const links = allLinksData[u.name] || [];
+      const linkCount = links.length;
+      
+      container.innerHTML += `
+        <div class="supe-card" onclick="renderLevel2('${u.name}')">
+          <h3 style="margin:0 0 0.5rem 0;font-size:1.1rem;color:var(--primary);">👤 ${u.name}</h3>
+          <p class="text-muted text-sm" style="margin:0;">
+            ${linkCount === 0 ? 'No sheets linked' : `🔗 ${linkCount} sheet(s) linked`}
+          </p>
+        </div>
+      `;
+    });
+  }
+
+  window.renderLevel2 = function(supeName) {
+    document.getElementById("l2-title").textContent = `Supervisor: ${supeName}`;
+    const container = document.getElementById("links-container");
+    container.innerHTML = "";
+    
+    const links = allLinksData[supeName] || [];
+    
+    if (links.length === 0) {
+      container.innerHTML = `<div class="text-muted text-center" style="padding:2rem;">No Google Sheets have been linked by this supervisor yet.</div>`;
+    } else {
+      links.forEach(link => {
+        const safeUrl = link.url.startsWith("http") ? link.url : `https://${link.url}`;
+        const name = link.name || "Untitled Sheet";
+        
+        container.innerHTML += `
+          <div class="link-row">
+            <div>
+              <strong style="font-size:1.1rem;">${name}</strong><br/>
+              <a href="${safeUrl}" target="_blank" class="text-muted text-sm" style="text-decoration:none;">${safeUrl}</a>
+            </div>
+            <div>
+              <a href="${safeUrl}" target="_blank" class="btn btn-primary btn-sm">Open Sheet ↗</a>
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    showLevel(2);
+  };
+
+  window.showLevel = function(level) {
+    document.getElementById("level-1").classList.add("hidden");
+    document.getElementById("level-2").classList.add("hidden");
+    document.getElementById(`level-${level}`).classList.remove("hidden");
+  };
 
   window.doLogout = function() {
     clearManagerSession();
     window.location.href = "index.html";
   };
 
-  async function init() {
-    const container = document.getElementById("links-container");
-    try {
-      const users = await getUsers();
-      const links = await getAllGoogleSheetLinks();
-      
-      let html = `<table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="border-bottom:2px solid var(--border);text-align:left;">
-            <th style="padding:0.75rem;">Supervisor</th>
-            <th style="padding:0.75rem;">Google Sheet Link</th>
-          </tr>
-        </thead>
-        <tbody>`;
-      
-      let hasLinks = false;
-      users.forEach(u => {
-        if (u.role === 'supervisor') {
-          hasLinks = true;
-          const link = links[u.name] || "";
-          html += `<tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:0.75rem;font-weight:600;">${u.name}</td>
-            <td style="padding:0.75rem;">
-              ${link 
-                ? `<a href="${link}" target="_blank" style="color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:0.25rem;">
-                     📄 Open Sheet ↗
-                   </a>` 
-                : `<span class="text-muted text-sm">No link provided yet.</span>`
-              }
-            </td>
-          </tr>`;
-        }
-      });
-      html += `</tbody></table>`;
-      
-      if (!hasLinks) {
-        html = `<div class="text-muted text-center">No supervisors found in the system.</div>`;
-      }
-      
-      container.innerHTML = html;
-    } catch (e) {
-      console.error(e);
-      container.innerHTML = `<div style="color:red;font-weight:bold;">Error loading links: ${e.message}</div>`;
-    }
+  // Clock
+  function updateClock() {
+    document.getElementById('live-clock').textContent = new Date().toLocaleString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'
+    });
   }
+  setInterval(updateClock, 60000);
+  updateClock();
 
   init();
 </script>
