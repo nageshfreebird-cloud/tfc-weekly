@@ -64,7 +64,6 @@
 <div class="page">
   <div class="container-wide" style="max-width: 1400px;">
 
-    <!-- Top Navigation Tabs -->
     <div class="nav-tabs">
       <a href="supervisor.html" class="active">⚙️ Registry & Year Plan</a>
       <a href="team.html">Weekly Tasks</a>
@@ -84,20 +83,20 @@
         <div class="alert alert-info text-sm mb-3" style="margin-bottom:1rem;">
           You can add schools manually or upload an Excel (.xlsx) file.
         </div>
-        <button class="btn btn-outline btn-block mb-2" style="margin-bottom:0.5rem;">⬇️ Download Excel Template</button>
-        <button class="btn btn-primary btn-block mb-3" style="margin-bottom:1rem;">⬆️ Upload Excel File</button>
+        <button class="btn btn-outline btn-block mb-2" style="margin-bottom:0.5rem;" onclick="downloadSchoolTemplate()">⬇️ Download Excel Template</button>
+        <button class="btn btn-primary btn-block mb-3" style="margin-bottom:1rem;" onclick="uploadSchoolExcel()">⬆️ Upload Excel File</button>
         <hr style="border:0;border-top:1px solid var(--border);margin:1rem 0;" />
-        <button class="btn btn-success btn-block">+ Add School Manually</button>
+        <button class="btn btn-success btn-block" onclick="addSchoolManually()">+ Add School Manually</button>
       </div>
 
       <!-- Part 2: Syllabus Registry -->
       <div class="setup-panel">
         <h2>📚 Syllabus Registry</h2>
         <p class="text-sm text-muted mb-2" style="margin-bottom:1rem;">Map syllabus chapters to Levels 1, 2, 3, and 4.</p>
-        <button class="btn btn-outline btn-block mb-2" style="margin-bottom:0.5rem;">⬇️ Download Excel Template</button>
-        <button class="btn btn-primary btn-block mb-3" style="margin-bottom:1rem;">⬆️ Upload Syllabus File</button>
+        <button class="btn btn-outline btn-block mb-2" style="margin-bottom:0.5rem;" onclick="downloadSyllabusTemplate()">⬇️ Download Excel Template</button>
+        <button class="btn btn-primary btn-block mb-3" style="margin-bottom:1rem;" onclick="uploadSyllabusExcel()">⬆️ Upload Syllabus File</button>
         <hr style="border:0;border-top:1px solid var(--border);margin:1rem 0;" />
-        <button class="btn btn-success btn-block">+ Map Syllabus Manually</button>
+        <button class="btn btn-success btn-block" onclick="addSyllabusManually()">+ Map Syllabus Manually</button>
       </div>
 
       <!-- Part 3: Year Plan -->
@@ -105,21 +104,11 @@
         <h2>🗓️ Year Plan (June-May)</h2>
         <p class="text-sm text-muted mb-3" style="margin-bottom:1rem;">Plan your long-term goals for each academic month.</p>
         
-        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
-          <strong>June</strong>
-          <button class="btn btn-ghost btn-sm">+ Add Task</button>
+        <div id="year-plan-container" style="max-height:500px;overflow-y:auto;padding-right:0.5rem;">
+          <!-- Dynamically populated -->
+          <div class="text-muted text-center" style="margin-top:2rem;">Loading Year Plan...</div>
         </div>
-        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
-          <strong>July</strong>
-          <button class="btn btn-ghost btn-sm">+ Add Task</button>
-        </div>
-        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
-          <strong>August</strong>
-          <button class="btn btn-ghost btn-sm">+ Add Task</button>
-        </div>
-        <div class="text-center mt-2" style="text-align:center;margin-top:1rem;">
-          <a href="#" style="font-size:0.85rem;color:var(--primary);">View all months...</a>
-        </div>
+
       </div>
 
     </div>
@@ -127,7 +116,10 @@
   </div>
 </div>
 
-<script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan } from "./js/db.js";
+
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
 
@@ -138,11 +130,165 @@
 
   document.getElementById("welcome-name").textContent = "👋 " + userName;
 
-  function doLogout() {
+  let myUser = null;
+  let yearPlan = {};
+  const MONTHS = ["June", "July", "August", "September", "October", "November", "December", "January", "February", "March", "April", "May"];
+
+  async function init() {
+    const users = await getUsers();
+    myUser = users.find(u => u.name === userName);
+    if (!myUser || !myUser.districts || myUser.districts.length === 0) {
+      alert("No districts assigned to you! Contact your Manager.");
+    }
+    
+    yearPlan = await getYearPlan(userName);
+    renderYearPlan();
+  }
+
+  // --- SCHOOLS LOGIC ---
+  window.downloadSchoolTemplate = function() {
+    const ws = XLSX.utils.aoa_to_sheet([["School Name", "Mandal Name", "Level", "HM Name", "HM Phone", "Teacher Name", "Teacher Phone", "Location", "TV Working", "Pendrive Working"]]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Schools");
+    XLSX.writeFile(wb, "School_Registry_Template.xlsx");
+  };
+
+  window.uploadSchoolExcel = function() {
+    if (!myUser || !myUser.districts || myUser.districts.length === 0) return alert("No districts assigned.");
+    let distStr = myUser.districts.map((d, i) => `${i}: ${d}`).join("\n");
+    const dIdx = prompt("Enter the NUMBER of the district to upload schools to:\n" + distStr);
+    if (dIdx === null || !myUser.districts[dIdx]) return;
+    const selectedDist = myUser.districts[dIdx];
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx, .xls";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        let existing = await getSchools(selectedDist);
+        existing = existing.concat(data); // Append new
+        await saveSchools(selectedDist, existing);
+        alert(`Successfully imported ${data.length} schools into ${selectedDist}!`);
+      };
+      reader.readAsBinaryString(file);
+    };
+    input.click();
+  };
+
+  window.addSchoolManually = async function() {
+    if (!myUser || !myUser.districts || myUser.districts.length === 0) return alert("No districts assigned.");
+    let distStr = myUser.districts.map((d, i) => `${i}: ${d}`).join("\n");
+    const dIdx = prompt("Enter the NUMBER of the district:\n" + distStr);
+    if (dIdx === null || !myUser.districts[dIdx]) return;
+    const selectedDist = myUser.districts[dIdx];
+
+    const schoolName = prompt("Enter School Name:");
+    if (!schoolName) return;
+    const level = prompt("Enter Level (Level-1, Level-2, Level-3, Level-4):", "Level-1");
+    if (!level) return;
+    
+    let existing = await getSchools(selectedDist);
+    existing.push({ "School Name": schoolName, "Level": level, "Mandal Name": "", "HM Name": "", "HM Phone": "", "Teacher Name": "", "Teacher Phone": "", "Location": "", "TV Working": "Yes", "Pendrive Working": "Yes" });
+    await saveSchools(selectedDist, existing);
+    alert("School saved successfully!");
+  };
+
+  // --- SYLLABUS LOGIC ---
+  window.downloadSyllabusTemplate = function() {
+    const ws = XLSX.utils.aoa_to_sheet([["Topic Name", "Description"]]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Syllabus");
+    XLSX.writeFile(wb, "Syllabus_Template.xlsx");
+  };
+
+  window.uploadSyllabusExcel = function() {
+    const level = prompt("Enter Level for this syllabus (e.g. Level-1, Level-2, Level-3, Level-4):", "Level-1");
+    if (!level) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx, .xls";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        await saveSyllabus(level, data);
+        alert(`Successfully imported syllabus topics for ${level}!`);
+      };
+      reader.readAsBinaryString(file);
+    };
+    input.click();
+  };
+  
+  window.addSyllabusManually = async function() {
+    const level = prompt("Enter Level (Level-1, Level-2, Level-3, Level-4):", "Level-1");
+    if (!level) return;
+    const topic = prompt("Enter Topic Name:");
+    if (!topic) return;
+
+    let existing = await getSyllabus(level);
+    existing.push({ "Topic Name": topic, "Description": "" });
+    await saveSyllabus(level, existing);
+    alert("Topic added!");
+  };
+
+  // --- YEAR PLAN LOGIC ---
+  function renderYearPlan() {
+    const ypContainer = document.getElementById("year-plan-container");
+    ypContainer.innerHTML = "";
+    MONTHS.forEach(m => {
+      const tasks = yearPlan[m] || [];
+      let taskHtml = tasks.map((t, i) => `<div class="text-sm" style="margin-top:0.4rem;padding:0.3rem;background:var(--bg);border-radius:4px;display:flex;justify-content:space-between;"><span>✅ ${t}</span> <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--danger);" onclick="deleteYearTask('${m}', ${i})">✕</button></div>`).join("");
+      
+      ypContainer.innerHTML += `
+        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.75rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong>${m}</strong>
+            <button class="btn btn-outline btn-sm" onclick="addYearTask('${m}')">+ Add Task</button>
+          </div>
+          <div style="margin-top:0.5rem;">${taskHtml}</div>
+        </div>
+      `;
+    });
+  }
+
+  window.addYearTask = async function(month) {
+    const task = prompt(`Enter new plan/task for ${month}:`);
+    if (!task) return;
+    if (!yearPlan[month]) yearPlan[month] = [];
+    yearPlan[month].push(task);
+    await saveYearPlan(userName, yearPlan);
+    renderYearPlan();
+  };
+  
+  window.deleteYearTask = async function(month, index) {
+    if (!confirm("Delete this task from the plan?")) return;
+    yearPlan[month].splice(index, 1);
+    await saveYearPlan(userName, yearPlan);
+    renderYearPlan();
+  };
+
+  window.doLogout = function() {
     sessionStorage.removeItem("tfc_member_name");
     sessionStorage.removeItem("tfc_member_role");
     window.location.href = "index.html";
-  }
+  };
+
+  init();
 </script>
 </body>
 </html>

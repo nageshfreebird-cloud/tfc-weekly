@@ -83,14 +83,13 @@
 <div class="page">
   <div class="container-wide" style="max-width: 1400px;">
 
-    <!-- Top Navigation Tabs -->
     <div class="nav-tabs">
       <a href="dashboard.html" class="active">⚙️ Setup & Directory</a>
-      <a href="tab-a.html">Tab A: Weekly Tasks</a>
-      <a href="#">Tab B: 15-Day Calls</a>
-      <a href="#">Tab C: Assessments</a>
-      <a href="#">Tab D: Data Entry</a>
-      <a href="#">Tab E: Google Sheets</a>
+      <a href="tab-a.html">Weekly Tasks</a>
+      <a href="#">15-Days Teacher Calls</a>
+      <a href="#">Assessments Received</a>
+      <a href="#">Assessments Record in Drive</a>
+      <a href="#">Google Sheet Links</a>
       <a href="settings.html">My Settings</a>
     </div>
 
@@ -121,7 +120,7 @@
           </div>
 
           <!-- Add Team Form -->
-          <h3 style="font-size:1rem;margin:1.5rem 0 0.5rem 0;">+ Add New Member</h3>
+          <h3 id="form-title" style="font-size:1rem;margin:1.5rem 0 0.5rem 0;">+ Add New Member</h3>
           <div style="background:var(--bg-alt);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--border);">
             <div class="form-group">
               <label class="form-label">Name</label>
@@ -136,7 +135,7 @@
             </div>
             <div class="form-group">
               <label class="form-label">Password</label>
-              <input type="password" id="tm-pwd" class="form-control" placeholder="Create password" />
+              <input type="text" id="tm-pwd" class="form-control" placeholder="Create password" />
             </div>
             
             <div class="form-group" id="district-assign-group">
@@ -146,7 +145,8 @@
               </div>
             </div>
 
-            <button class="btn btn-success btn-block" onclick="addTeamMember()">Save Team Member</button>
+            <button id="form-submit-btn" class="btn btn-success btn-block" style="margin-bottom:0.5rem;" onclick="saveTeamMember()">Save Team Member</button>
+            <button id="form-cancel-btn" class="btn btn-ghost btn-block hidden" onclick="cancelEdit()">Cancel Edit</button>
           </div>
         </div>
 
@@ -204,6 +204,7 @@
 
   let districts = [];
   let users = [];
+  let editUserIndex = -1;
 
   async function init() {
     districts = await getDistricts();
@@ -234,8 +235,10 @@
     list.innerHTML = "";
     if (districts.length === 0) {
       list.innerHTML = `<div class="text-muted text-sm">No districts added yet.</div>`;
+      return;
     }
-    districts.forEach((d, i) => {
+    
+    districts.forEach((d) => {
       list.innerHTML += `
         <label style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem;">
           <input type="checkbox" value="${d}" class="district-cb" /> ${d}
@@ -276,7 +279,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
             <strong>${u.name}</strong>
             <div style="display:flex;gap:0.25rem;">
-              <button class="btn btn-outline btn-sm" onclick="resetPwd(${i})">Reset Pwd</button>
+              <button class="btn btn-outline btn-sm" onclick="editUser(${i})">Edit</button>
               <button class="btn btn-ghost btn-sm" onclick="removeUser(${i})" style="color:var(--danger)">✕</button>
             </div>
           </div>
@@ -287,34 +290,67 @@
     });
   }
 
-  window.addTeamMember = async function() {
+  window.editUser = function(i) {
+    editUserIndex = i;
+    const u = users[i];
+    document.getElementById("form-title").textContent = "✏️ Edit Member: " + u.name;
+    document.getElementById("tm-name").value = u.name;
+    document.getElementById("tm-role").value = u.role;
+    document.getElementById("tm-pwd").value = u.password;
+    document.getElementById("district-assign-group").style.display = (u.role === 'supervisor') ? 'block' : 'none';
+    
+    document.getElementById("form-submit-btn").textContent = "Update Team Member";
+    document.getElementById("form-cancel-btn").classList.remove("hidden");
+    
+    renderDistrictCheckboxes(); // re-render to free up their currently assigned districts
+    
+    // Check their boxes
+    if (u.districts) {
+      document.querySelectorAll(".district-cb").forEach(cb => {
+        if (u.districts.includes(cb.value)) cb.checked = true;
+      });
+    }
+  };
+
+  window.cancelEdit = function() {
+    editUserIndex = -1;
+    document.getElementById("form-title").textContent = "+ Add New Member";
+    document.getElementById("tm-name").value = "";
+    document.getElementById("tm-role").value = "supervisor";
+    document.getElementById("tm-pwd").value = "";
+    document.getElementById("district-assign-group").style.display = 'block';
+    
+    document.getElementById("form-submit-btn").textContent = "Save Team Member";
+    document.getElementById("form-cancel-btn").classList.add("hidden");
+    
+    renderDistrictCheckboxes();
+  };
+
+  window.saveTeamMember = async function() {
     const name = document.getElementById("tm-name").value.trim();
     const role = document.getElementById("tm-role").value;
     const pwd = document.getElementById("tm-pwd").value;
     
     if (!name || !pwd) { alert("Name and password are required."); return; }
-    if (users.find(u => u.name === name)) { alert("User already exists!"); return; }
+    
+    if (editUserIndex === -1 && users.find(u => u.name === name)) { 
+      alert("User already exists!"); return; 
+    }
 
     const assigned = [];
     if (role === 'supervisor') {
       document.querySelectorAll(".district-cb:checked").forEach(cb => assigned.push(cb.value));
     }
 
-    users.push({ name, role, password: pwd, districts: assigned });
-    await saveUsers(users);
-    
-    document.getElementById("tm-name").value = "";
-    document.getElementById("tm-pwd").value = "";
-    document.querySelectorAll(".district-cb").forEach(cb => cb.checked = false);
-    renderUsers();
-  };
+    if (editUserIndex > -1) {
+      users[editUserIndex] = { name, role, password: pwd, districts: assigned };
+    } else {
+      users.push({ name, role, password: pwd, districts: assigned });
+    }
 
-  window.resetPwd = async function(i) {
-    const newPwd = prompt(`Enter new password for ${users[i].name}:`);
-    if (!newPwd) return;
-    users[i].password = newPwd;
     await saveUsers(users);
-    alert("Password reset successfully.");
+    cancelEdit();
+    renderUsers();
   };
 
   window.removeUser = async function(i) {

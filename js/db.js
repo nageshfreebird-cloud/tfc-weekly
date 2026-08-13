@@ -290,3 +290,55 @@ export async function saveDistricts(districts) {
     updatedAt: new Date().toISOString()
   });
 }
+
+// ============================================
+// PHASE 2: SCHOOLS, SYLLABUS, YEAR PLAN
+// ============================================
+
+/** Get all schools for a given district */
+export async function getSchools(districtName) {
+  try {
+    const snap = await getDoc(doc(db, "schools", districtName));
+    if (snap.exists() && snap.data().list) return snap.data().list;
+  } catch(e) {}
+  return [];
+}
+
+export async function saveSchools(districtName, schools) {
+  await setDoc(doc(db, "schools", districtName), {
+    list: schools,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+/** Get syllabus for a specific level (Level-1, Level-2, etc) */
+export async function getSyllabus(level) {
+  try {
+    const snap = await getDoc(doc(db, "syllabus", level));
+    if (snap.exists() && snap.data().topics) return snap.data().topics;
+  } catch(e) {}
+  return [];
+}
+
+export async function saveSyllabus(level, topics) {
+  await setDoc(doc(db, "syllabus", level), {
+    topics,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+/** Get year plan for a specific supervisor */
+export async function getYearPlan(supervisorName) {
+  try {
+    const snap = await getDoc(doc(db, "year_plans", supervisorName));
+    if (snap.exists() && snap.data().plan) return snap.data().plan;
+  } catch(e) {}
+  return {}; // { "June": ["Task 1"], "July": [...] }
+}
+
+export async function saveYearPlan(supervisorName, plan) {
+  await setDoc(doc(db, "year_plans", supervisorName), {
+    plan,
+    updatedAt: new Date().toISOString()
+  });
+}
