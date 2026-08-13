@@ -766,9 +766,9 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
   white-space: nowrap;
 }
 .compact-btn.active.green {
-  background: var(--success);
+  background: var(--secondary);
   color: white;
-  border-color: var(--success);
+  border-color: var(--secondary);
 }
 .compact-btn.active.red {
   background: var(--danger);
