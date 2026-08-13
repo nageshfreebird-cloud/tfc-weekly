@@ -191,17 +191,24 @@
         </div>
 
       </div>
-
     </div>
   </div>
 </div>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession } from "./js/utils.js?v=3";
-  import { getDistricts, saveDistricts, getUsers, saveUsers, getSchools } from "./js/db.js?v=3";
+  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
+  import { getDistricts, saveDistricts, getUsers, saveUsers, getSchools } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
 
+  window.clearManagerSession = clearManagerSession;
+  window.getDistricts = getDistricts;
+  window.getUsers = getUsers;
+  window.renderDistricts = renderDistricts;
+  window.renderUsers = renderUsers;
+  window.renderDistrictCheckboxes = renderDistrictCheckboxes;
+  window.populateSupervisors = populateSupervisors;
+  
   let districts = [];
   let users = [];
   let editUserIndex = -1;
@@ -226,6 +233,9 @@
       uList.innerHTML = `<div style="color:red;font-weight:bold;padding:1rem;">CRASH at getUsers: ${e.message}</div>`;
     }
   }
+
+  // Auto-run init
+  init();
 
   function renderDistricts() {
     const list = document.getElementById("district-list");
