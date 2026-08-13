@@ -3,8 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manager Dashboard — Teach for Change</title>
+  <title>Manager Setup — Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    .setup-panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .setup-panel h2 {
+      font-size: 1.2rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .district-list, .team-list {
+      max-height: 250px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+    }
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .list-item:last-child { border-bottom: none; }
+    
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .nav-tabs a {
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+    .nav-tabs a.active {
+      background: var(--primary);
+      color: white;
+    }
+  </style>
 </head>
 <body>
 
@@ -14,259 +76,252 @@
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime">
-    <span class="time-icon">🕐</span>
-    <span id="live-clock">Loading...</span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
   </div>
 </nav>
 
 <div class="page">
-  <div class="container-wide">
+  <div class="container-wide" style="max-width: 1400px;">
 
-    <!-- Top bar -->
-    <div class="flex-between" style="margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;">
-      <div>
-        <h1 style="font-size:1.4rem;font-weight:800;color:var(--primary);">📊 Manager Dashboard</h1>
-        <p class="text-muted text-sm">Live submission status for this week</p>
-      </div>
-      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
-        <a href="settings.html" class="btn btn-ghost btn-sm">⚙️ Settings</a>
-        <a href="summary.html" class="btn btn-outline btn-sm">✏️ Edit Summary</a>
-        <a href="print.html" class="btn btn-warning btn-sm">🖨️ Print Report</a>
-        <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
-      </div>
+    <!-- Top Navigation Tabs -->
+    <div class="nav-tabs">
+      <a href="dashboard.html" class="active">⚙️ Setup & Directory</a>
+      <a href="tab-a.html">Tab A: Weekly Tasks</a>
+      <a href="#">Tab B: 15-Day Calls</a>
+      <a href="#">Tab C: Assessments</a>
+      <a href="#">Tab D: Data Entry</a>
+      <a href="#">Tab E: Google Sheets</a>
+      <a href="settings.html">My Settings</a>
     </div>
 
-    <!-- Week Bar -->
-    <div class="week-bar" id="week-bar">
-      <div>
-        <div class="week-label">Current Week</div>
-        <div class="week-dates" id="week-dates">—</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
-        <div class="meeting-day" id="meeting-day-display">Meeting: —</div>
-        <div id="note-badge" class="badge badge-pending hidden" style="font-size:.78rem;"></div>
-      </div>
-    </div>
-
-    <!-- Submissions Toggle + Stats -->
-    <div class="card" style="margin-bottom:1rem;">
-      <div class="flex-between" style="flex-wrap:wrap;gap:1rem;">
-        <div class="toggle-wrap">
-          <span class="toggle-label">Submissions:</span>
-          <label class="toggle" title="Open or close submissions for team">
-            <input type="checkbox" id="submissions-toggle" onchange="toggleSubmissions(this.checked)" />
-            <span class="toggle-slider"></span>
-          </label>
-          <span id="toggle-status" class="badge badge-gray">Closed</span>
-          <span class="live-dot" id="live-dot" style="display:none;"></span>
+    <div class="dashboard-grid">
+      
+      <!-- LEFT HALF: SETUP AREA -->
+      <div class="left-half">
+        
+        <!-- Register Districts -->
+        <div class="setup-panel">
+          <h2>📍 Register Districts</h2>
+          <div class="district-list" id="district-list">
+            <div class="text-muted text-sm" style="padding:1rem;text-align:center;">Loading...</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <input type="text" id="new-district" class="form-control" placeholder="Enter new district name" />
+            <button class="btn btn-primary" onclick="addDistrict()">Add</button>
+          </div>
         </div>
-        <div style="font-size:.82rem;color:var(--text-muted);">
-          <span id="submit-count">0</span> of 9 submitted
+
+        <!-- Register Team -->
+        <div class="setup-panel">
+          <h2>👥 Register Team Members</h2>
+          
+          <!-- Team List -->
+          <div class="team-list" id="team-list">
+            <div class="text-muted text-sm" style="padding:1rem;text-align:center;">Loading...</div>
+          </div>
+
+          <!-- Add Team Form -->
+          <h3 style="font-size:1rem;margin:1.5rem 0 0.5rem 0;">+ Add New Member</h3>
+          <div style="background:var(--bg-alt);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input type="text" id="tm-name" class="form-control" placeholder="Full Name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select id="tm-role" class="form-control">
+                <option value="supervisor">Field Supervisor (Has access to all tabs)</option>
+                <option value="other">Other (Only Tab A)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="password" id="tm-pwd" class="form-control" placeholder="Create password" />
+            </div>
+            
+            <div class="form-group" id="district-assign-group">
+              <label class="form-label">Assign Districts (Select multiple)</label>
+              <div id="assign-districts-list" style="max-height:150px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);padding:0.5rem;border-radius:var(--radius-sm);">
+                <div class="text-muted text-sm">Add districts first...</div>
+              </div>
+            </div>
+
+            <button class="btn btn-success btn-block" onclick="addTeamMember()">Save Team Member</button>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Stats -->
-    <div class="stats-bar" style="margin-bottom:1.25rem;">
-      <div class="stat-box">
-        <div class="stat-num" id="stat-total">9</div>
-        <div class="stat-label">Total</div>
       </div>
-      <div class="stat-box green">
-        <div class="stat-num" id="stat-done">0</div>
-        <div class="stat-label">Submitted</div>
-      </div>
-      <div class="stat-box orange">
-        <div class="stat-num" id="stat-pending">9</div>
-        <div class="stat-label">Pending</div>
-      </div>
-    </div>
 
-    <!-- Member List -->
-    <div class="card" style="padding:1rem;">
-      <div class="card-header" style="margin-bottom:.85rem;">
-        <span class="icon">👥</span>
-        <h2>Team Submissions</h2>
-        <span class="live-dot" style="margin-left:auto;"></span>
-        <span class="text-sm text-muted" style="margin-left:.4rem;">Live</span>
-      </div>
-      <div id="member-list"></div>
-    </div>
+      <!-- RIGHT HALF: DIRECTORY VIEWER -->
+      <div class="right-half">
+        
+        <div class="setup-panel" style="min-height: 80vh;">
+          <h2>🏫 School Info Directory</h2>
+          <p class="text-sm text-muted" style="margin-bottom:1rem;">Select a supervisor's area to view their registered schools.</p>
+          
+          <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+            <div style="flex:1;">
+              <label class="form-label">Supervisor</label>
+              <select id="filter-supervisor" class="form-control">
+                <option value="">Select Supervisor...</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <label class="form-label">District</label>
+              <select id="filter-district" class="form-control">
+                <option value="">Select District...</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <label class="form-label">Level</label>
+              <select id="filter-level" class="form-control">
+                <option value="">All Levels</option>
+                <option value="Level-1">Level 1</option>
+                <option value="Level-2">Level 2</option>
+                <option value="Level-3">Level 3</option>
+                <option value="Level-4">Level 4</option>
+              </select>
+            </div>
+          </div>
 
-    <!-- Member Detail Panel (Modal) -->
-    <div id="detail-overlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;padding:1rem;">
-      <div id="detail-panel" class="card animate-in" style="width:100%;max-width:500px;max-height:90vh;overflow-y:auto;margin:0;">
-        <div class="flex-between" style="margin-bottom:1rem;">
-          <h2 id="detail-name" style="font-size:1.1rem;font-weight:800;color:var(--primary);"></h2>
-          <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕ Close</button>
+          <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:300px;display:flex;align-items:center;justify-content:center;">
+            <p class="text-muted">School data will appear here once Field Supervisors register them.</p>
+          </div>
+          
         </div>
-        <div id="detail-content"></div>
-      </div>
-    </div>
 
+      </div>
+
+    </div>
   </div>
 </div>
 
 <script type="module">
-  import { startClock, requireManagerAuth, clearManagerSession,
-           initials, formatFullDate, formatWeekRange, formatTime } from "./js/utils.js";
-  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers, deleteMemberSubmission } from "./js/db.js";
+  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
+  import { getDistricts, saveDistricts, getUsers, saveUsers } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
-  startClock("live-clock");
 
-  let _weekStart = null;
-  let _submissions = {};
-  let _team = [];
+  let districts = [];
+  let users = [];
 
   async function init() {
-    _team = await getTeamMembers();
-    // Render initially empty
-    renderMemberList({});
-
-    // Listen to week settings
-    listenWeekSettings(settings => {
-    if (!settings) return;
-    _weekStart = settings.weekStart;
-    document.getElementById("week-dates").textContent = formatWeekRange(settings.weekStart, settings.weekEnd);
-    document.getElementById("meeting-day-display").textContent = "Meeting: " + formatFullDate(settings.meetingDay);
-
-    const noteEl = document.getElementById("note-badge");
-    if (settings.teamNote) {
-      noteEl.textContent = "📢 " + settings.teamNote;
-      noteEl.classList.remove("hidden");
-    } else noteEl.classList.add("hidden");
-
-    const tog = document.getElementById("submissions-toggle");
-    const st  = document.getElementById("toggle-status");
-    const dot = document.getElementById("live-dot");
-    tog.checked = settings.submissionsOpen;
-    if (settings.submissionsOpen) {
-      st.className = "badge badge-success"; st.textContent = "Open";
-      dot.style.display = "inline-block";
-    } else {
-      st.className = "badge badge-gray"; st.textContent = "Closed";
-      dot.style.display = "none";
-    }
-
-    // Start listening submissions once we have weekStart
-    startListeningSubmissions(settings.weekStart);
-  });
+    districts = await getDistricts();
+    users = await getUsers();
+    renderDistricts();
+    renderUsers();
+    renderDistrictCheckboxes();
   }
 
-  let _unsubSub = null;
-  function startListeningSubmissions(weekStart) {
-    if (_unsubSub) _unsubSub();
-    _unsubSub = listenWeekSubmissions(weekStart, subs => {
-      _submissions = subs;
-      renderMemberList(subs);
-    });
-  }
-
-  function renderMemberList(subs) {
-    const done = Object.keys(subs).length;
-    document.getElementById("submit-count").textContent = done;
-    document.getElementById("stat-done").textContent = done;
-    document.getElementById("stat-pending").textContent = 9 - done;
-
-    const list = document.getElementById("member-list");
+  function renderDistricts() {
+    const list = document.getElementById("district-list");
     list.innerHTML = "";
-    const totalCount = _team.length;
-    document.getElementById("submit-count").textContent = done;
-    document.getElementById("stat-done").textContent = done;
-    document.getElementById("stat-pending").textContent = totalCount - done;
-    document.getElementById("stat-total").textContent = totalCount;
-
-    _team.forEach(name => {
-      const sub = subs[name];
-      const row = document.createElement("div");
-      row.className = "member-row " + (sub ? "submitted" : "pending-row");
-      row.onclick = () => showDetail(name, sub);
-      const timeStr = sub ? formatTime(new Date(sub.submittedAt)) : "";
-      row.innerHTML = `
-        <div class="member-info">
-          <div class="member-avatar">${initials(name)}</div>
-          <div>
-            <div class="member-name">${name}</div>
-            <div class="member-time">${sub ? "Submitted at " + timeStr : "Not yet submitted"}</div>
-          </div>
-        </div>
-        <div class="member-status">
-          ${sub
-            ? '<span class="badge badge-success">✅ Submitted</span>'
-            : '<span class="badge badge-gray">⏳ Pending</span>'
-          }
-          <span style="color:var(--text-muted);font-size:1rem;">›</span>
+    if (districts.length === 0) {
+      list.innerHTML = `<div class="text-muted text-sm" style="padding:1rem;text-align:center;">No districts added yet.</div>`;
+    }
+    districts.forEach((d, i) => {
+      list.innerHTML += `
+        <div class="list-item">
+          <strong>${d}</strong>
+          <button class="btn btn-ghost btn-sm" onclick="removeDistrict(${i})" style="color:var(--danger)">✕</button>
         </div>
       `;
-      list.appendChild(row);
     });
   }
 
-  function showDetail(name, sub) {
-    const panel = document.getElementById("detail-panel");
-    document.getElementById("detail-name").textContent = `👤 ${name}`;
-    if (!sub) {
-      document.getElementById("detail-content").innerHTML =
-        `<div class="alert alert-warning">⏳ ${name} has not submitted yet.</div>`;
-    } else {
-      let html = "";
-      // Last week review
-      if (sub.lastWeekReview && sub.lastWeekReview.length > 0) {
-        html += `<div class="section-divider"><span>Last Week Review</span></div>`;
-        sub.lastWeekReview.forEach((r,i) => {
-          const icon = r.status === "completed" ? "✅" : "🔄";
-          html += `<div style="padding:.5rem .25rem;border-bottom:1px solid var(--border);">
-            <span style="font-size:.85rem;font-weight:600;">${icon} ${escHtml(r.task)}</span>
-            ${r.reason ? `<div style="font-size:.8rem;color:var(--pending);margin-top:.2rem;">📌 ${escHtml(r.reason)}</div>` : ""}
-          </div>`;
-        });
-      }
-      // This week tasks
-      if (sub.thisWeekTasks && sub.thisWeekTasks.length > 0) {
-        html += `<div class="section-divider"><span>This Week Plan</span></div>`;
-        const completedArr = sub.thisWeekCompleted || [];
-        sub.thisWeekTasks.forEach((t,i) => {
-          const isDone = completedArr[i] === true;
-          const style = isDone ? 'text-decoration:line-through;color:var(--text-muted);' : '';
-          const icon = isDone ? '✅ ' : `${i+1}. `;
-          html += `<div style="padding:.35rem .25rem;font-size:.88rem;${style}">${icon}${escHtml(t)}</div>`;
-        });
-      }
-      // Support
-      if (sub.supportNeeded) {
-        html += `<div class="alert alert-warning" style="margin-top:.85rem;">🆘 <strong>Support needed:</strong> ${escHtml(sub.supportNeeded)}</div>`;
-      }
-      // Delete Submission Button
-      html += `
-        <div style="margin-top:1.5rem;text-align:right;">
-          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSub('${name}')">
-            🗑️ Delete Submission (Allow Re-entry)
-          </button>
-        </div>
-      `;
-      document.getElementById("detail-content").innerHTML = html || "<p class='text-muted'>No data available.</p>";
+  function renderDistrictCheckboxes() {
+    const list = document.getElementById("assign-districts-list");
+    list.innerHTML = "";
+    if (districts.length === 0) {
+      list.innerHTML = `<div class="text-muted text-sm">No districts added yet.</div>`;
     }
-    document.getElementById("detail-overlay").classList.remove("hidden");
+    districts.forEach((d, i) => {
+      list.innerHTML += `
+        <label style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem;">
+          <input type="checkbox" value="${d}" class="district-cb" /> ${d}
+        </label>
+      `;
+    });
   }
 
-  window.deleteSub = async function(name) {
-    if (!confirm(`Are you sure you want to delete ${name}'s submission? They will have to re-enter their tasks.`)) return;
-    try {
-      await deleteMemberSubmission(_weekStart, name);
-      closeDetail();
-    } catch(err) {
-      alert("Error deleting submission: " + err.message);
+  window.addDistrict = async function() {
+    const inp = document.getElementById("new-district");
+    const val = inp.value.trim();
+    if (!val) return;
+    if (districts.includes(val)) { alert("District already exists"); return; }
+    districts.push(val);
+    await saveDistricts(districts);
+    inp.value = "";
+    renderDistricts();
+    renderDistrictCheckboxes();
+  };
+
+  window.removeDistrict = async function(i) {
+    if (!confirm("Remove this district?")) return;
+    districts.splice(i, 1);
+    await saveDistricts(districts);
+    renderDistricts();
+    renderDistrictCheckboxes();
+  };
+
+  function renderUsers() {
+    const list = document.getElementById("team-list");
+    list.innerHTML = "";
+    if (users.length === 0) {
+      list.innerHTML = `<div class="text-muted text-sm" style="padding:1rem;text-align:center;">No team members yet.</div>`;
     }
+    users.forEach((u, i) => {
+      list.innerHTML += `
+        <div class="list-item" style="display:block;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+            <strong>${u.name}</strong>
+            <div style="display:flex;gap:0.25rem;">
+              <button class="btn btn-outline btn-sm" onclick="resetPwd(${i})">Reset Pwd</button>
+              <button class="btn btn-ghost btn-sm" onclick="removeUser(${i})" style="color:var(--danger)">✕</button>
+            </div>
+          </div>
+          <div class="text-sm text-muted">Role: ${u.role === 'supervisor' ? 'Field Supervisor' : 'Other'}</div>
+          ${u.role === 'supervisor' && u.districts && u.districts.length > 0 ? `<div class="text-sm" style="color:var(--primary)">📍 ${u.districts.join(", ")}</div>` : ''}
+        </div>
+      `;
+    });
+  }
+
+  window.addTeamMember = async function() {
+    const name = document.getElementById("tm-name").value.trim();
+    const role = document.getElementById("tm-role").value;
+    const pwd = document.getElementById("tm-pwd").value;
+    
+    if (!name || !pwd) { alert("Name and password are required."); return; }
+    if (users.find(u => u.name === name)) { alert("User already exists!"); return; }
+
+    const assigned = [];
+    if (role === 'supervisor') {
+      document.querySelectorAll(".district-cb:checked").forEach(cb => assigned.push(cb.value));
+    }
+
+    users.push({ name, role, password: pwd, districts: assigned });
+    await saveUsers(users);
+    
+    document.getElementById("tm-name").value = "";
+    document.getElementById("tm-pwd").value = "";
+    document.querySelectorAll(".district-cb").forEach(cb => cb.checked = false);
+    renderUsers();
   };
 
-  window.closeDetail = function() {
-    document.getElementById("detail-overlay").classList.add("hidden");
+  window.resetPwd = async function(i) {
+    const newPwd = prompt(`Enter new password for ${users[i].name}:`);
+    if (!newPwd) return;
+    users[i].password = newPwd;
+    await saveUsers(users);
+    alert("Password reset successfully.");
   };
 
-  window.toggleSubmissions = async function(isOpen) {
-    try { await setSubmissionsOpen(isOpen); }
-    catch(e) { alert("Error: " + e.message); }
+  window.removeUser = async function(i) {
+    if (!confirm(`Delete user ${users[i].name}?`)) return;
+    users.splice(i, 1);
+    await saveUsers(users);
+    renderUsers();
   };
 
   window.doLogout = function() {
@@ -274,9 +329,10 @@
     window.location.href = "index.html";
   };
 
-  function escHtml(s) {
-    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  }
+  // Toggle district select based on role
+  document.getElementById("tm-role").addEventListener("change", (e) => {
+    document.getElementById("district-assign-group").style.display = (e.target.value === 'supervisor') ? 'block' : 'none';
+  });
 
   init();
 </script>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supervisor Dashboard — Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .nav-tabs a {
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+    .nav-tabs a.active {
+      background: var(--primary);
+      color: white;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    .setup-panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+    .setup-panel h2 {
+      font-size: 1.2rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span id="welcome-name" style="margin-right:1rem;font-weight:600;"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="container-wide" style="max-width: 1400px;">
+
+    <!-- Top Navigation Tabs -->
+    <div class="nav-tabs">
+      <a href="supervisor.html" class="active">⚙️ Registry & Year Plan</a>
+      <a href="team.html">Weekly Tasks</a>
+      <a href="#">15-Days Teacher Calls</a>
+      <a href="#">Assessments Received</a>
+      <a href="#">Assessments Record in Drive</a>
+      <a href="#">Google Sheet Links</a>
+    </div>
+
+    <!-- Main Dashboard Split into 3 Parts -->
+    <div class="grid-3">
+      
+      <!-- Part 1: School Registry -->
+      <div class="setup-panel">
+        <h2>🏫 School Registry</h2>
+        <p class="text-sm text-muted mb-2" style="margin-bottom:1rem;">Register schools for your assigned districts.</p>
+        <div class="alert alert-info text-sm mb-3" style="margin-bottom:1rem;">
+          You can add schools manually or upload an Excel (.xlsx) file.
+        </div>
+        <button class="btn btn-outline btn-block mb-2" style="margin-bottom:0.5rem;">⬇️ Download Excel Template</button>
+        <button class="btn btn-primary btn-block mb-3" style="margin-bottom:1rem;">⬆️ Upload Excel File</button>
+        <hr style="border:0;border-top:1px solid var(--border);margin:1rem 0;" />
+        <button class="btn btn-success btn-block">+ Add School Manually</button>
+      </div>
+
+      <!-- Part 2: Syllabus Registry -->
+      <div class="setup-panel">
+        <h2>📚 Syllabus Registry</h2>
+        <p class="text-sm text-muted mb-2" style="margin-bottom:1rem;">Map syllabus chapters to Levels 1, 2, 3, and 4.</p>
+        <button class="btn btn-outline btn-block mb-2" style="margin-bottom:0.5rem;">⬇️ Download Excel Template</button>
+        <button class="btn btn-primary btn-block mb-3" style="margin-bottom:1rem;">⬆️ Upload Syllabus File</button>
+        <hr style="border:0;border-top:1px solid var(--border);margin:1rem 0;" />
+        <button class="btn btn-success btn-block">+ Map Syllabus Manually</button>
+      </div>
+
+      <!-- Part 3: Year Plan -->
+      <div class="setup-panel">
+        <h2>🗓️ Year Plan (June-May)</h2>
+        <p class="text-sm text-muted mb-3" style="margin-bottom:1rem;">Plan your long-term goals for each academic month.</p>
+        
+        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+          <strong>June</strong>
+          <button class="btn btn-ghost btn-sm">+ Add Task</button>
+        </div>
+        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+          <strong>July</strong>
+          <button class="btn btn-ghost btn-sm">+ Add Task</button>
+        </div>
+        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+          <strong>August</strong>
+          <button class="btn btn-ghost btn-sm">+ Add Task</button>
+        </div>
+        <div class="text-center mt-2" style="text-align:center;margin-top:1rem;">
+          <a href="#" style="font-size:0.85rem;color:var(--primary);">View all months...</a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const userName = sessionStorage.getItem("tfc_member_name");
+  const userRole = sessionStorage.getItem("tfc_member_role");
+
+  if (!userName || userRole !== 'supervisor') {
+    alert("Unauthorized access.");
+    window.location.href = "index.html";
+  }
+
+  document.getElementById("welcome-name").textContent = "👋 " + userName;
+
+  function doLogout() {
+    sessionStorage.removeItem("tfc_member_name");
+    sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  }
+</script>
+</body>
+</html>

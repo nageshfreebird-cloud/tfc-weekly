@@ -86,8 +86,13 @@
             <option value="">— Choose your name —</option>
           </select>
         </div>
-        <button class="btn btn-primary btn-block btn-lg" onclick="goTeamForm()">
-          Continue →
+        <div class="form-group">
+          <label class="form-label" for="member-pwd">Password</label>
+          <input type="password" class="form-control" id="member-pwd" placeholder="Enter password (provided by manager)" />
+          <div id="pwd-error" class="text-sm hidden" style="color:var(--danger);margin-top:0.3rem;">Invalid password. Please ask manager if you forgot.</div>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" id="team-login-btn" onclick="goTeamForm()">
+          Login →
         </button>
       </div>
     </div>
@@ -97,7 +102,7 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatFullDate } from "./js/utils.js";
-  import { listenWeekSettings, getTeamMembers } from "./js/db.js";
+  import { listenWeekSettings, getTeamMembers, verifyUserLogin } from "./js/db.js";
 
   startClock("live-clock");
 
@@ -152,15 +157,47 @@
     card.classList.toggle("active");
   };
 
-  window.goTeamForm = function() {
+  window.goTeamForm = async function() {
     const name = document.getElementById("member-name").value;
+    const pwd = document.getElementById("member-pwd").value;
     if (!name) { alert("Please select your name."); return; }
-    if (window._weekSettings && !window._weekSettings.submissionsOpen) {
-      alert("Submissions are currently closed. Please contact your manager.");
-      return;
+    if (!pwd) { alert("Please enter your password."); return; }
+
+    const err = document.getElementById("pwd-error");
+    err.classList.add("hidden");
+    
+    const btn = document.getElementById("team-login-btn");
+    btn.textContent = "Verifying...";
+    btn.disabled = true;
+
+    try {
+      const user = await verifyUserLogin(name, pwd);
+      if (user) {
+        if (window._weekSettings && !window._weekSettings.submissionsOpen) {
+          alert("Submissions are currently closed. Please contact your manager.");
+          btn.textContent = "Login →";
+          btn.disabled = false;
+          return;
+        }
+        sessionStorage.setItem("tfc_member_name", user.name);
+        sessionStorage.setItem("tfc_member_role", user.role);
+        
+        // Redirect based on role
+        if (user.role === 'supervisor') {
+          window.location.href = "supervisor.html"; // We will build this next
+        } else {
+          window.location.href = "team.html"; // The 'Other' role goes here
+        }
+      } else {
+        err.classList.remove("hidden");
+        btn.textContent = "Login →";
+        btn.disabled = false;
+      }
+    } catch(e) {
+      alert("Login error: " + e.message);
+      btn.textContent = "Login →";
+      btn.disabled = false;
     }
-    sessionStorage.setItem("tfc_member_name", name);
-    window.location.href = "team.html";
   };
 </script>
 </body>

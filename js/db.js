@@ -240,3 +240,53 @@ export async function saveTeamMembers(members) {
     updatedAt: new Date().toISOString()
   });
 }
+
+// ============================================
+// USERS & ROLES
+// ============================================
+export async function getUsers() {
+  try {
+    const snap = await getDoc(doc(db, "settings", "users"));
+    if (snap.exists() && snap.data().users) {
+      return snap.data().users; // [{name, role, password, districts: []}]
+    }
+  } catch(e) {}
+  return [];
+}
+
+export async function saveUsers(users) {
+  await setDoc(doc(db, "settings", "users"), {
+    users,
+    updatedAt: new Date().toISOString()
+  });
+  // Keep legacy team list in sync for existing code
+  const memberNames = users.map(u => u.name);
+  await saveTeamMembers(memberNames);
+}
+
+export async function verifyUserLogin(name, password) {
+  const users = await getUsers();
+  const user = users.find(u => u.name === name);
+  if (user && user.password === password) return user;
+  return null;
+}
+
+// ============================================
+// DISTRICTS
+// ============================================
+export async function getDistricts() {
+  try {
+    const snap = await getDoc(doc(db, "settings", "districts"));
+    if (snap.exists() && snap.data().districts) {
+      return snap.data().districts;
+    }
+  } catch(e) {}
+  return [];
+}
+
+export async function saveDistricts(districts) {
+  await setDoc(doc(db, "settings", "districts"), {
+    districts,
+    updatedAt: new Date().toISOString()
+  });
+}
