@@ -226,7 +226,7 @@ const DEFAULT_TEAM = [
 export async function getTeamMembers() {
   try {
     const snap = await getDoc(doc(db, "settings", "team"));
-    if (snap.exists() && snap.data().members) {
+    if (snap.exists() && Array.isArray(snap.data().members)) {
       return snap.data().members;
     }
   } catch(e) {}
@@ -245,31 +245,55 @@ export async function saveTeamMembers(members) {
 // USERS & ROLES
 // ============================================
 export async function getUsers() {
+  let finalUsers = [];
   try {
     const snap = await getDoc(doc(db, "settings", "users"));
-    if (snap.exists() && snap.data().users && snap.data().users.length > 0) {
-      return snap.data().users; // [{name, role, password, districts: []}]
+    if (snap.exists() && Array.isArray(snap.data().users)) {
+      finalUsers = snap.data().users;
     }
   } catch(e) {}
   
-  // Migration fallback: If users is empty, check legacy team array
-  const legacyTeam = await getTeamMembers();
-  if (legacyTeam && legacyTeam.length > 0) {
-    const migratedUsers = legacyTeam.map(name => ({
-      name,
-      role: 'supervisor',
-      password: 'tfc@2014',
-      districts: []
-    }));
-    // Auto-save so it's persisted for the future (fire and forget)
-    setDoc(doc(db, "settings", "users"), {
-      users: migratedUsers,
-      updatedAt: new Date().toISOString()
-    }).catch(e => console.error("Migration error", e));
-    return migratedUsers;
+  if (finalUsers.length === 0) {
+    let legacyTeam = await getTeamMembers();
+    if (!Array.isArray(legacyTeam)) legacyTeam = [];
+    finalUsers = legacyTeam.map(name => {
+      const realName = typeof name === 'string' ? name : (name.name || 'Unknown');
+      return {
+        name: realName,
+        role: 'supervisor',
+        password: 'tfc@2014',
+        districts: []
+      };
+    });
   }
   
-  return [];
+  // RESTORE MISSING OLD TEAM MEMBERS (if accidentally deleted)
+  let changed = false;
+  DEFAULT_TEAM.forEach(name => {
+    if (!finalUsers.find(u => u.name === name)) {
+      finalUsers.push({
+        name,
+        role: 'supervisor',
+        password: 'tfc@2014',
+        districts: []
+      });
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    setDoc(doc(db, "settings", "users"), {
+      users: finalUsers,
+      updatedAt: new Date().toISOString()
+    }).catch(e => console.error("Migration error", e));
+    
+    setDoc(doc(db, "settings", "team"), {
+      members: finalUsers.map(u => u.name),
+      updatedAt: new Date().toISOString()
+    }).catch(e => console.error(e));
+  }
+  
+  return finalUsers;
 }
 
 export async function saveUsers(users) {
@@ -295,7 +319,7 @@ export async function verifyUserLogin(name, password) {
 export async function getDistricts() {
   try {
     const snap = await getDoc(doc(db, "settings", "districts"));
-    if (snap.exists() && snap.data().districts) {
+    if (snap.exists() && Array.isArray(snap.data().districts)) {
       return snap.data().districts;
     }
   } catch(e) {}

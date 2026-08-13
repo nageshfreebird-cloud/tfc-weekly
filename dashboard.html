@@ -207,12 +207,17 @@
   let editUserIndex = -1;
 
   async function init() {
-    districts = await getDistricts();
-    users = await getUsers();
-    renderDistricts();
-    renderUsers();
-    renderDistrictCheckboxes();
-    populateSupervisors();
+    try {
+      districts = await getDistricts();
+      users = await getUsers();
+      renderDistricts();
+      renderUsers();
+      renderDistrictCheckboxes();
+      populateSupervisors();
+    } catch (e) {
+      console.error(e);
+      alert("Init error: " + e.message);
+    }
   }
 
   function renderDistricts() {
