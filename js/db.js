@@ -245,55 +245,51 @@ export async function saveTeamMembers(members) {
 // USERS & ROLES
 // ============================================
 export async function getUsers() {
-  let finalUsers = [];
+  let dbUsers = [];
   try {
     const snap = await getDoc(doc(db, "settings", "users"));
-    if (snap.exists() && Array.isArray(snap.data().users)) {
-      finalUsers = snap.data().users;
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && Array.isArray(data.users)) {
+        dbUsers = data.users;
+      }
     }
   } catch(e) {}
-  
-  if (finalUsers.length === 0) {
-    let legacyTeam = await getTeamMembers();
-    if (!Array.isArray(legacyTeam)) legacyTeam = [];
-    finalUsers = legacyTeam.map(name => {
-      const realName = typeof name === 'string' ? name : (name.name || 'Unknown');
-      return {
-        name: realName,
-        role: 'supervisor',
-        password: 'tfc@2014',
-        districts: []
-      };
-    });
-  }
-  
-  // RESTORE MISSING OLD TEAM MEMBERS (if accidentally deleted)
-  let changed = false;
-  DEFAULT_TEAM.forEach(name => {
-    if (!finalUsers.find(u => u.name === name)) {
-      finalUsers.push({
-        name,
-        role: 'supervisor',
-        password: 'tfc@2014',
-        districts: []
-      });
-      changed = true;
-    }
-  });
 
-  if (changed) {
-    setDoc(doc(db, "settings", "users"), {
-      users: finalUsers,
-      updatedAt: new Date().toISOString()
-    }).catch(e => console.error("Migration error", e));
-    
-    setDoc(doc(db, "settings", "team"), {
-      members: finalUsers.map(u => u.name),
-      updatedAt: new Date().toISOString()
-    }).catch(e => console.error(e));
+  const legacyNames = [
+    "Nagesh", "Sai Kiran", "Rajashekar", "Jai Ram",
+    "Suresh", "Vamshi Krishna", "Swamy", "Chandrika", "Pratiksha"
+  ];
+  
+  if (dbUsers.length === 0) {
+    dbUsers = legacyNames.map(name => ({
+      name: name,
+      role: 'supervisor',
+      password: 'tfc@2014',
+      districts: []
+    }));
+  } else {
+    for (let i = 0; i < legacyNames.length; i++) {
+      let name = legacyNames[i];
+      let exists = false;
+      for (let j = 0; j < dbUsers.length; j++) {
+        if (dbUsers[j].name === name) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        dbUsers.push({
+          name: name,
+          role: 'supervisor',
+          password: 'tfc@2014',
+          districts: []
+        });
+      }
+    }
   }
   
-  return finalUsers;
+  return dbUsers;
 }
 
 export async function saveUsers(users) {
@@ -319,8 +315,11 @@ export async function verifyUserLogin(name, password) {
 export async function getDistricts() {
   try {
     const snap = await getDoc(doc(db, "settings", "districts"));
-    if (snap.exists() && Array.isArray(snap.data().districts)) {
-      return snap.data().districts;
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && Array.isArray(data.districts)) {
+        return data.districts;
+      }
     }
   } catch(e) {}
   return [];
