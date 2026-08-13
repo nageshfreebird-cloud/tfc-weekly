@@ -207,16 +207,23 @@
   let editUserIndex = -1;
 
   async function init() {
+    const dList = document.getElementById("district-list");
+    const uList = document.getElementById("team-list");
     try {
+      dList.innerHTML = "Fetching districts...";
       districts = await getDistricts();
+      
+      uList.innerHTML = "Fetching users...";
       users = await getUsers();
+      
       renderDistricts();
       renderUsers();
       renderDistrictCheckboxes();
       populateSupervisors();
     } catch (e) {
       console.error(e);
-      alert("Init error: " + e.message);
+      dList.innerHTML = `<div style="color:red;font-weight:bold;padding:1rem;">CRASH at getDistricts: ${e.message}</div>`;
+      uList.innerHTML = `<div style="color:red;font-weight:bold;padding:1rem;">CRASH at getUsers: ${e.message}</div>`;
     }
   }
 
