@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Report — Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; }
+      .navbar { display: none; }
+      .print-report { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar no-print">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span class="time-icon">🕐</span>
+    <span id="live-clock">Loading...</span>
+  </div>
+</nav>
+
+<!-- Action Bar -->
+<div class="no-print" style="background:white;border-bottom:1.5px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;">
+  <a href="summary.html" class="btn btn-ghost btn-sm">← Edit Summary</a>
+  <div style="display:flex;gap:.6rem;">
+    <a href="dashboard.html" class="btn btn-outline btn-sm">Dashboard</a>
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+</div>
+
+<div class="page print-report" style="background:white;">
+  <div style="max-width:720px;margin:0 auto;padding:1rem;">
+
+    <!-- Print Header -->
+    <div class="print-header" style="display:flex;align-items:center;gap:1.5rem;text-align:left;">
+      <!-- Logo on left -->
+      <div style="flex-shrink:0;">
+        <img src="logo.png" alt="Teach for Change"
+          style="width:90px;height:auto;object-fit:contain;" />
+      </div>
+      <!-- Title on right -->
+      <div style="flex:1;">
+        <h1 style="font-size:1.4rem;">TEACH FOR CHANGE</h1>
+        <p id="print-subtitle" style="font-size:.9rem;">Weekly Review Meeting</p>
+        <p id="print-week" style="font-weight:700;color:var(--primary);font-size:.95rem;margin-top:.2rem;"></p>
+        <p id="print-meeting" style="color:var(--text-muted);font-size:.85rem;margin-top:.1rem;"></p>
+        <p id="print-generated" style="color:var(--text-muted);font-size:.75rem;margin-top:.4rem;"></p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" style="text-align:center;padding:3rem;color:var(--text-muted);">
+      Loading report...
+    </div>
+
+    <!-- Report Content -->
+    <div id="report-content"></div>
+
+    <!-- Footer -->
+    <div id="print-footer" class="hidden" style="text-align:center;padding:1.5rem 0 0.5rem;border-top:1.5px solid var(--border);margin-top:1.5rem;font-size:.78rem;color:var(--text-muted);">
+      Teach for Change NGO — Weekly Review System
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { startClock, requireManagerAuth,
+           formatWeekRange, formatFullDate } from "./js/utils.js";
+  import { getWeekSettings, getSummary, getWeekSubmissions, getTeamMembers } from "./js/db.js";
+
+  if (!requireManagerAuth()) throw new Error("Not auth");
+  startClock("live-clock");
+
+  async function init() {
+    const ws   = await getWeekSettings();
+    const now  = new Date();
+
+    // Header
+    document.getElementById("print-week").textContent =
+      `📅 ${formatWeekRange(ws.weekStart, ws.weekEnd)}`;
+    document.getElementById("print-meeting").textContent =
+      `Meeting Day: ${formatFullDate(ws.meetingDay)}` +
+      (ws.teamNote ? `  |  Note: ${ws.teamNote}` : "");
+    document.getElementById("print-generated").textContent =
+      `Generated: ${now.toLocaleString("en-IN")}`;
+
+    // Get data: prefer finalized summary, fallback to raw submissions
+    let data = {};
+    const summary = await getSummary(ws.weekStart);
+    if (summary && summary.members) {
+      data = summary.members;
+    } else {
+      const subs = await getWeekSubmissions(ws.weekStart);
+      const team = await getTeamMembers();
+      team.forEach(name => {
+        if (subs[name]) {
+          data[name] = {
+            lastWeekReview: subs[name].lastWeekReview || [],
+            thisWeekTasks:  subs[name].thisWeekTasks  || [],
+            supportNeeded:  subs[name].supportNeeded  || ""
+          };
+        } else {
+          data[name] = null;
+        }
+      });
+    }
+
+    document.getElementById("loading-state").remove();
+    renderReport(data);
+    document.getElementById("print-footer").classList.remove("hidden");
+  }
+
+  async function renderReport(data) {
+    const container = document.getElementById("report-content");
+    const team = await getTeamMembers();
+    team.forEach((name, idx) => {
+      const d   = data[name];
+      const div = document.createElement("div");
+      div.className = "print-member";
+
+      // Name header
+      const hdr = document.createElement("div");
+      hdr.className = "print-member-name";
+      hdr.textContent = `${idx + 1}. ${name.toUpperCase()}`;
+      div.appendChild(hdr);
+
+      const body = document.createElement("div");
+      body.className = "print-member-body";
+
+      if (!d) {
+        body.innerHTML = `<p style="color:var(--text-muted);font-size:.87rem;font-style:italic;">⏳ Did not submit this week.</p>`;
+      } else {
+        // Last week review
+        if (d.lastWeekReview && d.lastWeekReview.length > 0) {
+          const title = document.createElement("div");
+          title.className = "print-section-title";
+          title.textContent = "Last Week Review";
+          body.appendChild(title);
+          d.lastWeekReview.forEach(r => {
+            const icon = r.status === "completed" ? "✅" : "🔄";
+            const p = document.createElement("div");
+            p.className = "print-task";
+            p.innerHTML = `${icon} ${escHtml(r.task)}`;
+            body.appendChild(p);
+            if (r.status === "pending" && r.reason) {
+              const rp = document.createElement("div");
+              rp.className = "print-pending-reason";
+              rp.textContent = `📌 Pending reason: ${r.reason}`;
+              body.appendChild(rp);
+            }
+          });
+        }
+
+        // This week tasks
+        if (d.thisWeekTasks && d.thisWeekTasks.length > 0) {
+          const title = document.createElement("div");
+          title.className = "print-section-title";
+          title.style.marginTop = ".6rem";
+          title.textContent = "This Week Tasks";
+          body.appendChild(title);
+          const completedArr = d.thisWeekCompleted || [];
+          d.thisWeekTasks.forEach((t, i) => {
+            const isDone = completedArr[i] === true;
+            const icon = isDone ? '✅ ' : '• ';
+            const p = document.createElement("div");
+            p.className = "print-task";
+            if (isDone) p.style.cssText = "text-decoration:line-through;color:#666;";
+            p.textContent = `${icon}${t}`;
+            body.appendChild(p);
+          });
+        }
+
+        // Support
+        if (d.supportNeeded) {
+          const sup = document.createElement("div");
+          sup.style.cssText = "margin-top:.6rem;font-size:.82rem;color:var(--danger);";
+          sup.innerHTML = `🆘 <strong>Support needed:</strong> ${escHtml(d.supportNeeded)}`;
+          body.appendChild(sup);
+        }
+      }
+
+      div.appendChild(body);
+      container.appendChild(div);
+    });
+  }
+
+  function escHtml(s) {
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  init();
+</script>
+</body>
+</html>
