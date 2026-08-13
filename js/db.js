@@ -247,10 +247,28 @@ export async function saveTeamMembers(members) {
 export async function getUsers() {
   try {
     const snap = await getDoc(doc(db, "settings", "users"));
-    if (snap.exists() && snap.data().users) {
+    if (snap.exists() && snap.data().users && snap.data().users.length > 0) {
       return snap.data().users; // [{name, role, password, districts: []}]
     }
   } catch(e) {}
+  
+  // Migration fallback: If users is empty, check legacy team array
+  const legacyTeam = await getTeamMembers();
+  if (legacyTeam && legacyTeam.length > 0) {
+    const migratedUsers = legacyTeam.map(name => ({
+      name,
+      role: 'supervisor',
+      password: 'tfc@2014',
+      districts: []
+    }));
+    // Auto-save so it's persisted for the future (fire and forget)
+    setDoc(doc(db, "settings", "users"), {
+      users: migratedUsers,
+      updatedAt: new Date().toISOString()
+    }).catch(e => console.error("Migration error", e));
+    return migratedUsers;
+  }
+  
   return [];
 }
 
