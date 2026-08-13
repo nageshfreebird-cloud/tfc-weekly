@@ -197,8 +197,8 @@
 </div>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
-  import { getDistricts, saveDistricts, getUsers, saveUsers, getSchools } from "./js/db.js";
+  import { requireManagerAuth, clearManagerSession } from "./js/utils.js?v=3";
+  import { getDistricts, saveDistricts, getUsers, saveUsers, getSchools } from "./js/db.js?v=3";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
 
