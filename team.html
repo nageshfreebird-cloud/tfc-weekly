@@ -67,7 +67,7 @@
           ✅ Submit Last Week Review →
         </button>
         <div style="text-align:center;margin-top:0.75rem;">
-          <a href="index.html" style="font-size:0.83rem;color:var(--text-muted);">← Back</a>
+          <a href="#" onclick="goBackHome(); return false;" style="font-size:0.83rem;color:var(--text-muted);">← Back to Dashboard</a>
         </div>
       </div>
 
@@ -122,7 +122,7 @@
           The manager can now see your report.
         </p>
         <div id="success-summary" style="text-align:left;background:var(--bg);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1.5rem;font-size:0.87rem;"></div>
-        <a href="index.html" class="btn btn-primary btn-lg">← Back to Home</a>
+        <a href="#" onclick="goBackHome(); return false;" class="btn btn-primary btn-lg">← Back to Dashboard</a>
       </div>
     </div>
 
@@ -131,13 +131,22 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatShortDate } from "./js/utils.js";
-  import { getWeekSettings, getMemberSubmission, submitMemberReport, getWeekSubmissions, markTaskCompleted } from "./js/db.js";
+  import { getWeekSettings, getMemberSubmission, submitMemberReport, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
   import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
 
   const memberName = sessionStorage.getItem("tfc_member_name");
+  const memberRole = sessionStorage.getItem("tfc_member_role");
   if (!memberName) { window.location.href = "index.html"; }
+
+  window.goBackHome = function() {
+    if (memberRole === 'supervisor') window.location.href = "supervisor.html";
+    else {
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    }
+  };
 
   document.getElementById("greeting-name").textContent = `Hello, ${memberName} 👋`;
 
@@ -180,8 +189,40 @@
       document.getElementById("no-prev-tasks").classList.remove("hidden");
     }
 
-    // Default: one task input for this week
-    addThisWeekTask();
+    // Default tasks for this week
+    await loadSmartDefaultTasks();
+  }
+
+  async function loadSmartDefaultTasks() {
+    if (memberRole !== 'supervisor') {
+      addThisWeekTask(); return;
+    }
+    
+    // Find supervisor's districts
+    const users = await getUsers();
+    const supe = users.find(u => u.name === memberName);
+    if (!supe || !supe.districts || supe.districts.length === 0) {
+      addThisWeekTask(); return;
+    }
+
+    // Fetch schools for each district to build District_Level string
+    let distLevelSet = new Set();
+    for (const d of supe.districts) {
+      const schools = await getSchools(d);
+      schools.forEach(s => {
+        if (s.Level) distLevelSet.add(`${d}_${s.Level}`);
+      });
+    }
+
+    if (distLevelSet.size === 0) {
+      addThisWeekTask(); return;
+    }
+
+    const distStr = Array.from(distLevelSet).sort().join(", ");
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    days.forEach(day => {
+      addThisWeekTask(`${day} daily activities sent to ${distStr}`);
+    });
   }
 
   function renderReviewList() {
@@ -252,7 +293,7 @@
   };
 
   let thisWeekCount = 0;
-  window.addThisWeekTask = function() {
+  window.addThisWeekTask = function(initialValue = "") {
     thisWeekCount++;
     const list = document.getElementById("this-week-tasks");
     const item = document.createElement("div");
@@ -260,11 +301,13 @@
     item.id = `tw-${thisWeekCount}`;
     item.innerHTML = `
       <span class="task-num">${thisWeekCount}.</span>
-      <input type="text" placeholder="Describe your task for this week..." id="tw-inp-${thisWeekCount}" />
+      <input type="text" placeholder="Describe your task for this week..." id="tw-inp-${thisWeekCount}" value="${escHtml(initialValue)}" />
       <button class="task-remove" onclick="removeTask('tw-${thisWeekCount}')">✕</button>
     `;
     list.appendChild(item);
-    document.getElementById(`tw-inp-${thisWeekCount}`).focus();
+    if (!initialValue) {
+      document.getElementById(`tw-inp-${thisWeekCount}`).focus();
+    }
   };
 
   window.removeTask = function(id) {

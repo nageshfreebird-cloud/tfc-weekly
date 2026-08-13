@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Sheet Links — Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span class="time-icon">🕐</span>
+    <span id="live-clock">Loading...</span>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="container-wide">
+
+    <div class="nav-tabs" style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <a href="dashboard.html" style="padding:0.5rem 1rem;border:1px solid var(--primary);border-radius:var(--radius-sm);text-decoration:none;color:var(--primary);font-weight:600;">⚙️ Setup & Directory</a>
+      <a href="tab-a.html" style="padding:0.5rem 1rem;border:1px solid var(--primary);border-radius:var(--radius-sm);text-decoration:none;color:var(--primary);font-weight:600;">Weekly Tasks</a>
+      <a href="#" style="padding:0.5rem 1rem;border:1px solid var(--primary);border-radius:var(--radius-sm);text-decoration:none;color:var(--primary);font-weight:600;">15-Days Teacher Calls</a>
+      <a href="#" style="padding:0.5rem 1rem;border:1px solid var(--primary);border-radius:var(--radius-sm);text-decoration:none;color:var(--primary);font-weight:600;">Assessments Received</a>
+      <a href="#" style="padding:0.5rem 1rem;border:1px solid var(--primary);border-radius:var(--radius-sm);text-decoration:none;color:var(--primary);font-weight:600;">Assessments Record in Drive</a>
+      <a href="tab-e.html" style="padding:0.5rem 1rem;background:var(--primary);color:white;border-radius:var(--radius-sm);text-decoration:none;font-weight:600;">Google Sheet Links</a>
+      <a href="settings.html" style="padding:0.5rem 1rem;border:1px solid var(--primary);border-radius:var(--radius-sm);text-decoration:none;color:var(--primary);font-weight:600;">My Settings</a>
+    </div>
+
+    <div class="flex-between" style="margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;">
+      <div>
+        <h1 style="font-size:1.4rem;font-weight:800;color:var(--primary);">🔗 Google Sheet Links</h1>
+        <p class="text-muted text-sm">View Google Sheets registered by Field Supervisors</p>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- Member List -->
+    <div class="card" style="padding:1rem;">
+      <div class="card-header" style="margin-bottom:.85rem;">
+        <span class="icon">👥</span>
+        <h2>Supervisor Sheets</h2>
+      </div>
+      <div id="links-list" style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div class="text-muted text-center">Loading links...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { requireManagerAuth, clearManagerSession, startClock } from "./js/utils.js";
+  import { getUsers, getAllGoogleSheetLinks } from "./js/db.js";
+
+  if (!requireManagerAuth()) throw new Error("Not auth");
+  startClock("live-clock");
+
+  async function init() {
+    const users = await getUsers();
+    const links = await getAllGoogleSheetLinks();
+    
+    const supervisors = users.filter(u => u.role === 'supervisor');
+    const list = document.getElementById("links-list");
+    
+    if (supervisors.length === 0) {
+      list.innerHTML = `<div class="text-muted text-center" style="padding:2rem;">No supervisors found. Please create a team member first.</div>`;
+      return;
+    }
+    
+    list.innerHTML = supervisors.map(supe => {
+      const link = links[supe.name];
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-alt);">
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div class="member-avatar" style="background:var(--primary);color:white;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:bold;">
+              ${supe.name.substring(0,2).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-weight:bold;font-size:1.1rem;">${supe.name}</div>
+              <div class="text-sm text-muted">${supe.districts ? supe.districts.join(", ") : "No districts"}</div>
+            </div>
+          </div>
+          <div>
+            ${link 
+              ? `<a href="${link}" target="_blank" class="btn btn-success">🔗 Open Google Sheet</a>`
+              : `<span class="badge badge-pending">No Link Provided</span>`
+            }
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  window.doLogout = function() {
+    clearManagerSession();
+    window.location.href = "index.html";
+  };
+
+  init();
+</script>
+</body>
+</html>

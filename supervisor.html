@@ -183,6 +183,15 @@
 
       </div>
 
+      <!-- Part 4: Google Sheet Link -->
+      <div class="setup-panel">
+        <h2>🔗 Google Sheet Link</h2>
+        <p class="text-sm text-muted mb-3" style="margin-bottom:1rem;">Paste your Google Sheet link here for the Manager to view your data.</p>
+        
+        <input type="url" id="sheet-link-input" class="form-control" style="margin-bottom:1rem;" placeholder="https://docs.google.com/spreadsheets/d/..." />
+        <button class="btn btn-success btn-block" onclick="saveSheet()">💾 Save Link</button>
+      </div>
+
     </div>
 
   </div>
@@ -190,7 +199,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
-  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan } from "./js/db.js";
+  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGoogleSheetLink, saveGoogleSheetLink } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -227,6 +236,9 @@
     
     yearPlan = await getYearPlan(userName);
     renderYearPlan();
+
+    const link = await getGoogleSheetLink(userName);
+    if (link) document.getElementById("sheet-link-input").value = link;
   }
 
   // --- SCHOOLS LOGIC ---
@@ -434,6 +446,14 @@
     sessionStorage.removeItem("tfc_member_name");
     sessionStorage.removeItem("tfc_member_role");
     window.location.href = "index.html";
+  };
+
+  // --- GOOGLE SHEET LOGIC ---
+  window.saveSheet = async function() {
+    const link = document.getElementById("sheet-link-input").value.trim();
+    if (!link) return alert("Please enter a link.");
+    await saveGoogleSheetLink(userName, link);
+    alert("Google Sheet Link saved successfully!");
   };
 
   init();

@@ -342,3 +342,23 @@ export async function saveYearPlan(supervisorName, plan) {
     updatedAt: new Date().toISOString()
   });
 }
+
+// ============================================
+// GOOGLE SHEETS LINKS
+// ============================================
+
+export async function saveGoogleSheetLink(userName, link) {
+  await setDoc(doc(db, "google_sheets", userName), { link });
+}
+
+export async function getGoogleSheetLink(userName) {
+  const snap = await getDoc(doc(db, "google_sheets", userName));
+  return snap.exists() ? snap.data().link : "";
+}
+
+export async function getAllGoogleSheetLinks() {
+  const snap = await getDocs(collection(db, "google_sheets"));
+  let links = {};
+  snap.forEach(d => links[d.id] = d.data().link);
+  return links;
+}
