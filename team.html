@@ -375,35 +375,49 @@
         <p class="text-sm text-muted" style="margin-bottom:1rem;">Check off tasks below as you complete them during the week. Once checked, they cannot be unchecked.</p>
         <div style="text-align:left;">
       `;
-      const completedArr = data.thisWeekCompleted || [];
       data.thisWeekTasks.forEach((t, i) => { 
         const isDone = completedArr[i] === true;
         html += `
-          <label style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:${isDone ? '#f0fdf4' : 'var(--bg)'};border:1px solid ${isDone ? '#bbf7d0' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:0.5rem;cursor:${isDone ? 'default' : 'pointer'};transition:all 0.2s;">
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:${isDone ? '#f0fdf4' : 'var(--bg)'};border:1px solid ${isDone ? '#bbf7d0' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:0.5rem;transition:all 0.2s;">
             <input type="checkbox" style="margin-top:0.25rem;width:1.2rem;height:1.2rem;accent-color:var(--success);" 
               ${isDone ? 'checked disabled' : `onclick="markDone(event, ${i}, '${escHtml(t).replace(/'/g,"\\'").replace(/"/g,"&quot;")}')"`} />
-            <span style="${isDone ? 'text-decoration:line-through;color:var(--text-muted);' : 'color:var(--text);'}font-size:0.95rem;line-height:1.4;">${escHtml(t)}</span>
-          </label>
+            <span style="${isDone ? 'text-decoration:line-through;color:var(--text-muted);' : 'color:var(--text);'}font-size:0.95rem;line-height:1.4;flex:1;">${escHtml(t)}</span>
+            <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--primary);" onclick="editTrackerTask(${i})">✏️</button>
+          </div>
         `; 
       });
-      html += `</div></div>`;
+      html += `
+        <button class="btn btn-outline btn-sm" style="margin-top:0.5rem;" onclick="addTrackerTask()">+ Add Task</button>
+      </div></div>`;
     }
     document.getElementById("success-summary").innerHTML = html;
-    
-    // Add edit button
-    if (!document.getElementById("btn-edit-report")) {
-      const editBtn = document.createElement("button");
-      editBtn.id = "btn-edit-report";
-      editBtn.className = "btn btn-outline btn-block mb-3";
-      editBtn.style.marginBottom = "1.5rem";
-      editBtn.innerHTML = "✏️ Edit My Report";
-      editBtn.onclick = window.editReport;
-      document.getElementById("success-summary").insertAdjacentElement('afterend', editBtn);
-    }
-
     document.querySelectorAll(".step-section").forEach(s => s.classList.remove("active"));
     document.getElementById("step-success").classList.add("active");
   }
+
+  window.editTrackerTask = async function(idx) {
+    if (!window.existingData || !window.existingData.thisWeekTasks) return;
+    const oldTask = window.existingData.thisWeekTasks[idx];
+    const newTask = prompt("Edit Task:", oldTask);
+    if (newTask && newTask.trim() !== "" && newTask !== oldTask) {
+       window.existingData.thisWeekTasks[idx] = newTask.trim();
+       await submitMemberReport(weekSettings.weekStart, memberName, window.existingData);
+       showSuccess(window.existingData);
+    }
+  };
+
+  window.addTrackerTask = async function() {
+    if (!window.existingData) return;
+    const newTask = prompt("Enter new task:");
+    if (newTask && newTask.trim() !== "") {
+       if (!window.existingData.thisWeekTasks) window.existingData.thisWeekTasks = [];
+       if (!window.existingData.thisWeekCompleted) window.existingData.thisWeekCompleted = [];
+       window.existingData.thisWeekTasks.push(newTask.trim());
+       window.existingData.thisWeekCompleted.push(false);
+       await submitMemberReport(weekSettings.weekStart, memberName, window.existingData);
+       showSuccess(window.existingData);
+    }
+  };
 
   window.markDone = async function(e, idx, taskText) {
     e.preventDefault(); // Stop checkbox from checking immediately
@@ -422,37 +436,6 @@
         alert("Error marking task as completed: " + err.message);
       }
     }
-  };
-
-  window.editReport = function() {
-    if (!window.existingData) return;
-    
-    // Step 1: Pre-fill lastWeekReview
-    if (window.existingData.lastWeekReview) {
-      window.existingData.lastWeekReview.forEach((r, i) => {
-        const rbC = document.getElementById(`rb-c-${i}`);
-        const rbP = document.getElementById(`rb-p-${i}`);
-        if (!rbC || !rbP) return;
-        if (r.status === "completed") {
-           rbC.querySelector('input').checked = true;
-           onStatusChange(i, "completed");
-        } else if (r.status === "pending") {
-           rbP.querySelector('input').checked = true;
-           onStatusChange(i, "pending");
-           document.getElementById(`reason-text-${i}`).value = r.reason || "";
-        }
-      });
-    }
-
-    // Step 2: Pre-fill thisWeekTasks
-    if (window.existingData.thisWeekTasks) {
-      document.getElementById("this-week-tasks").innerHTML = ""; // clear smart defaults
-      thisWeekCount = 0;
-      window.existingData.thisWeekTasks.forEach(t => addThisWeekTask(t));
-      document.getElementById("support-needed").value = window.existingData.supportNeeded || "";
-    }
-
-    goStep(1);
   };
 
   window.goStep = function(n) {
