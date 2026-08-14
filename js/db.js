@@ -8,7 +8,7 @@ import {
   collection, query, where, getDocs, onSnapshot, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import firebaseConfig from "./firebase-config.js";
-import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getFridayOf, toYMD } from "./utils.js";
+import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getSaturdayOf, toYMD } from "./utils.js";
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
@@ -53,7 +53,7 @@ export async function updateAdminCredentials(newUserId, newPassword) {
 export async function getWeekSettings() {
   const today = new Date();
   const currentMonday = getMondayOf(today);
-  const defaultEnd = getFridayOf(today);
+  const defaultEnd = getSaturdayOf(today);
 
   try {
     const snap = await getDoc(doc(db, "settings", "week"));

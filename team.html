@@ -133,7 +133,7 @@
 <script type="module">
   import { startClock, formatWeekRange, formatShortDate, goBackHome } from "./js/utils.js";
   import { getWeekSettings, getMemberSubmission, submitMemberReport, getLatestMemberSubmissionBefore, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
-  import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, toYMD } from "./js/utils.js";
+  import { subtract7Days, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
   window.goBackHome = goBackHome;
@@ -163,9 +163,9 @@
     const thisStart = weekSettings.weekStart;
     const thisEnd   = weekSettings.weekEnd;
 
-    // Last week dates relative to the active weekStart
-    const lastStart = getLastWeekMonday(thisStart);
-    const lastEnd   = getLastWeekFriday(thisStart);
+    // Last week dates simply mirror the present week shifted back by 7 days
+    const lastStart = subtract7Days(thisStart);
+    const lastEnd   = subtract7Days(thisEnd);
 
     document.getElementById("greeting-week").textContent =
       `Week: ${formatWeekRange(thisStart, thisEnd)}`;
@@ -179,8 +179,9 @@
     
     if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
       lastWeekTasks = lastSub.thisWeekTasks;
-      // Also update the review title to show the actual week they last submitted
-      const actualLastEnd = getLastWeekFriday(lastSub.weekStart);
+      // Also update the review title to show the exact dates they actually submitted under
+      // We calculate their specific week's length dynamically based on the current week's length
+      const actualLastEnd = subtract7Days(thisEnd); // roughly mirrors the duration
       document.getElementById("step1-title").textContent = 
         `Review: ${formatWeekRange(lastSub.weekStart, actualLastEnd)}`;
       renderReviewList();
@@ -286,16 +287,23 @@
       let status = "";
       radios.forEach(r => { if (r.checked) status = r.value; });
       if (!status) {
+        valid = false;
         alert(`Please mark task ${i+1} as Completed or Pending.`); return;
       }
-      let reason = "";
-      if (status === "pending") {
-        reason = document.getElementById(`reason-text-${i}`).value.trim();
-        if (!reason) { alert(`Please write why task ${i+1} is still pending.`); return; }
+      
+      const isComplete = (status === "completed");
+      const isPending  = (status === "pending");
+      const reason     = isPending ? document.getElementById(`reason-text-${i}`).value.trim() : "";
+      
+      if (isPending && !reason) {
+        valid = false;
+        alert("Please provide a reason for all pending tasks before continuing.");
+        break;
       }
+
       step1Reviews.push({ task: lastWeekTasks[i], status, reason });
     }
-    goStep(2);
+    if(valid) goStep(2);
   };
 
   let thisWeekCount = 0;

@@ -54,8 +54,8 @@ export function getMondayOf(date = new Date()) {
   return toYMD(d);
 }
 
-/** Returns Friday of the week containing `date` as YYYY-MM-DD */
-export function getFridayOf(date = new Date()) {
+/** Returns Saturday of the week containing `date` as YYYY-MM-DD */
+export function getSaturdayOf(date = new Date()) {
   let d;
   if (typeof date === 'string') {
     const parts = date.split('T')[0].split('-');
@@ -66,7 +66,7 @@ export function getFridayOf(date = new Date()) {
   const mon = new Date(getMondayOf(d)); // getMondayOf returns local string, we parse it below
   const parts = getMondayOf(d).split('-');
   const monDate = new Date(parts[0], parts[1] - 1, parts[2]);
-  monDate.setDate(monDate.getDate() + 4);
+  monDate.setDate(monDate.getDate() + 5); // +5 for Saturday
   return toYMD(monDate);
 }
 
@@ -78,12 +78,25 @@ export function getLastWeekMonday(date = new Date()) {
   return toYMD(mon);
 }
 
-/** Returns last week's Friday as YYYY-MM-DD */
-export function getLastWeekFriday(date = new Date()) {
-  const parts = getFridayOf(date).split('-');
-  const fri = new Date(parts[0], parts[1] - 1, parts[2]);
-  fri.setDate(fri.getDate() - 7);
-  return toYMD(fri);
+/** Subtract exactly 7 days from any date/string and return YYYY-MM-DD */
+export function subtract7Days(date = new Date()) {
+  let d;
+  if (typeof date === 'string') {
+    const parts = date.split('T')[0].split('-');
+    d = new Date(parts[0], parts[1] - 1, parts[2]);
+  } else {
+    d = new Date(date);
+  }
+  d.setDate(d.getDate() - 7);
+  return toYMD(d);
+}
+
+/** Returns last week's Saturday as YYYY-MM-DD */
+export function getLastWeekSaturday(date = new Date()) {
+  const parts = getSaturdayOf(date).split('-');
+  const sat = new Date(parts[0], parts[1] - 1, parts[2]);
+  sat.setDate(sat.getDate() - 7);
+  return toYMD(sat);
 }
 
 /** YYYY-MM-DD string from Date in LOCAL time */
