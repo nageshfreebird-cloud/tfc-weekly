@@ -228,7 +228,7 @@
       return;
     }
 
-    listEl.innerHTML = schools.map(s => `
+    listEl.innerHTML = schools.map((s, index) => `
       <details style="background:var(--bg);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;padding:0.5rem;">
         <summary style="cursor:pointer;font-weight:600;display:flex;justify-content:space-between;align-items:center;">
           <span>${s["School Name"]}</span>
@@ -241,6 +241,10 @@
           <div><strong>Teacher:</strong> ${s["Teacher Name"] || '-'} (${s["Teacher Phone"] || '-'})</div>
           <div><strong>TV:</strong> ${s["TV Working"] || '-'}</div>
           <div><strong>Pendrive:</strong> ${s["Pendrive Working"] || '-'}</div>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;border-top:1px solid var(--border);padding-top:0.5rem;">
+          <button class="btn btn-outline btn-sm" onclick="editSchool('${dist}', ${index})">Edit</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSchool('${dist}', ${index})">Delete</button>
         </div>
       </details>
     `).join("");
@@ -281,6 +285,37 @@
     input.click();
   };
 
+  let editingSchool = null;
+
+  window.editSchool = async function(dist, index) {
+    let schools = await getSchools(dist);
+    const s = schools[index];
+    if (!s) return;
+    
+    document.getElementById("man-school-dist").value = dist;
+    document.getElementById("man-school-name").value = s["School Name"] || "";
+    document.getElementById("man-school-mandal").value = s["Mandal Name"] || "";
+    document.getElementById("man-school-level").value = s.Level || "Level-1";
+    document.getElementById("man-school-hm").value = s["HM Name"] || "";
+    document.getElementById("man-school-hmph").value = s["HM Phone"] || "";
+    document.getElementById("man-school-teacher").value = s["Teacher Name"] || "";
+    document.getElementById("man-school-teacherph").value = s["Teacher Phone"] || "";
+    document.getElementById("man-school-loc").value = s["Location"] || "";
+    document.getElementById("man-school-tv").checked = s["TV Working"] === "Yes";
+    document.getElementById("man-school-pd").checked = s["Pendrive Working"] === "Yes";
+    
+    editingSchool = { dist, index };
+    setMode('school', 'manual');
+  };
+
+  window.deleteSchool = async function(dist, index) {
+    if (!confirm("Are you sure you want to delete this school?")) return;
+    let schools = await getSchools(dist);
+    schools.splice(index, 1);
+    await saveSchools(dist, schools);
+    renderSchoolView();
+  };
+
   window.submitSchoolManual = async function() {
     const dist = document.getElementById("man-school-dist").value;
     const name = document.getElementById("man-school-name").value.trim();
@@ -290,7 +325,8 @@
     if (!dist || !name) return alert("District and School Name are required.");
     
     let existing = await getSchools(dist);
-    existing.push({
+    
+    const newSchool = {
       "School Name": name, "Level": lvl, "Mandal Name": mandal, 
       "HM Name": document.getElementById("man-school-hm").value, 
       "HM Phone": document.getElementById("man-school-hmph").value, 
@@ -299,11 +335,28 @@
       "Location": document.getElementById("man-school-loc").value, 
       "TV Working": document.getElementById("man-school-tv").checked ? "Yes" : "No", 
       "Pendrive Working": document.getElementById("man-school-pd").checked ? "Yes" : "No"
-    });
+    };
+
+    if (editingSchool && editingSchool.dist === dist) {
+      existing[editingSchool.index] = newSchool;
+      editingSchool = null;
+    } else {
+      existing.push(newSchool);
+    }
     
     await saveSchools(dist, existing);
     alert("School saved successfully!");
+    
+    // Clear form
     document.getElementById("man-school-name").value = "";
+    document.getElementById("man-school-mandal").value = "";
+    document.getElementById("man-school-hm").value = "";
+    document.getElementById("man-school-hmph").value = "";
+    document.getElementById("man-school-teacher").value = "";
+    document.getElementById("man-school-teacherph").value = "";
+    document.getElementById("man-school-loc").value = "";
+    setMode('school', 'view');
+    renderSchoolView();
   };
 
   // --- SYLLABUS LOGIC ---
@@ -320,10 +373,14 @@
       return;
     }
 
-    listEl.innerHTML = topics.map(t => `
+    listEl.innerHTML = topics.map((t, index) => `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;padding:0.75rem;">
         <div style="font-weight:600;">📘 ${t["Topic Name"]}</div>
         ${t.Description ? `<div class="text-sm text-muted" style="margin-top:0.25rem;">${t.Description}</div>` : ''}
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem;">
+          <button class="btn btn-outline btn-sm" onclick="editSyllabus('${lvl}', ${index})">Edit</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSyllabus('${lvl}', ${index})">Delete</button>
+        </div>
       </div>
     `).join("");
   };
@@ -363,6 +420,29 @@
     input.click();
   };
   
+  let editingSyllabus = null;
+
+  window.editSyllabus = async function(lvl, index) {
+    let topics = await getSyllabus(lvl);
+    const t = topics[index];
+    if (!t) return;
+    
+    document.getElementById("man-syl-level").value = lvl;
+    document.getElementById("man-syl-topic").value = t["Topic Name"] || "";
+    document.getElementById("man-syl-desc").value = t.Description || "";
+    
+    editingSyllabus = { lvl, index };
+    setMode('syllabus', 'manual');
+  };
+
+  window.deleteSyllabus = async function(lvl, index) {
+    if (!confirm("Are you sure you want to delete this topic?")) return;
+    let topics = await getSyllabus(lvl);
+    topics.splice(index, 1);
+    await saveSyllabus(lvl, topics);
+    renderSyllabusView();
+  };
+
   window.submitSyllabusManual = async function() {
     const lvl = document.getElementById("man-syl-level").value;
     const topic = document.getElementById("man-syl-topic").value.trim();
@@ -370,11 +450,22 @@
     if (!topic) return alert("Topic Name is required.");
 
     let existing = await getSyllabus(lvl);
-    existing.push({ "Topic Name": topic, "Description": desc });
+    const newTopic = { "Topic Name": topic, "Description": desc };
+
+    if (editingSyllabus && editingSyllabus.lvl === lvl) {
+      existing[editingSyllabus.index] = newTopic;
+      editingSyllabus = null;
+    } else {
+      existing.push(newTopic);
+    }
+    
     await saveSyllabus(lvl, existing);
-    alert("Topic added!");
+    alert("Topic saved!");
+    
     document.getElementById("man-syl-topic").value = "";
     document.getElementById("man-syl-desc").value = "";
+    setMode('syllabus', 'view');
+    renderSyllabusView();
   };
 
   // --- YEAR PLAN LOGIC ---
@@ -383,7 +474,7 @@
     ypContainer.innerHTML = "";
     MONTHS.forEach(m => {
       const tasks = yearPlan[m] || [];
-      let taskHtml = tasks.map((t, i) => `<div class="text-sm" style="margin-top:0.4rem;padding:0.3rem;background:var(--bg);border-radius:4px;display:flex;justify-content:space-between;"><span>✅ ${t}</span> <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--danger);" onclick="deleteYearTask('${m}', ${i})">✕</button></div>`).join("");
+      let taskHtml = tasks.map((t, i) => `<div class="text-sm" style="margin-top:0.4rem;padding:0.3rem;background:var(--bg);border-radius:4px;display:flex;justify-content:space-between;"><span>✅ ${t}</span> <div style="display:flex;gap:0.5rem;"><button class="btn btn-ghost btn-sm" style="padding:0;color:var(--primary);" onclick="editYearTask('${m}', ${i})">✎</button><button class="btn btn-ghost btn-sm" style="padding:0;color:var(--danger);" onclick="deleteYearTask('${m}', ${i})">✕</button></div></div>`).join("");
       
       ypContainer.innerHTML += `
         <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.75rem;">
@@ -404,6 +495,16 @@
     yearPlan[month].push(task);
     await saveYearPlan(userName, yearPlan);
     renderYearPlan();
+  };
+  
+  window.editYearTask = async function(month, index) {
+    const oldTask = yearPlan[month][index];
+    const newTask = prompt(`Edit task for ${month}:`, oldTask);
+    if (newTask && newTask.trim() !== "") {
+      yearPlan[month][index] = newTask.trim();
+      await saveYearPlan(userName, yearPlan);
+      renderYearPlan();
+    }
   };
   
   window.deleteYearTask = async function(month, index) {

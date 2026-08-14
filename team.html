@@ -175,14 +175,7 @@
     document.getElementById("step2-title").textContent =
       `Plan: ${formatWeekRange(thisStart, thisEnd)}`;
 
-    // Check if already submitted this week
-    const existing = await getMemberSubmission(thisStart, memberName);
-    if (existing) {
-      showSuccess(existing);
-      return;
-    }
-
-    // Load last week's tasks
+    // Load last week's tasks FIRST so the DOM is ready for edit
     const lastSub = await getMemberSubmission(lastStart, memberName);
     if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
       lastWeekTasks = lastSub.thisWeekTasks;
@@ -191,8 +184,15 @@
       document.getElementById("no-prev-tasks").classList.remove("hidden");
     }
 
-    // Default tasks for this week
-    await loadSmartDefaultTasks();
+    // Check if already submitted this week
+    const existing = await getMemberSubmission(thisStart, memberName);
+    if (existing) {
+      window.existingData = existing;
+      showSuccess(existing);
+    } else {
+      // Default tasks for this week if not submitted
+      await loadSmartDefaultTasks();
+    }
   }
 
   async function loadSmartDefaultTasks() {
@@ -344,8 +344,13 @@
         thisWeekTasks:  thisTasks,
         supportNeeded:  support
       };
+      if (window.existingData && window.existingData.thisWeekCompleted) {
+        data.thisWeekCompleted = window.existingData.thisWeekCompleted;
+      }
       await submitMemberReport(weekSettings.weekStart, memberName, data);
+      window.existingData = data;
       showSuccess(data);
+      btn.textContent = "✅ Submit Weekly Report"; btn.disabled = false;
     } catch(err) {
       alert("Error submitting. Please try again. (" + err.message + ")");
       btn.textContent = "✅ Submit Weekly Report"; btn.disabled = false;
@@ -384,6 +389,17 @@
       html += `</div></div>`;
     }
     document.getElementById("success-summary").innerHTML = html;
+    
+    // Add edit button
+    if (!document.getElementById("btn-edit-report")) {
+      const editBtn = document.createElement("button");
+      editBtn.id = "btn-edit-report";
+      editBtn.className = "btn btn-outline btn-block mb-3";
+      editBtn.style.marginBottom = "1.5rem";
+      editBtn.innerHTML = "✏️ Edit My Report";
+      editBtn.onclick = window.editReport;
+      document.getElementById("success-summary").insertAdjacentElement('afterend', editBtn);
+    }
 
     document.querySelectorAll(".step-section").forEach(s => s.classList.remove("active"));
     document.getElementById("step-success").classList.add("active");
@@ -406,6 +422,37 @@
         alert("Error marking task as completed: " + err.message);
       }
     }
+  };
+
+  window.editReport = function() {
+    if (!window.existingData) return;
+    
+    // Step 1: Pre-fill lastWeekReview
+    if (window.existingData.lastWeekReview) {
+      window.existingData.lastWeekReview.forEach((r, i) => {
+        const rbC = document.getElementById(`rb-c-${i}`);
+        const rbP = document.getElementById(`rb-p-${i}`);
+        if (!rbC || !rbP) return;
+        if (r.status === "completed") {
+           rbC.querySelector('input').checked = true;
+           onStatusChange(i, "completed");
+        } else if (r.status === "pending") {
+           rbP.querySelector('input').checked = true;
+           onStatusChange(i, "pending");
+           document.getElementById(`reason-text-${i}`).value = r.reason || "";
+        }
+      });
+    }
+
+    // Step 2: Pre-fill thisWeekTasks
+    if (window.existingData.thisWeekTasks) {
+      document.getElementById("this-week-tasks").innerHTML = ""; // clear smart defaults
+      thisWeekCount = 0;
+      window.existingData.thisWeekTasks.forEach(t => addThisWeekTask(t));
+      document.getElementById("support-needed").value = window.existingData.supportNeeded || "";
+    }
+
+    goStep(1);
   };
 
   window.goStep = function(n) {
