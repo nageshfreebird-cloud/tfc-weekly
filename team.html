@@ -132,8 +132,8 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatShortDate, goBackHome } from "./js/utils.js";
-  import { getWeekSettings, getMemberSubmission, submitMemberReport, getLatestMemberSubmissionBefore, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
-  import { subtract7Days, toYMD } from "./js/utils.js";
+  import { getWeekSettings, getMemberSubmission, submitMemberReport, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
+  import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
   window.goBackHome = goBackHome;
@@ -163,9 +163,9 @@
     const thisStart = weekSettings.weekStart;
     const thisEnd   = weekSettings.weekEnd;
 
-    // Last week dates simply mirror the present week shifted back by 7 days
-    const lastStart = subtract7Days(thisStart);
-    const lastEnd   = subtract7Days(thisEnd);
+    // Last week dates relative to the active weekStart
+    const lastStart = getLastWeekMonday(thisStart);
+    const lastEnd   = getLastWeekFriday(thisStart);
 
     document.getElementById("greeting-week").textContent =
       `Week: ${formatWeekRange(thisStart, thisEnd)}`;
@@ -174,16 +174,20 @@
     document.getElementById("step2-title").textContent =
       `Plan: ${formatWeekRange(thisStart, thisEnd)}`;
 
-    // Fetch the most recent submission they made before the current week
-    let lastSub = await getLatestMemberSubmissionBefore(thisStart, memberName);
+    // Load last week's tasks FIRST so the DOM is ready for edit
+    let lastSub = await getMemberSubmission(lastStart, memberName);
     
+    // Fallback: If not found, try the day before (Sunday) in case it was saved during the UTC timezone bug
+    if (!lastSub) {
+      const parts = lastStart.split('-');
+      const fallbackDate = new Date(parts[0], parts[1] - 1, parts[2]);
+      fallbackDate.setDate(fallbackDate.getDate() - 1);
+      const fallbackYMD = fallbackDate.getFullYear() + '-' + String(fallbackDate.getMonth() + 1).padStart(2, '0') + '-' + String(fallbackDate.getDate()).padStart(2, '0');
+      lastSub = await getMemberSubmission(fallbackYMD, memberName);
+    }
+
     if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
       lastWeekTasks = lastSub.thisWeekTasks;
-      // Also update the review title to show the exact dates they actually submitted under
-      // We calculate their specific week's length dynamically based on the current week's length
-      const actualLastEnd = subtract7Days(thisEnd); // roughly mirrors the duration
-      document.getElementById("step1-title").textContent = 
-        `Review: ${formatWeekRange(lastSub.weekStart, actualLastEnd)}`;
       renderReviewList();
     } else {
       document.getElementById("no-prev-tasks").classList.remove("hidden");
@@ -315,18 +319,12 @@
     item.id = `tw-${thisWeekCount}`;
     item.innerHTML = `
       <span class="task-num">${thisWeekCount}.</span>
-      <input type="text" placeholder="Describe your task for this week..." id="tw-inp-${thisWeekCount}" value="${escHtml(initialValue)}" />
-      <button class="task-remove" onclick="removeTask('tw-${thisWeekCount}')">✕</button>
+      <input type="text" placeholder="Describe your task for this week..." id="tw-inp-${thisWeekCount}" value="${escHtml(initialValue)}" style="flex:1;" />
     `;
     list.appendChild(item);
     if (!initialValue) {
       document.getElementById(`tw-inp-${thisWeekCount}`).focus();
     }
-  };
-
-  window.removeTask = function(id) {
-    const el = document.getElementById(id);
-    if (el) { el.remove(); renumberTasks(); }
   };
 
   function renumberTasks() {
