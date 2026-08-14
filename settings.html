@@ -137,7 +137,7 @@
 </div>
 
 <script type="module">
-  import { startClock, requireManagerAuth, getMondayOf, getFridayOf,
+  import { startClock, requireManagerAuth, getMondayOf, getSaturdayOf,
            toYMD, formatShortDate } from "./js/utils.js";
   import { getWeekSettings, saveWeekSettings, getAdminCredentials,
            updateAdminCredentials, verifyAdminLogin, getTeamMembers, saveTeamMembers } from "./js/db.js";
@@ -149,7 +149,7 @@
   async function loadWeek() {
     const s = await getWeekSettings();
     document.getElementById("week-start").value = s.weekStart || getMondayOf();
-    document.getElementById("week-end").value   = s.weekEnd   || getFridayOf();
+    document.getElementById("week-end").value   = s.weekEnd   || getSaturdayOf();
     document.getElementById("team-note").value  = s.teamNote  || "";
     populateMeetingDays(s.weekStart, s.meetingDay);
   }

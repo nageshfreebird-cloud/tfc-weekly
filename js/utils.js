@@ -48,10 +48,10 @@ export function getMondayOf(date = new Date()) {
   return toYMD(d);
 }
 
-/** Returns Friday of the week containing `date` as YYYY-MM-DD */
-export function getFridayOf(date = new Date()) {
+/** Returns Saturday of the week containing `date` as YYYY-MM-DD */
+export function getSaturdayOf(date = new Date()) {
   const mon = new Date(getMondayOf(date) + "T00:00:00");
-  mon.setDate(mon.getDate() + 4);
+  mon.setDate(mon.getDate() + 5);
   return toYMD(mon);
 }
 
@@ -62,11 +62,11 @@ export function getLastWeekMonday(date = new Date()) {
   return toYMD(mon);
 }
 
-/** Returns last week's Friday as YYYY-MM-DD */
-export function getLastWeekFriday(date = new Date()) {
-  const fri = new Date(getFridayOf(date) + "T00:00:00");
-  fri.setDate(fri.getDate() - 7);
-  return toYMD(fri);
+/** Returns last week's Saturday as YYYY-MM-DD */
+export function getLastWeekSaturday(date = new Date()) {
+  const sat = new Date(getSaturdayOf(date) + "T00:00:00");
+  sat.setDate(sat.getDate() - 7);
+  return toYMD(sat);
 }
 
 /** YYYY-MM-DD string from Date */

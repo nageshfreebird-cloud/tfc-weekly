@@ -133,7 +133,7 @@
 <script type="module">
   import { startClock, formatWeekRange, formatShortDate, goBackHome } from "./js/utils.js";
   import { getWeekSettings, getMemberSubmission, getLatestMemberSubmissionBefore, submitMemberReport, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
-  import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, toYMD } from "./js/utils.js";
+  import { getMondayOf, getSaturdayOf, getLastWeekMonday, getLastWeekSaturday, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
   window.goBackHome = goBackHome;
@@ -165,7 +165,7 @@
 
     // Last week dates relative to the active weekStart
     const lastStart = getLastWeekMonday(thisStart);
-    const lastEnd   = getLastWeekFriday(thisStart);
+    const lastEnd   = getLastWeekSaturday(thisStart);
 
     document.getElementById("greeting-week").textContent =
       `Week: ${formatWeekRange(thisStart, thisEnd)}`;
@@ -176,13 +176,6 @@
 
     // Fetch the most recent submission they made before the current week
     let lastSub = await getLatestMemberSubmissionBefore(thisStart, memberName);
-    
-    // Also update the review title to show the exact dates they actually submitted under
-    if (lastSub) {
-       const actualLastEnd = getFridayOf(new Date(lastSub.weekStart));
-       document.getElementById("step1-title").textContent = 
-         `Review: ${formatWeekRange(lastSub.weekStart, actualLastEnd)}`;
-    }
 
     if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
       lastWeekTasks = lastSub.thisWeekTasks;

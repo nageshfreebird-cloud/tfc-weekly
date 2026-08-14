@@ -8,7 +8,7 @@ import {
   collection, query, where, getDocs, onSnapshot, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import firebaseConfig from "./firebase-config.js";
-import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getFridayOf, toYMD } from "./utils.js";
+import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getSaturdayOf, toYMD } from "./utils.js";
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
@@ -53,7 +53,7 @@ export async function updateAdminCredentials(newUserId, newPassword) {
 export async function getWeekSettings() {
   const today = new Date();
   const currentMonday = getMondayOf(today);
-  const defaultEnd = getFridayOf(today);
+  const defaultEnd = getSaturdayOf(today);
 
   try {
     const snap = await getDoc(doc(db, "settings", "week"));
@@ -150,11 +150,28 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
   }
 }
 
-/** Get one member's submission for a week */
-export async function getMemberSubmission(weekStart, memberName) {
-  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
-  const snap = await getDoc(doc(db, "submissions", id));
-  return snap.exists() ? snap.data() : null;
+/** Get one member's submission for a week (robust lookup) */
+export async function getMemberSubmission(currentWeekStart, memberName) {
+  // We query for any submission made by the member on or after the current week start
+  const q = query(
+    collection(db, "submissions"),
+    where("memberName", "==", memberName),
+    where("weekStart", ">=", currentWeekStart)
+  );
+  const snap = await getDocs(q);
+  
+  if (!snap.empty) {
+    // Sort to ensure we get the earliest one matching (which is this week's)
+    let docs = [];
+    snap.forEach(d => docs.push(d.data()));
+    docs.sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+    return docs[0];
+  }
+  
+  // Fallback to exactly matching string (legacy behavior for old submissions)
+  const id = `${currentWeekStart}_${memberName.replace(/\s+/g,"_")}`;
+  const exactSnap = await getDoc(doc(db, "submissions", id));
+  return exactSnap.exists() ? exactSnap.data() : null;
 }
 
 /** Get the most recent submission for a member BEFORE a given date */
