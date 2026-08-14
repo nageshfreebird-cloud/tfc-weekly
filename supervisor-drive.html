@@ -110,6 +110,15 @@
             <option value="Level-4">Level-4</option>
           </select>
         </div>
+        <div style="flex:1;">
+          <label class="form-label">Assessment</label>
+          <select id="assessment-select" class="form-control" onchange="loadSchools()">
+            <option value="">Select Assessment</option>
+            <option value="baseline">Baseline</option>
+            <option value="midline">Midline</option>
+            <option value="endline">Endline</option>
+          </select>
+        </div>
       </div>
 
       <div id="schools-container" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;min-height:300px;">
@@ -150,11 +159,12 @@
   window.loadSchools = async function() {
     const dist = document.getElementById("dist-select").value;
     const level = document.getElementById("level-select").value;
+    const assessmentType = document.getElementById("assessment-select").value;
     const container = document.getElementById("schools-container");
     const saveBtn = document.getElementById("save-btn");
 
-    if (!dist || !level) {
-      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Please select a district and level above.</div>`;
+    if (!dist || !level || !assessmentType) {
+      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Please select District, Level, and Assessment above.</div>`;
       saveBtn.classList.add("hidden");
       return;
     }
@@ -163,7 +173,7 @@
     
     const allSchools = await getSchools(dist);
     currentSchools = allSchools.filter(s => s.Level === level);
-    savedData = await getDriveRecords(userName, `${dist}_${level}`);
+    savedData = await getDriveRecords(userName, `${dist}_${level}_${assessmentType}`);
 
     if (currentSchools.length === 0) {
       container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found in ${dist} for ${level}.</div>`;
@@ -185,7 +195,7 @@
       const disabledAttr = frozen ? 'disabled' : '';
 
       html += `
-        <div class="compact-row" id="row-${idx}" data-school="${sName}">
+        <div class="compact-row school-row" id="row-${idx}" data-school="${sName}">
           <div class="compact-col-info">
             <strong>🏫 ${sName}</strong>
           </div>
@@ -254,7 +264,8 @@
   window.saveDriveData = async function() {
     const dist = document.getElementById("dist-select").value;
     const level = document.getElementById("level-select").value;
-    if (!dist || !level) return;
+    const assessmentType = document.getElementById("assessment-select").value;
+    if (!dist || !level || !assessmentType) return;
 
     const rows = document.querySelectorAll(".school-row");
     let newData = {};
@@ -270,7 +281,7 @@
       };
     });
 
-    await saveDriveRecords(userName, `${dist}_${level}`, newData);
+    await saveDriveRecords(userName, `${dist}_${level}_${assessmentType}`, newData);
     alert("Drive data saved successfully!");
     loadSchools();
   };

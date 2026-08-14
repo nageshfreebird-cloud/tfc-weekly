@@ -410,17 +410,14 @@
     dSel.innerHTML = '<option value="">Select District...</option>';
     
     if (!sName) {
-      renderDirectory(); return;
+      window.renderDirectory(); return;
     }
     const supe = users.find(u => u.name === sName);
     if (supe && supe.districts) {
       supe.districts.forEach(d => dSel.innerHTML += `<option value="${d}">${d}</option>`);
     }
-    renderDirectory();
+    window.renderDirectory();
   });
-
-  document.getElementById("filter-district").addEventListener("change", renderDirectory);
-  document.getElementById("filter-level").addEventListener("change", renderDirectory);
 
   window.renderDirectory = async function() {
     const dist = document.getElementById("filter-district").value;
@@ -459,7 +456,10 @@
     `).join("");
   };
 
-  init();
+  document.getElementById("filter-district").addEventListener("change", window.renderDirectory);
+  document.getElementById("filter-level").addEventListener("change", window.renderDirectory);
+
+  // init() already called above
 </script>
 </body>
 </html>

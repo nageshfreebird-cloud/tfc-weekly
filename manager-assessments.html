@@ -64,8 +64,16 @@
       
       <!-- LEVEL 1: Overview -->
       <div id="level-1">
-        <div class="drilldown-header">
+        <div class="drilldown-header" style="display:flex; justify-content:space-between; align-items:center;">
           <h2>📝 Assessments Received (Overview)</h2>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <label class="form-label" style="margin:0;">Assessment:</label>
+            <select id="assessment-filter" class="form-control" style="width:auto; padding:0.25rem 0.5rem;" onchange="processDataAndRender()">
+              <option value="baseline">Baseline</option>
+              <option value="midline">Midline</option>
+              <option value="endline">Endline</option>
+            </select>
+          </div>
         </div>
         <p class="text-muted mb-3">Click on a Supervisor to see their District & Level breakdown.</p>
         <div id="l1-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;">
@@ -111,12 +119,15 @@
   let globalData = {}; 
   let chartInstances = [];
 
+  let usersList = [];
+  let callsData = {};
+  let allSchoolsByDist = {};
+
   async function init() {
-    const users = await getUsers();
-    const callsData = await getAllAssessments(); 
+    usersList = await getUsers();
+    callsData = await getAllAssessments(); 
     
-    let allSchoolsByDist = {};
-    const supervisors = users.filter(u => u.role === 'supervisor');
+    const supervisors = usersList.filter(u => u.role === 'supervisor');
     
     for (let u of supervisors) {
       if (!u.districts) continue;
@@ -126,6 +137,13 @@
         }
       }
     }
+    processDataAndRender();
+  }
+
+  window.processDataAndRender = function() {
+    const supervisors = usersList.filter(u => u.role === 'supervisor');
+    const assessmentType = document.getElementById("assessment-filter").value;
+    globalData = {};
 
     supervisors.forEach(u => {
       globalData[u.name] = {};
@@ -142,8 +160,9 @@
 
         Object.keys(levelsInDist).forEach(lvl => {
           const distLevelKey = `${dist}_${lvl}`;
+          const fetchKey = `${u.name}_${distLevelKey}_${assessmentType}`;
           const schoolsInLvl = levelsInDist[lvl];
-          const savedForThisLvl = callsData[`${u.name}_${distLevelKey}`] || {};
+          const savedForThisLvl = callsData[fetchKey] || {};
           
           let doneCount = 0;
           let schoolDetails = [];
@@ -152,7 +171,6 @@
             const sName = s["School Name"];
             const sData = savedForThisLvl[sName];
             
-            // "Done" means they logged it as received
             const isDone = sData && (sData.status === "received");
             if (isDone) doneCount++;
             
@@ -174,7 +192,7 @@
     });
 
     renderLevel1();
-  }
+  };
 
   function destroyCharts() {
     chartInstances.forEach(c => c.destroy());
