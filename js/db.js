@@ -152,11 +152,13 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
 
 /** Get one member's submission for a week (robust lookup) */
 export async function getMemberSubmission(currentWeekStart, memberName) {
-  // We query for any submission made by the member on or after the current week start
+  const realMonday = getMondayOf(new Date(currentWeekStart + "T00:00:00"));
+
+  // We query for any submission made by the member on or after the REAL Monday of this week
   const q = query(
     collection(db, "submissions"),
     where("memberName", "==", memberName),
-    where("weekStart", ">=", currentWeekStart)
+    where("weekStart", ">=", realMonday)
   );
   const snap = await getDocs(q);
   

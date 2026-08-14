@@ -69,9 +69,12 @@ export function getLastWeekSaturday(date = new Date()) {
   return toYMD(sat);
 }
 
-/** YYYY-MM-DD string from Date */
+/** YYYY-MM-DD string from Date (Local Timezone safe) */
 export function toYMD(d) {
-  return d.toISOString().split("T")[0];
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${yr}-${mo}-${da}`;
 }
 
 /** "Monday, Aug 11" from YYYY-MM-DD */
