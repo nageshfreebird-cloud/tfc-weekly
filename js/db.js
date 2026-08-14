@@ -157,6 +157,24 @@ export async function getMemberSubmission(weekStart, memberName) {
   return snap.exists() ? snap.data() : null;
 }
 
+/** Get the most recent submission for a member BEFORE a given date */
+export async function getLatestMemberSubmissionBefore(currentWeekStart, memberName) {
+  const q = query(
+    collection(db, "submissions"),
+    where("memberName", "==", memberName),
+    where("weekStart", "<", currentWeekStart)
+  );
+  const snap = await getDocs(q);
+  
+  if (snap.empty) return null;
+
+  // Manual sort by weekStart string to get the latest one
+  let docs = [];
+  snap.forEach(d => docs.push(d.data()));
+  docs.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+  return docs[0];
+}
+
 /** Delete a member's submission so they can resubmit */
 export async function deleteMemberSubmission(weekStart, memberName) {
   const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;

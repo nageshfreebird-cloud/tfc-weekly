@@ -132,8 +132,8 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatShortDate, goBackHome } from "./js/utils.js";
-  import { getWeekSettings, getMemberSubmission, submitMemberReport, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
-  import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, toYMD } from "./js/utils.js";
+  import { getWeekSettings, getMemberSubmission, getLatestMemberSubmissionBefore, submitMemberReport, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
+  import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, subtract7Days, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
   window.goBackHome = goBackHome;
@@ -174,16 +174,14 @@
     document.getElementById("step2-title").textContent =
       `Plan: ${formatWeekRange(thisStart, thisEnd)}`;
 
-    // Load last week's tasks FIRST so the DOM is ready for edit
-    let lastSub = await getMemberSubmission(lastStart, memberName);
+    // Fetch the most recent submission they made before the current week
+    let lastSub = await getLatestMemberSubmissionBefore(thisStart, memberName);
     
-    // Fallback: If not found, try the day before (Sunday) in case it was saved during the UTC timezone bug
-    if (!lastSub) {
-      const parts = lastStart.split('-');
-      const fallbackDate = new Date(parts[0], parts[1] - 1, parts[2]);
-      fallbackDate.setDate(fallbackDate.getDate() - 1);
-      const fallbackYMD = fallbackDate.getFullYear() + '-' + String(fallbackDate.getMonth() + 1).padStart(2, '0') + '-' + String(fallbackDate.getDate()).padStart(2, '0');
-      lastSub = await getMemberSubmission(fallbackYMD, memberName);
+    // Also update the review title to show the exact dates they actually submitted under
+    if (lastSub) {
+       const actualLastEnd = getFridayOf(new Date(lastSub.weekStart));
+       document.getElementById("step1-title").textContent = 
+         `Review: ${formatWeekRange(lastSub.weekStart, actualLastEnd)}`;
     }
 
     if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
@@ -295,7 +293,6 @@
         alert(`Please mark task ${i+1} as Completed or Pending.`); return;
       }
       
-      const isComplete = (status === "completed");
       const isPending  = (status === "pending");
       const reason     = isPending ? document.getElementById(`reason-text-${i}`).value.trim() : "";
       
