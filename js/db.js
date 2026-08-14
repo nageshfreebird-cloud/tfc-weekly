@@ -150,11 +150,27 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
   }
 }
 
-/** Get one member's submission for a week */
+/** Get one member's submission for a specific week */
 export async function getMemberSubmission(weekStart, memberName) {
   const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
   const snap = await getDoc(doc(db, "submissions", id));
   return snap.exists() ? snap.data() : null;
+}
+
+/** Get the most recent submission for a member BEFORE the current week */
+export async function getLatestMemberSubmissionBefore(weekStart, memberName) {
+  const q = query(collection(db, "submissions"), where("memberName", "==", memberName));
+  const snap = await getDocs(q);
+  let latest = null;
+  snap.forEach(doc => {
+    const data = doc.data();
+    if (data.weekStart < weekStart) {
+      if (!latest || data.weekStart > latest.weekStart) {
+        latest = data;
+      }
+    }
+  });
+  return latest;
 }
 
 /** Delete a member's submission so they can resubmit */

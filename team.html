@@ -132,7 +132,7 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatShortDate, goBackHome } from "./js/utils.js";
-  import { getWeekSettings, getMemberSubmission, submitMemberReport, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
+  import { getWeekSettings, getMemberSubmission, submitMemberReport, getLatestMemberSubmissionBefore, getWeekSubmissions, markTaskCompleted, getUsers, getSchools } from "./js/db.js";
   import { getMondayOf, getFridayOf, getLastWeekMonday, getLastWeekFriday, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
@@ -174,10 +174,15 @@
     document.getElementById("step2-title").textContent =
       `Plan: ${formatWeekRange(thisStart, thisEnd)}`;
 
-    // Load last week's tasks FIRST so the DOM is ready for edit
-    const lastSub = await getMemberSubmission(lastStart, memberName);
+    // Fetch the most recent submission they made before the current week
+    let lastSub = await getLatestMemberSubmissionBefore(thisStart, memberName);
+    
     if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
       lastWeekTasks = lastSub.thisWeekTasks;
+      // Also update the review title to show the actual week they last submitted
+      const actualLastEnd = getLastWeekFriday(lastSub.weekStart);
+      document.getElementById("step1-title").textContent = 
+        `Review: ${formatWeekRange(lastSub.weekStart, actualLastEnd)}`;
       renderReviewList();
     } else {
       document.getElementById("no-prev-tasks").classList.remove("hidden");
