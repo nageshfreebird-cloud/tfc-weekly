@@ -41,7 +41,13 @@ export function formatWeekRange(startStr, endStr) {
 
 /** Returns Monday of the week containing `date` as YYYY-MM-DD */
 export function getMondayOf(date = new Date()) {
-  const d = new Date(date);
+  let d;
+  if (typeof date === 'string') {
+    const parts = date.split('T')[0].split('-');
+    d = new Date(parts[0], parts[1] - 1, parts[2]);
+  } else {
+    d = new Date(date);
+  }
   const day = d.getDay();
   const diff = (day === 0 ? -6 : 1 - day);
   d.setDate(d.getDate() + diff);
@@ -50,28 +56,42 @@ export function getMondayOf(date = new Date()) {
 
 /** Returns Friday of the week containing `date` as YYYY-MM-DD */
 export function getFridayOf(date = new Date()) {
-  const mon = new Date(getMondayOf(date) + "T00:00:00");
-  mon.setDate(mon.getDate() + 4);
-  return toYMD(mon);
+  let d;
+  if (typeof date === 'string') {
+    const parts = date.split('T')[0].split('-');
+    d = new Date(parts[0], parts[1] - 1, parts[2]);
+  } else {
+    d = new Date(date);
+  }
+  const mon = new Date(getMondayOf(d)); // getMondayOf returns local string, we parse it below
+  const parts = getMondayOf(d).split('-');
+  const monDate = new Date(parts[0], parts[1] - 1, parts[2]);
+  monDate.setDate(monDate.getDate() + 4);
+  return toYMD(monDate);
 }
 
 /** Returns last week's Monday as YYYY-MM-DD */
 export function getLastWeekMonday(date = new Date()) {
-  const mon = new Date(getMondayOf(date) + "T00:00:00");
+  const parts = getMondayOf(date).split('-');
+  const mon = new Date(parts[0], parts[1] - 1, parts[2]);
   mon.setDate(mon.getDate() - 7);
   return toYMD(mon);
 }
 
 /** Returns last week's Friday as YYYY-MM-DD */
 export function getLastWeekFriday(date = new Date()) {
-  const fri = new Date(getFridayOf(date) + "T00:00:00");
+  const parts = getFridayOf(date).split('-');
+  const fri = new Date(parts[0], parts[1] - 1, parts[2]);
   fri.setDate(fri.getDate() - 7);
   return toYMD(fri);
 }
 
-/** YYYY-MM-DD string from Date */
+/** YYYY-MM-DD string from Date in LOCAL time */
 export function toYMD(d) {
-  return d.toISOString().split("T")[0];
+  const yr = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${yr}-${m}-${day}`;
 }
 
 /** "Monday, Aug 11" from YYYY-MM-DD */

@@ -163,10 +163,9 @@
     const thisStart = weekSettings.weekStart;
     const thisEnd   = weekSettings.weekEnd;
 
-    // Last week dates
-    const today     = new Date();
-    const lastStart = getLastWeekMonday(today);
-    const lastEnd   = getLastWeekFriday(today);
+    // Last week dates relative to the active weekStart
+    const lastStart = getLastWeekMonday(thisStart);
+    const lastEnd   = getLastWeekFriday(thisStart);
 
     document.getElementById("greeting-week").textContent =
       `Week: ${formatWeekRange(thisStart, thisEnd)}`;
