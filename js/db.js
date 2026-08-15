@@ -133,10 +133,22 @@ export async function submitMemberReport(weekStart, memberName, data) {
 
 /** Mark a single task as completed during the week */
 export async function markTaskCompleted(weekStart, memberName, taskIndex) {
-  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
-  const ref = doc(db, "submissions", id);
-  const snap = await getDoc(ref);
-  if (snap.exists()) {
+  const nameSafe = memberName.replace(/\s+/g,"_");
+  const datesToCheck = getWeekDatesArray(weekStart);
+  
+  let targetId = null;
+  for (const dateStr of datesToCheck) {
+    let id = `${dateStr}_${nameSafe}`;
+    let snap = await getDoc(doc(db, "submissions", id));
+    if (snap.exists()) {
+      targetId = id;
+      break;
+    }
+  }
+
+  if (targetId) {
+    const ref = doc(db, "submissions", targetId);
+    const snap = await getDoc(ref);
     const data = snap.data();
     let completed = data.thisWeekCompleted || (data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : []);
     completed[taskIndex] = true;

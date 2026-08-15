@@ -446,6 +446,13 @@
         checkbox.nextElementSibling.style.color = 'var(--text-muted)';
         
         await markTaskCompleted(weekSettings.weekStart, memberName, idx);
+        
+        if (window.existingData && window.existingData.thisWeekTasks) {
+          if (!window.existingData.thisWeekCompleted) {
+            window.existingData.thisWeekCompleted = window.existingData.thisWeekTasks.map(() => false);
+          }
+          window.existingData.thisWeekCompleted[idx] = true;
+        }
       } catch (err) {
         alert("Error marking task as completed: " + err.message);
       }
