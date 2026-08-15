@@ -163,14 +163,12 @@
     const thisStart = weekSettings.weekStart;
     const thisEnd   = weekSettings.weekEnd;
 
-    // Last week dates relative to the active weekStart
-    const lastStart = getLastWeekMonday(thisStart);
-    const lastEnd   = getLastWeekSaturday(thisStart);
-
+    // The user explicitly requested that the Review dates display the exact same 
+    // dates as the current week to avoid confusing the team.
     document.getElementById("greeting-week").textContent =
       `Week: ${formatWeekRange(thisStart, thisEnd)}`;
     document.getElementById("step1-title").textContent =
-      `Review: ${formatWeekRange(lastStart, lastEnd)}`;
+      `Review: ${formatWeekRange(thisStart, thisEnd)}`;
     document.getElementById("step2-title").textContent =
       `Plan: ${formatWeekRange(thisStart, thisEnd)}`;
 
