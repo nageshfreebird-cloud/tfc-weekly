@@ -174,20 +174,28 @@ export async function getMemberSubmission(currentWeekStart, memberName) {
   return null;
 }
 
-/** Get the most recent submission for a member BEFORE a given date */
+/** Get the most recent submission for a member BEFORE a given date (safe lookup) */
 export async function getLatestMemberSubmissionBefore(currentWeekStart, memberName) {
+  // Query only by memberName to avoid needing a Firebase composite index
   const q = query(
     collection(db, "submissions"),
-    where("memberName", "==", memberName),
-    where("weekStart", "<", currentWeekStart)
+    where("memberName", "==", memberName)
   );
   const snap = await getDocs(q);
   
   if (snap.empty) return null;
 
-  // Manual sort by weekStart string to get the latest one
+  // Filter and sort manually in Javascript
   let docs = [];
-  snap.forEach(d => docs.push(d.data()));
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.weekStart < currentWeekStart) {
+      docs.push(data);
+    }
+  });
+  
+  if (docs.length === 0) return null;
+
   docs.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
   return docs[0];
 }

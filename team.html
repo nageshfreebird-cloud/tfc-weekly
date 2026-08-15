@@ -279,6 +279,7 @@
   };
 
   window.submitStep1 = function() {
+    let valid = true;
     step1Reviews = [];
     for (let i = 0; i < lastWeekTasks.length; i++) {
       const radios = document.querySelectorAll(`input[name="status-${i}"]`);
