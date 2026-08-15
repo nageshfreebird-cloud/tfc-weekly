@@ -41,21 +41,14 @@
           <img src="lakshmi.png" alt="Lakshmi Manchu" style="flex: 0 0 130px; width:130px; height:130px; border-radius:50%; object-fit:cover; box-shadow:0 2px 6px rgba(0,0,0,0.1);" onerror="this.src='https://via.placeholder.com/130?text=Photo'" />
           
           <div style="font-size:0.85rem; line-height:1.4; color:#475569; flex:1;">
-            <p style="margin-bottom:0.5rem;">Lakshmi Manchu, is an Actor, Producer and a Humanitarian. As a Television Presenter, she is known for her works in American Television. Lakshmi is very active in social and political movements across the country. She has been advocating for various causes like reforms in Primary Education, Cancer Awareness, and Women empowerment.</p>
-            <p style="margin:0;">The Government of India nominated her as the Swachh Bharat Ambassador for the state of Telangana. She has been actively promoting the cause of Clean India through her video series and events.</p>
+            <p style="margin-bottom:0.5rem;">Lakshmi Manchu, is an Actor, Producer and a Humanitarian.Teach For Change is a non-profit organisation working to improve the quality of education in government schools in India. Established in 2014 the organisation runs two programs that address the foundational challenges faced by our government schools. The flagship volunteer program provides volunteer teachers to government schools which are understaffed and face a lack of leadership. The Smart Classroom program addresses the need to improve the foundational literacy and numeracy among children from low income communities studying in government school.</p>
+            <p style="margin:0;">The Teach For Change movement is aimed towards achieving the United Nations Sustainable Development Goals (Goal 4-Quality Education)..</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Week Info Bar (loaded dynamically) -->
-    <div id="week-bar" class="week-bar hidden">
-      <div>
-        <div class="week-label">Current Week</div>
-        <div class="week-dates" id="week-dates">—</div>
-      </div>
-      <div class="meeting-day" id="meeting-day-bar">Meeting: —</div>
-    </div>
+
 
     <!-- Team Note (if any) -->
     <div id="team-note-wrap" class="alert alert-warning hidden">
@@ -143,10 +136,7 @@
   // Load week settings
   listenWeekSettings(settings => {
     if (!settings) return;
-    // Week bar
-    document.getElementById("week-bar").classList.remove("hidden");
-    document.getElementById("week-dates").textContent = formatWeekRange(settings.weekStart, settings.weekEnd);
-    document.getElementById("meeting-day-bar").textContent = "Meeting: " + formatFullDate(settings.meetingDay);
+    // Removed Week bar update
 
     // Team note
     if (settings.teamNote) {
