@@ -360,6 +360,17 @@ export async function verifyUserLogin(name, password) {
   return null;
 }
 
+export async function updateUserPassword(name, newPassword) {
+  const users = await getUsers();
+  const idx = users.findIndex(u => u.name === name);
+  if (idx !== -1) {
+    users[idx].password = newPassword;
+    await saveUsers(users);
+    return true;
+  }
+  return false;
+}
+
 // ============================================
 // DISTRICTS
 // ============================================

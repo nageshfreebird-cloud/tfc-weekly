@@ -60,12 +60,12 @@
       <div class="choice-card" id="team-card" onclick="showTeamDrop()">
         <div class="choice-icon">👥</div>
         <div class="choice-title">Team Member</div>
-        <div class="choice-sub">Submit weekly report</div>
+        <div class="choice-sub">Login to dashboard</div>
       </div>
     </div>
 
     <!-- Team Member Name Drop (hidden until clicked) -->
-    <div id="team-section" class="card hidden animate-in">
+    <div id="team-section" class="card hidden animate-in" style="position: relative;">
       <div class="card-header">
         <span class="icon">👥</span>
         <h2>Select Your Name</h2>
@@ -76,6 +76,16 @@
         <div class="icon">🔒</div>
         <h2>Submissions Closed</h2>
         <p>The manager has not opened submissions yet.<br/>Please wait or contact your manager.</p>
+      </div>
+
+      <!-- Change Password Overlay -->
+      <div id="change-pwd-overlay" class="hidden" style="position:absolute;top:0;left:0;width:100%;height:100%;background:var(--card-bg);z-index:10;border-radius:var(--radius);padding:1.5rem;display:flex;flex-direction:column;justify-content:center;">
+        <h3 style="color:var(--primary);margin-bottom:0.5rem;">🔒 Secure Your Account</h3>
+        <p class="text-sm text-muted" style="margin-bottom:1rem;">Please create a new personal password to continue. The default password will no longer work.</p>
+        <div class="form-group">
+          <input type="password" id="new-personal-pwd" class="form-control" placeholder="New Password" />
+        </div>
+        <button class="btn btn-primary btn-block" id="save-new-pwd-btn" onclick="savePersonalPassword()">Save Password & Login</button>
       </div>
 
       <!-- Name Select + Continue -->
@@ -179,15 +189,17 @@
           btn.disabled = false;
           return;
         }
-        sessionStorage.setItem("tfc_member_name", user.name);
-        sessionStorage.setItem("tfc_member_role", user.role);
         
-        // Redirect based on role
-        if (user.role === 'supervisor') {
-          window.location.href = "supervisor.html"; // We will build this next
-        } else {
-          window.location.href = "team.html"; // The 'Other' role goes here
+        if (user.password === 'tfc@2014') {
+          // Show password reset overlay
+          window._pendingUser = user;
+          document.getElementById("open-form").classList.add("hidden");
+          document.getElementById("change-pwd-overlay").classList.remove("hidden");
+          document.getElementById("change-pwd-overlay").style.display = "flex";
+          return;
         }
+
+        doLoginRedirect(user);
       } else {
         err.classList.remove("hidden");
         btn.textContent = "Login →";
@@ -199,6 +211,39 @@
       btn.disabled = false;
     }
   };
+
+  import { updateUserPassword } from "./js/db.js";
+
+  window.savePersonalPassword = async function() {
+    const newPwd = document.getElementById("new-personal-pwd").value.trim();
+    if (!newPwd) { alert("Please enter a new password."); return; }
+    if (newPwd === "tfc@2014") { alert("Please choose a password different from the default."); return; }
+    
+    const btn = document.getElementById("save-new-pwd-btn");
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+
+    const success = await updateUserPassword(window._pendingUser.name, newPwd);
+    if (success) {
+      doLoginRedirect(window._pendingUser);
+    } else {
+      alert("Error saving password.");
+      btn.textContent = "Save Password & Login";
+      btn.disabled = false;
+    }
+  };
+
+  function doLoginRedirect(user) {
+    sessionStorage.setItem("tfc_member_name", user.name);
+    sessionStorage.setItem("tfc_member_role", user.role);
+    
+    // Redirect based on role
+    if (user.role === 'supervisor') {
+      window.location.href = "supervisor.html";
+    } else {
+      window.location.href = "team.html";
+    }
+  }
 </script>
 </body>
 </html>
