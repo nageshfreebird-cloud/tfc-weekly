@@ -179,6 +179,7 @@
 
     if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
       lastWeekTasks = lastSub.thisWeekTasks;
+      window.lastWeekCompletedData = lastSub.thisWeekCompleted || [];
       renderReviewList();
     } else {
       document.getElementById("no-prev-tasks").classList.remove("hidden");
@@ -231,8 +232,12 @@
     const list = document.getElementById("review-list");
     list.innerHTML = "";
     lastWeekTasks.forEach((task, i) => {
+      const isDone = window.lastWeekCompletedData[i] === true;
+      const cChecked = isDone ? "checked" : "";
+      const pChecked = isDone ? "" : "checked";
+      
       const div = document.createElement("div");
-      div.className = "review-task";
+      div.className = "review-task" + (isDone ? " is-completed" : " is-pending");
       div.id = `rt-${i}`;
       div.innerHTML = `
         <div class="review-task-header">
@@ -240,16 +245,16 @@
           <span class="review-task-text">${escHtml(task)}</span>
         </div>
         <div class="review-task-options">
-          <label class="radio-btn completed" id="rb-c-${i}">
-            <input type="radio" name="status-${i}" value="completed" onchange="onStatusChange(${i},'completed')" />
+          <label class="radio-btn completed ${isDone ? 'selected' : ''}" id="rb-c-${i}">
+            <input type="radio" name="status-${i}" value="completed" onchange="onStatusChange(${i},'completed')" ${cChecked} />
             ✅ Completed
           </label>
-          <label class="radio-btn pending" id="rb-p-${i}">
-            <input type="radio" name="status-${i}" value="pending" onchange="onStatusChange(${i},'pending')" />
+          <label class="radio-btn pending ${isDone ? '' : 'selected'}" id="rb-p-${i}">
+            <input type="radio" name="status-${i}" value="pending" onchange="onStatusChange(${i},'pending')" ${pChecked} />
             🔄 Still Pending
           </label>
         </div>
-        <div class="review-reason hidden" id="reason-${i}">
+        <div class="review-reason ${isDone ? 'hidden' : ''}" id="reason-${i}">
           <textarea placeholder="Why is it still pending? (required)" rows="2" id="reason-text-${i}"></textarea>
         </div>
       `;
@@ -310,10 +315,19 @@
     item.innerHTML = `
       <span class="task-num">${thisWeekCount}.</span>
       <input type="text" placeholder="Describe your task for this week..." id="tw-inp-${thisWeekCount}" value="${escHtml(initialValue)}" style="flex:1;" />
+      <button class="task-remove" onclick="removeThisWeekTask(${thisWeekCount})" title="Delete Task">✕</button>
     `;
     list.appendChild(item);
     if (!initialValue) {
       document.getElementById(`tw-inp-${thisWeekCount}`).focus();
+    }
+  };
+
+  window.removeThisWeekTask = function(id) {
+    const item = document.getElementById(`tw-${id}`);
+    if (item) {
+      item.remove();
+      renumberTasks();
     }
   };
 
@@ -370,6 +384,7 @@
       html += `</ul>`;
     }
     if (data.thisWeekTasks && data.thisWeekTasks.length > 0) {
+      const completedArr = data.thisWeekCompleted || [];
       html += `<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
         <strong style="display:block;margin-bottom:0.5rem;color:var(--primary);">🎯 Your Weekly Progress Tracker:</strong>
         <p class="text-sm text-muted" style="margin-bottom:1rem;">Check off tasks below as you complete them during the week. Once checked, they cannot be unchecked.</p>

@@ -71,9 +71,10 @@ export function getLastWeekSaturday(date = new Date()) {
 
 /** YYYY-MM-DD string from Date (Local Timezone safe) */
 export function toYMD(d) {
-  const yr = d.getFullYear();
-  const mo = String(d.getMonth() + 1).padStart(2, '0');
-  const da = String(d.getDate()).padStart(2, '0');
+  const istDate = new Date(d.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+  const yr = istDate.getFullYear();
+  const mo = String(istDate.getMonth() + 1).padStart(2, '0');
+  const da = String(istDate.getDate()).padStart(2, '0');
   return `${yr}-${mo}-${da}`;
 }
 
