@@ -150,30 +150,24 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
   }
 }
 
-/** Get one member's submission for a week (robust lookup) */
+/** Get one member's submission for a week (robust lookup without requiring Firebase indexes) */
 export async function getMemberSubmission(currentWeekStart, memberName) {
-  const realMonday = getMondayOf(new Date(currentWeekStart + "T00:00:00"));
-
-  // We query for any submission made by the member on or after the REAL Monday of this week
-  const q = query(
-    collection(db, "submissions"),
-    where("memberName", "==", memberName),
-    where("weekStart", ">=", realMonday)
-  );
-  const snap = await getDocs(q);
+  const nameSafe = memberName.replace(/\s+/g,"_");
   
-  if (!snap.empty) {
-    // Sort to ensure we get the earliest one matching (which is this week's)
-    let docs = [];
-    snap.forEach(d => docs.push(d.data()));
-    docs.sort((a, b) => a.weekStart.localeCompare(b.weekStart));
-    return docs[0];
+  // First try the exact weekStart the admin set (e.g. 2026-08-11)
+  let id = `${currentWeekStart}_${nameSafe}`;
+  let snap = await getDoc(doc(db, "submissions", id));
+  if (snap.exists()) return snap.data();
+
+  // If not found, try the real Monday fallback (e.g. 2026-08-10) just in case
+  const realMonday = getMondayOf(new Date(currentWeekStart + "T00:00:00"));
+  if (realMonday !== currentWeekStart) {
+    id = `${realMonday}_${nameSafe}`;
+    snap = await getDoc(doc(db, "submissions", id));
+    if (snap.exists()) return snap.data();
   }
   
-  // Fallback to exactly matching string (legacy behavior for old submissions)
-  const id = `${currentWeekStart}_${memberName.replace(/\s+/g,"_")}`;
-  const exactSnap = await getDoc(doc(db, "submissions", id));
-  return exactSnap.exists() ? exactSnap.data() : null;
+  return null;
 }
 
 /** Get the most recent submission for a member BEFORE a given date */
