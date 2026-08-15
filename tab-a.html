@@ -5,6 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Dashboard — Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 3fr 1fr;
+      }
+    }
+    .year-plan-month {
+      margin-bottom: 1rem;
+      border-left: 2px solid var(--primary);
+      padding-left: 0.75rem;
+    }
+    .year-plan-month h4 {
+      font-size: 0.95rem;
+      color: var(--primary);
+      margin-bottom: 0.4rem;
+    }
+    .year-plan-list {
+      list-style-type: disc;
+      padding-left: 1.25rem;
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+    .year-plan-list li {
+      margin-bottom: 0.2rem;
+    }
+  </style>
 </head>
 <body>
 
@@ -58,49 +90,74 @@
       </div>
     </div>
 
-    <!-- Submissions Toggle + Stats -->
-    <div class="card" style="margin-bottom:1rem;">
-      <div class="flex-between" style="flex-wrap:wrap;gap:1rem;">
-        <div class="toggle-wrap">
-          <span class="toggle-label">Submissions:</span>
-          <label class="toggle" title="Open or close submissions for team">
-            <input type="checkbox" id="submissions-toggle" onchange="toggleSubmissions(this.checked)" />
-            <span class="toggle-slider"></span>
-          </label>
-          <span id="toggle-status" class="badge badge-gray">Closed</span>
-          <span class="live-dot" id="live-dot" style="display:none;"></span>
+    <div class="dashboard-grid">
+      
+      <!-- Left Column: 75% -->
+      <div class="left-col">
+        <!-- Submissions Toggle + Stats -->
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="flex-between" style="flex-wrap:wrap;gap:1rem;">
+            <div class="toggle-wrap">
+              <span class="toggle-label">Submissions:</span>
+              <label class="toggle" title="Open or close submissions for team">
+                <input type="checkbox" id="submissions-toggle" onchange="toggleSubmissions(this.checked)" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span id="toggle-status" class="badge badge-gray">Closed</span>
+              <span class="live-dot" id="live-dot" style="display:none;"></span>
+            </div>
+            <div style="font-size:.82rem;color:var(--text-muted);">
+              <span id="submit-count">0</span> of 9 submitted
+            </div>
+          </div>
         </div>
-        <div style="font-size:.82rem;color:var(--text-muted);">
-          <span id="submit-count">0</span> of 9 submitted
+
+        <!-- Stats -->
+        <div class="stats-bar" style="margin-bottom:1.25rem;">
+          <div class="stat-box">
+            <div class="stat-num" id="stat-total">9</div>
+            <div class="stat-label">Total</div>
+          </div>
+          <div class="stat-box green">
+            <div class="stat-num" id="stat-done">0</div>
+            <div class="stat-label">Submitted</div>
+          </div>
+          <div class="stat-box orange">
+            <div class="stat-num" id="stat-pending">9</div>
+            <div class="stat-label">Pending</div>
+          </div>
+        </div>
+
+        <!-- Member List -->
+        <div class="card" style="padding:1rem;">
+          <div class="card-header" style="margin-bottom:.85rem;">
+            <span class="icon">👥</span>
+            <h2>Team Submissions</h2>
+            <span class="live-dot" style="margin-left:auto;"></span>
+            <span class="text-sm text-muted" style="margin-left:.4rem;">Live</span>
+          </div>
+          <div id="member-list"></div>
         </div>
       </div>
-    </div>
 
-    <!-- Stats -->
-    <div class="stats-bar" style="margin-bottom:1.25rem;">
-      <div class="stat-box">
-        <div class="stat-num" id="stat-total">9</div>
-        <div class="stat-label">Total</div>
+      <!-- Right Column: 25% (Year Plan) -->
+      <div class="right-col">
+        <div class="card">
+          <div class="card-header" style="margin-bottom:1rem;">
+            <span class="icon">📅</span>
+            <h2>Year Plan</h2>
+          </div>
+          <div class="form-group">
+            <select id="year-plan-supervisor" class="form-control" onchange="loadSelectedYearPlan()">
+              <option value="">— Select Supervisor —</option>
+            </select>
+          </div>
+          <div id="year-plan-display">
+            <div class="text-sm text-muted" style="text-align:center;padding:1rem 0;">Select a supervisor to view their year plan.</div>
+          </div>
+        </div>
       </div>
-      <div class="stat-box green">
-        <div class="stat-num" id="stat-done">0</div>
-        <div class="stat-label">Submitted</div>
-      </div>
-      <div class="stat-box orange">
-        <div class="stat-num" id="stat-pending">9</div>
-        <div class="stat-label">Pending</div>
-      </div>
-    </div>
-
-    <!-- Member List -->
-    <div class="card" style="padding:1rem;">
-      <div class="card-header" style="margin-bottom:.85rem;">
-        <span class="icon">👥</span>
-        <h2>Team Submissions</h2>
-        <span class="live-dot" style="margin-left:auto;"></span>
-        <span class="text-sm text-muted" style="margin-left:.4rem;">Live</span>
-      </div>
-      <div id="member-list"></div>
+      
     </div>
 
     <!-- Member Detail Panel (Modal) -->
@@ -120,7 +177,7 @@
 <script type="module">
   import { startClock, requireManagerAuth, clearManagerSession,
            initials, formatFullDate, formatWeekRange, formatTime } from "./js/utils.js";
-  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers, deleteMemberSubmission } from "./js/db.js";
+  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers, deleteMemberSubmission, getUsers, getYearPlan } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
@@ -133,6 +190,16 @@
     _team = await getTeamMembers();
     // Render initially empty
     renderMemberList({});
+
+    // Load Supervisors for Year Plan Dropdown
+    const users = await getUsers();
+    const supeSelect = document.getElementById("year-plan-supervisor");
+    users.filter(u => u.role === 'supervisor').forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.name;
+      opt.textContent = u.name;
+      supeSelect.appendChild(opt);
+    });
 
     // Listen to week settings
     listenWeekSettings(settings => {
@@ -267,6 +334,43 @@
       closeDetail();
     } catch(err) {
       alert("Error deleting submission: " + err.message);
+    }
+  };
+
+  window.loadSelectedYearPlan = async function() {
+    const name = document.getElementById("year-plan-supervisor").value;
+    const display = document.getElementById("year-plan-display");
+    
+    if (!name) {
+      display.innerHTML = `<div class="text-sm text-muted" style="text-align:center;padding:1rem 0;">Select a supervisor to view their year plan.</div>`;
+      return;
+    }
+    
+    display.innerHTML = `<div class="text-sm text-muted" style="text-align:center;padding:1rem 0;">Loading plan...</div>`;
+    
+    const plan = await getYearPlan(name);
+    const months = ["June", "July", "August", "September", "October", "November", "December", "January", "February", "March", "April", "May"];
+    
+    let html = "";
+    let hasPlan = false;
+    
+    months.forEach(m => {
+      if (plan[m] && plan[m].length > 0) {
+        hasPlan = true;
+        html += `<div class="year-plan-month">
+          <h4>${m}</h4>
+          <ul class="year-plan-list">`;
+        plan[m].forEach(task => {
+          html += `<li>${String(task).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</li>`;
+        });
+        html += `</ul></div>`;
+      }
+    });
+    
+    if (!hasPlan) {
+      display.innerHTML = `<div class="text-sm text-muted" style="text-align:center;padding:1rem 0;">No year plan tasks added yet.</div>`;
+    } else {
+      display.innerHTML = html;
     }
   };
 

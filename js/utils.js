@@ -99,6 +99,47 @@ export function formatTime(date) {
   return `${h}:${m.toString().padStart(2,"0")} ${ampm}`;
 }
 
+// ---- 15-Day Period Utilities ----
+
+/** Returns the current 15-day period string (e.g. "Aug 1 - Aug 15" or "Aug 16 - Aug 31") */
+export function getCurrent15DayPeriod(date = new Date()) {
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const m = months[date.getMonth()];
+  const day = date.getDate();
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  
+  if (day <= 15) {
+    return {
+      label: `${m} 1 - ${m} 15`,
+      startDate: toYMD(new Date(date.getFullYear(), date.getMonth(), 1)),
+      endDate: toYMD(new Date(date.getFullYear(), date.getMonth(), 15))
+    };
+  } else {
+    return {
+      label: `${m} 16 - ${m} ${lastDay}`,
+      startDate: toYMD(new Date(date.getFullYear(), date.getMonth(), 16)),
+      endDate: toYMD(new Date(date.getFullYear(), date.getMonth(), lastDay))
+    };
+  }
+}
+
+/** Generates past periods counting backwards from a specific date */
+export function generatePast15DayPeriods(count = 10, fromDate = new Date()) {
+  const periods = [];
+  const d = new Date(fromDate);
+  
+  for (let i = 0; i < count; i++) {
+    periods.push(getCurrent15DayPeriod(d));
+    // Jump back 15 days from the 1st of the month, or jump back to the 1st
+    if (d.getDate() > 15) {
+      d.setDate(1);
+    } else {
+      d.setDate(0); // Last day of previous month
+    }
+  }
+  return periods;
+}
+
 /** Start live clock in element with id */
 export function startClock(elementId) {
   const el = document.getElementById(elementId);

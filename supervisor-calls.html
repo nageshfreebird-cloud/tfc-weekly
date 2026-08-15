@@ -65,7 +65,10 @@
     </div>
 
     <div class="setup-panel">
-      <h2>📞 15-Days Teacher Calls</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <h2>📞 15-Days Teacher Calls</h2>
+        <div id="period-badge" class="badge badge-primary" style="font-size:0.9rem;">Loading period...</div>
+      </div>
       <p class="text-muted mb-3" style="margin-bottom:1.5rem;">Select your district and level to log calls for your assigned schools.</p>
 
       <div style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
@@ -91,14 +94,13 @@
         <div class="text-muted text-center" style="margin-top:2rem;">Please select a district and level above.</div>
       </div>
 
-      <button id="save-btn" class="btn btn-primary btn-block hidden" style="margin-top:1.5rem;" onclick="saveCallsData()">💾 Save All Calls Data</button>
-
     </div>
 
   </div>
 </div>
 
 <script type="module">
+  import { getCurrent15DayPeriod } from "./js/utils.js";
   import { getUsers, getSchools, getSyllabus, getTeacherCalls, saveTeacherCalls } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
@@ -113,8 +115,12 @@
   let currentSchools = [];
   let currentSyllabus = [];
   let savedData = {};
+  let currentPeriod = null;
 
   async function init() {
+    currentPeriod = getCurrent15DayPeriod();
+    document.getElementById("period-badge").textContent = "Current Period: " + currentPeriod.label;
+
     const users = await getUsers();
     const myUser = users.find(u => u.name === userName);
     if (!myUser || !myUser.districts) return;
@@ -127,30 +133,26 @@
     const dist = document.getElementById("dist-select").value;
     const level = document.getElementById("level-select").value;
     const container = document.getElementById("schools-container");
-    const saveBtn = document.getElementById("save-btn");
 
     if (!dist || !level) {
       container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Please select a district and level above.</div>`;
-      saveBtn.classList.add("hidden");
       return;
     }
 
     container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Loading schools...</div>`;
     
-    // Fetch data
+    // Fetch data for the current period
     const allSchools = await getSchools(dist);
     currentSchools = allSchools.filter(s => s.Level === level);
     currentSyllabus = await getSyllabus(level);
-    savedData = await getTeacherCalls(userName, `${dist}_${level}`);
+    savedData = await getTeacherCalls(userName, `${dist}_${level}`, currentPeriod.label);
 
     if (currentSchools.length === 0) {
       container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found in ${dist} for ${level}.</div>`;
-      saveBtn.classList.add("hidden");
       return;
     }
 
-    // Build syllabus options
-    let sylOptions = `<option value="">-- None --</option>`;
+    let sylOptions = `<option value="">-- Optional --</option>`;
     currentSyllabus.forEach(t => {
       sylOptions += `<option value="${t['Topic Name']}">${t['Topic Name']}</option>`;
     });
@@ -161,67 +163,91 @@
       const tName = s["Teacher Name"] || "No Teacher";
       const tPhone = s["Teacher Phone"] || "No Phone";
       
-      const prevData = savedData[sName] || {};
-      const prevTopics = prevData.topics || [];
-      const prevRemarks = prevData.remarks || "";
-      const prevNotAnswered = prevData.notAnswered ? "checked" : "";
+      const logs = Array.isArray(savedData[sName]) ? savedData[sName] : [];
+
+      let logHtml = "";
+      if (logs.length > 0) {
+        logHtml = `<div style="margin-top:0.5rem;padding:0.5rem;background:#f8f9fa;border-radius:4px;font-size:0.85rem;">
+          <strong style="color:var(--text-muted);">Call History this period:</strong>
+          <ul style="margin:0.25rem 0 0 1rem;padding:0;">
+            ${logs.map(log => `
+              <li style="margin-bottom:0.25rem;">
+                <strong>${log.date}:</strong> ${log.syllabus ? `[${log.syllabus}]` : ''} ${log.remarks}
+              </li>
+            `).join("")}
+          </ul>
+        </div>`;
+      }
 
       html += `
-        <div class="compact-row" id="row-${idx}" data-school="${sName}">
-          <div class="compact-col-info">
-            <strong>🏫 ${sName}</strong>
-            <div class="text-sm text-muted">👤 ${tName} (${tPhone})</div>
+        <div class="card" style="margin-bottom:1rem;padding:1rem;" id="school-card-${idx}">
+          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+            
+            <div style="flex: 0 0 25%;min-width:200px;">
+              <strong>🏫 ${sName}</strong>
+              <div class="text-sm text-muted">👤 ${tName} (${tPhone})</div>
+            </div>
+            
+            <div style="flex: 0 0 18%;min-width:140px;">
+              <input type="date" class="form-control call-date" 
+                     min="${currentPeriod.startDate}" max="${currentPeriod.endDate}" 
+                     style="font-size:0.85rem;" title="Select Call Date" />
+            </div>
+            
+            <div style="flex: 0 0 18%;min-width:140px;">
+              <select class="form-control call-syllabus" style="font-size:0.85rem;">
+                ${sylOptions}
+              </select>
+            </div>
+            
+            <div style="flex: 1;min-width:200px;">
+              <input type="text" class="form-control call-remarks" placeholder="Optional remarks..." style="font-size:0.85rem;" />
+            </div>
+            
+            <div style="flex: 0 0 5%;min-width:60px;text-align:right;">
+              <button class="btn btn-success btn-sm" onclick="addCallLog('${sName.replace(/'/g, "\\'")}', ${idx})">✅ Done</button>
+            </div>
+            
           </div>
-          
-          <div class="compact-col-input" style="flex:1;">
-            <select class="form-control topic-select" multiple style="height:60px;padding:0.25rem;">
-              ${currentSyllabus.map(t => `<option value="${t['Topic Name']}" ${prevTopics.includes(t['Topic Name'])?'selected':''}>${t['Topic Name']}</option>`).join("")}
-            </select>
-          </div>
-          
-          <div class="compact-col-input" style="flex:1.5;">
-            <textarea class="form-control remarks-input" style="height:60px;resize:none;padding:0.4rem;" 
-                      placeholder="Enter remarks...">${prevRemarks}</textarea>
-          </div>
-          
-          <div class="compact-col-input" style="flex:0 0 150px;">
-            <label style="display:flex;align-items:center;gap:0.5rem;font-weight:600;color:var(--danger);cursor:pointer;font-size:0.85rem;">
-              <input type="checkbox" class="no-answer-check" style="width:18px;height:18px;" ${prevNotAnswered} />
-              No Answer
-            </label>
-          </div>
+          ${logHtml}
         </div>
       `;
     });
 
     container.innerHTML = html;
-    saveBtn.classList.remove("hidden");
   };
 
-  window.saveCallsData = async function() {
+  window.addCallLog = async function(schoolName, idx) {
     const dist = document.getElementById("dist-select").value;
     const level = document.getElementById("level-select").value;
     if (!dist || !level) return;
 
-    const rows = document.querySelectorAll(".compact-row");
-    let newData = {};
+    const card = document.getElementById(`school-card-${idx}`);
+    const dateVal = card.querySelector(".call-date").value;
+    const sylVal = card.querySelector(".call-syllabus").value;
+    const remarksVal = card.querySelector(".call-remarks").value.trim();
 
-    rows.forEach(row => {
-      const sName = row.getAttribute("data-school");
-      const topicSelect = row.querySelector(".topic-select");
-      const selectedTopics = Array.from(topicSelect.selectedOptions).map(opt => opt.value);
-      const remarks = row.querySelector(".remarks-input").value.trim();
-      const notAnswered = row.querySelector(".no-answer-check").checked;
+    if (!dateVal) {
+      alert("Please select a date first!");
+      return;
+    }
 
-      newData[sName] = {
-        topics: selectedTopics,
-        remarks: remarks,
-        notAnswered: notAnswered
-      };
+    // Append to logs
+    if (!Array.isArray(savedData[schoolName])) {
+      savedData[schoolName] = [];
+    }
+    
+    savedData[schoolName].push({
+      date: dateVal,
+      syllabus: sylVal,
+      remarks: remarksVal
     });
 
-    await saveTeacherCalls(userName, `${dist}_${level}`, newData);
-    alert("Teacher calls data saved successfully!");
+    // Save to DB under this period
+    await saveTeacherCalls(userName, `${dist}_${level}`, currentPeriod.label, savedData);
+    
+    // Rerender to show new log and clear inputs
+    loadSchools();
   };
 
   window.doLogout = function() {

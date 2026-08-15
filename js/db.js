@@ -470,19 +470,28 @@ export async function getAllSheetLinks() {
 
 // --- PHASE 4: TEACHER CALLS & ASSESSMENTS ---
 
-export async function saveTeacherCalls(supervisorName, distLevel, data) {
-  await setDoc(doc(db, "teacher_calls", `${supervisorName}_${distLevel}`), { data, updatedAt: Date.now() });
+export async function saveTeacherCalls(supervisorName, distLevel, period, data) {
+  const id = period ? `${period}_${supervisorName}_${distLevel}` : `${supervisorName}_${distLevel}`;
+  await setDoc(doc(db, "teacher_calls", id), { period, supervisorName, distLevel, data, updatedAt: Date.now() });
 }
 
-export async function getTeacherCalls(supervisorName, distLevel) {
-  const snap = await getDoc(doc(db, "teacher_calls", `${supervisorName}_${distLevel}`));
+export async function getTeacherCalls(supervisorName, distLevel, period) {
+  const id = period ? `${period}_${supervisorName}_${distLevel}` : `${supervisorName}_${distLevel}`;
+  const snap = await getDoc(doc(db, "teacher_calls", id));
   return snap.exists() ? snap.data().data : {};
 }
 
-export async function getAllTeacherCalls() {
+export async function getAllTeacherCalls(period) {
   const snap = await getDocs(collection(db, "teacher_calls"));
   let all = {};
-  snap.forEach(d => all[d.id] = d.data().data);
+  snap.forEach(d => {
+    const docData = d.data();
+    if (period && docData.period === period) {
+      all[`${docData.supervisorName}_${docData.distLevel}`] = docData.data;
+    } else if (!period && !docData.period) {
+      all[d.id] = docData.data;
+    }
+  });
   return all;
 }
 

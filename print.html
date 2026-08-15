@@ -29,7 +29,12 @@
 
 <!-- Action Bar -->
 <div class="no-print" style="background:white;border-bottom:1.5px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;">
-  <a href="summary.html" class="btn btn-ghost btn-sm">← Edit Summary</a>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <a href="summary.html" class="btn btn-ghost btn-sm">← Edit Summary</a>
+    <select id="past-weeks-select" class="form-control" style="width:200px;font-size:0.85rem;" onchange="loadSelectedWeek()">
+      <option value="">Loading past weeks...</option>
+    </select>
+  </div>
   <div style="display:flex;gap:.6rem;">
     <a href="dashboard.html" class="btn btn-outline btn-sm">Dashboard</a>
     <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
@@ -74,32 +79,81 @@
 
 <script type="module">
   import { startClock, requireManagerAuth,
-           formatWeekRange, formatFullDate } from "./js/utils.js";
+           formatWeekRange, formatFullDate, getMondayOf } from "./js/utils.js";
   import { getWeekSettings, getSummary, getWeekSubmissions, getTeamMembers } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
 
+  let currentWeekSettings = null;
+
   async function init() {
-    const ws   = await getWeekSettings();
+    currentWeekSettings = await getWeekSettings();
+    populatePastWeeks(currentWeekSettings.weekStart);
+    await loadWeekData(currentWeekSettings.weekStart, currentWeekSettings);
+  }
+
+  function populatePastWeeks(currentMondayStr) {
+    const sel = document.getElementById("past-weeks-select");
+    sel.innerHTML = "";
+    
+    // Generate the last 15 weeks mathematically
+    const d = new Date(currentMondayStr + "T00:00:00");
+    for (let i = 0; i < 15; i++) {
+      const monStr = d.toISOString().split("T")[0];
+      const sat = new Date(d);
+      sat.setDate(sat.getDate() + 5);
+      const satStr = sat.toISOString().split("T")[0];
+      
+      const opt = document.createElement("option");
+      opt.value = monStr;
+      opt.textContent = i === 0 ? `Current Week (${formatWeekRange(monStr, satStr)})` : formatWeekRange(monStr, satStr);
+      sel.appendChild(opt);
+      
+      // Go back one week
+      d.setDate(d.getDate() - 7);
+    }
+  }
+
+  window.loadSelectedWeek = async function() {
+    const selectedWeek = document.getElementById("past-weeks-select").value;
+    document.getElementById("report-content").innerHTML = "";
+    document.getElementById("loading-state").classList.remove("hidden");
+    document.getElementById("print-footer").classList.add("hidden");
+    
+    // For past weeks, we don't have the specific meeting day / note saved, so we just pass null
+    const settingsObj = (selectedWeek === currentWeekSettings.weekStart) ? currentWeekSettings : null;
+    await loadWeekData(selectedWeek, settingsObj);
+  };
+
+  async function loadWeekData(weekStart, wsObject) {
     const now  = new Date();
+    
+    // Calculate end date (Saturday) for the header
+    const d = new Date(weekStart + "T00:00:00");
+    d.setDate(d.getDate() + 5);
+    const weekEnd = d.toISOString().split("T")[0];
 
     // Header
-    document.getElementById("print-week").textContent =
-      `📅 ${formatWeekRange(ws.weekStart, ws.weekEnd)}`;
-    document.getElementById("print-meeting").textContent =
-      `Meeting Day: ${formatFullDate(ws.meetingDay)}` +
-      (ws.teamNote ? `  |  Note: ${ws.teamNote}` : "");
-    document.getElementById("print-generated").textContent =
-      `Generated: ${now.toLocaleString("en-IN")}`;
+    document.getElementById("print-week").textContent = `📅 ${formatWeekRange(weekStart, weekEnd)}`;
+    
+    if (wsObject) {
+      document.getElementById("print-meeting").textContent = 
+        `Meeting Day: ${formatFullDate(wsObject.meetingDay)}` +
+        (wsObject.teamNote ? `  |  Note: ${wsObject.teamNote}` : "");
+    } else {
+      document.getElementById("print-meeting").textContent = "Past Weekly Review";
+    }
+    
+    document.getElementById("print-generated").textContent = `Generated: ${now.toLocaleString("en-IN")}`;
 
     // Get data: prefer finalized summary, fallback to raw submissions
     let data = {};
-    const summary = await getSummary(ws.weekStart);
+    const summary = await getSummary(weekStart);
     if (summary && summary.members) {
       data = summary.members;
     } else {
-      const subs = await getWeekSubmissions(ws.weekStart);
+      const subs = await getWeekSubmissions(weekStart);
       const team = await getTeamMembers();
       team.forEach(name => {
         if (subs[name]) {
@@ -114,7 +168,7 @@
       });
     }
 
-    document.getElementById("loading-state").remove();
+    document.getElementById("loading-state").classList.add("hidden");
     renderReport(data);
     document.getElementById("print-footer").classList.remove("hidden");
   }

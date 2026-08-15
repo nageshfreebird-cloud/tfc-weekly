@@ -66,6 +66,9 @@
       <div id="level-1">
         <div class="drilldown-header">
           <h2>📞 15-Days Teacher Calls (Overview)</h2>
+          <select id="period-select" class="form-control" style="width:220px;" onchange="loadDataForPeriod(this.value)">
+            <option value="">Loading periods...</option>
+          </select>
         </div>
         <p class="text-muted mb-3">Click on a Supervisor to see their District & Level breakdown.</p>
         <div id="l1-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;">
@@ -98,7 +101,7 @@
 </div>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
+  import { requireManagerAuth, clearManagerSession, generatePast15DayPeriods } from "./js/utils.js";
   import { getUsers, getSchools, getAllTeacherCalls } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
@@ -111,22 +114,43 @@
   let globalData = {}; // { supeName: { distLevel: { total: X, done: Y, schools: [] } } }
   let chartInstances = [];
 
+  let allUsers = [];
+  let allSchoolsByDistCache = {};
+
   async function init() {
-    const users = await getUsers();
-    const callsData = await getAllTeacherCalls(); // Format: { "Nagesh_Gadwal_Level-1": { "School A": {...} } }
+    allUsers = await getUsers();
     
-    // Group all schools by district
-    let allSchoolsByDist = {};
-    const supervisors = users.filter(u => u.role === 'supervisor');
-    
+    // Cache schools
+    const supervisors = allUsers.filter(u => u.role === 'supervisor');
     for (let u of supervisors) {
       if (!u.districts) continue;
       for (let d of u.districts) {
-        if (!allSchoolsByDist[d]) {
-          allSchoolsByDist[d] = await getSchools(d);
+        if (!allSchoolsByDistCache[d]) {
+          allSchoolsByDistCache[d] = await getSchools(d);
         }
       }
     }
+
+    // Populate periods
+    const periods = generatePast15DayPeriods(10);
+    const sel = document.getElementById("period-select");
+    sel.innerHTML = "";
+    periods.forEach(p => {
+      sel.innerHTML += `<option value="${p.label}">${p.label}</option>`;
+    });
+
+    if (periods.length > 0) {
+      await loadDataForPeriod(periods[0].label);
+    }
+  }
+
+  window.loadDataForPeriod = async function(periodLabel) {
+    document.getElementById("l1-grid").innerHTML = `<div class="text-muted">Loading analytics for ${periodLabel}...</div>`;
+    
+    const callsData = await getAllTeacherCalls(periodLabel);
+    const supervisors = allUsers.filter(u => u.role === 'supervisor');
+    
+    globalData = {};
 
     // Build the analytics tree
     supervisors.forEach(u => {
@@ -134,7 +158,7 @@
       if (!u.districts) return;
 
       u.districts.forEach(dist => {
-        const distSchools = allSchoolsByDist[dist] || [];
+        const distSchools = allSchoolsByDistCache[dist] || [];
         // Group distSchools by level
         let levelsInDist = {};
         distSchools.forEach(s => {
@@ -155,18 +179,33 @@
             const sName = s["School Name"];
             const sData = savedForThisLvl[sName];
             
-            // A school is considered "Called" if it has any data saved
-            const isDone = sData && (sData.topics?.length > 0 || sData.remarks || sData.notAnswered);
+            // Check if called based on old object format or new CRM array format
+            let isDone = false;
+            let logs = [];
+            if (Array.isArray(sData)) {
+              isDone = sData.length > 0;
+              logs = sData;
+            } else if (sData) {
+              isDone = sData.topics?.length > 0 || sData.remarks || sData.notAnswered;
+              if (isDone) {
+                // Convert legacy format to single log entry for rendering
+                logs.push({
+                  date: "Legacy",
+                  syllabus: (sData.topics || []).join(", "),
+                  remarks: sData.remarks || "",
+                  notAnswered: sData.notAnswered
+                });
+              }
+            }
+
             if (isDone) doneCount++;
             
             schoolDetails.push({
               name: sName,
               teacher: s["Teacher Name"],
               phone: s["Teacher Phone"],
-              topics: sData ? (sData.topics || []).join(", ") : "",
-              remarks: sData ? sData.remarks : "",
-              notAnswered: sData ? sData.notAnswered : false,
-              isDone: !!isDone
+              isDone: !!isDone,
+              logs: logs
             });
           });
 
@@ -180,7 +219,7 @@
     });
 
     renderLevel1();
-  }
+  };
 
   function destroyCharts() {
     chartInstances.forEach(c => c.destroy());
@@ -307,7 +346,8 @@
   };
 
   window.renderLevel3 = function(dl) {
-    document.getElementById("l3-title").textContent = `${dl} (Raw Data)`;
+    const periodLabel = document.getElementById("period-select").value;
+    document.getElementById("l3-title").textContent = `${dl} (Raw Data for ${periodLabel})`;
     const container = document.getElementById("l3-content");
     const schools = globalData[window.currentSupe][dl].schools;
     
@@ -315,29 +355,35 @@
       <thead style="background:var(--bg-alt);border-bottom:2px solid var(--border);text-align:left;">
         <tr>
           <th style="padding:1rem;">School & Teacher</th>
-          <th style="padding:1rem;">Option 1: Completed Topics</th>
-          <th style="padding:1rem;">Option 2: Remarks</th>
-          <th style="padding:1rem;text-align:center;">Option 3: Phone Unanswered</th>
+          <th style="padding:1rem;">Call History (CRM Log)</th>
         </tr>
       </thead>
       <tbody>
     `;
     
     schools.forEach(s => {
+      let logsHtml = `<span class="text-muted text-sm">No calls logged this period.</span>`;
+      if (s.logs && s.logs.length > 0) {
+        logsHtml = `<ul style="margin:0;padding-left:1.2rem;">`;
+        s.logs.forEach(log => {
+          logsHtml += `<li style="margin-bottom:0.4rem;">
+            <strong style="color:var(--primary);">${log.date}:</strong> 
+            ${log.syllabus ? `<span style="background:#e0f2fe;color:#0369a1;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.8rem;">${log.syllabus}</span>` : ''}
+            ${log.remarks ? `<span>${log.remarks}</span>` : ''}
+            ${log.notAnswered ? `⚠️ <strong style="color:var(--danger);">Phone Unanswered</strong>` : ''}
+          </li>`;
+        });
+        logsHtml += `</ul>`;
+      }
+
       html += `
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:1rem;">
+          <td style="padding:1rem;vertical-align:top;width:30%;">
             <strong>${s.name}</strong><br/>
             <span class="text-muted text-sm">👤 ${s.teacher || 'Unknown'} (${s.phone || 'N/A'})</span>
           </td>
-          <td style="padding:1rem;">
-            ${s.topics ? `<span style="background:#e0f2fe;color:#0369a1;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.85rem;">${s.topics}</span>` : `<span class="text-muted text-sm">-</span>`}
-          </td>
-          <td style="padding:1rem;">
-            <span style="font-size:0.9rem;">${s.remarks || '-'}</span>
-          </td>
-          <td style="padding:1rem;text-align:center;">
-            ${s.notAnswered ? '⚠️ <strong style="color:var(--danger);">Yes</strong>' : '-'}
+          <td style="padding:1rem;vertical-align:top;">
+            ${logsHtml}
           </td>
         </tr>
       `;
