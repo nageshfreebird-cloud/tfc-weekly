@@ -55,25 +55,35 @@ export async function getWeekSettings() {
   const currentMonday = getMondayOf(today);
   const defaultEnd = getSaturdayOf(today);
 
-  try {
-    const snap = await getDoc(doc(db, "settings", "week"));
-    if (snap.exists()) {
-      const data = snap.data();
-      // Only return saved settings if they belong to the current or future week
-      if (data.weekStart >= currentMonday) {
-        return data;
-      }
-    }
-  } catch(e) {}
-  
-  // Return defaults for current week (auto-advance logic)
-  return {
+  let data = {
     weekStart:        currentMonday,
     weekEnd:          defaultEnd,
     meetingDay:       currentMonday,
     teamNote:         "",
     submissionsOpen:  false
   };
+
+  try {
+    const snap = await getDoc(doc(db, "settings", "week"));
+    if (snap.exists()) {
+      const dbData = snap.data();
+      // Keep only dynamic settings; completely IGNORE saved dates to prevent bugs
+      data.teamNote = dbData.teamNote || "";
+      data.submissionsOpen = dbData.submissionsOpen || false;
+    }
+  } catch(e) {}
+  
+  return data;
+}
+
+export function getWeekDatesArray(mondayStr) {
+  const days = [];
+  const d = new Date(mondayStr + "T00:00:00");
+  for (let i = 0; i < 6; i++) {
+    days.push(toYMD(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
 }
 
 /** Save week settings (admin action) */
@@ -153,17 +163,11 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
 /** Get one member's submission for a week (robust lookup without requiring Firebase indexes) */
 export async function getMemberSubmission(currentWeekStart, memberName) {
   const nameSafe = memberName.replace(/\s+/g,"_");
-  
-  // First try the exact weekStart the admin set (e.g. 2026-08-11)
-  let id = `${currentWeekStart}_${nameSafe}`;
-  let snap = await getDoc(doc(db, "submissions", id));
-  if (snap.exists()) return snap.data();
+  const datesToCheck = getWeekDatesArray(currentWeekStart);
 
-  // If not found, try the real Monday fallback (e.g. 2026-08-10) just in case
-  const realMonday = getMondayOf(new Date(currentWeekStart + "T00:00:00"));
-  if (realMonday !== currentWeekStart) {
-    id = `${realMonday}_${nameSafe}`;
-    snap = await getDoc(doc(db, "submissions", id));
+  for (const dateStr of datesToCheck) {
+    let id = `${dateStr}_${nameSafe}`;
+    let snap = await getDoc(doc(db, "submissions", id));
     if (snap.exists()) return snap.data();
   }
   
@@ -190,13 +194,20 @@ export async function getLatestMemberSubmissionBefore(currentWeekStart, memberNa
 
 /** Delete a member's submission so they can resubmit */
 export async function deleteMemberSubmission(weekStart, memberName) {
-  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
-  await deleteDoc(doc(db, "submissions", id));
+  const nameSafe = memberName.replace(/\s+/g,"_");
+  const datesToCheck = getWeekDatesArray(weekStart);
+  
+  // Delete across any potential date in the week
+  for (const dateStr of datesToCheck) {
+    let id = `${dateStr}_${nameSafe}`;
+    await deleteDoc(doc(db, "submissions", id));
+  }
 }
 
 /** Get all submissions for a week */
 export async function getWeekSubmissions(weekStart) {
-  const q = query(collection(db, "submissions"), where("weekStart", "==", weekStart));
+  const dates = getWeekDatesArray(weekStart);
+  const q = query(collection(db, "submissions"), where("weekStart", "in", dates));
   const snap = await getDocs(q);
   const result = {};
   snap.forEach(d => { result[d.data().memberName] = d.data(); });
@@ -205,7 +216,8 @@ export async function getWeekSubmissions(weekStart) {
 
 /** Listen to all submissions for a week in real time */
 export function listenWeekSubmissions(weekStart, callback) {
-  const q = query(collection(db, "submissions"), where("weekStart", "==", weekStart));
+  const dates = getWeekDatesArray(weekStart);
+  const q = query(collection(db, "submissions"), where("weekStart", "in", dates));
   return onSnapshot(q, snap => {
     const result = {};
     snap.forEach(d => { result[d.data().memberName] = d.data(); });
