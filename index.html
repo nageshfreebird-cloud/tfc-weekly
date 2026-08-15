@@ -28,44 +28,40 @@
     <!-- Hero Section: Logo + Lakshmi Manchu Bio -->
     <style>
       .hero-wrap {
-        display: flex; align-items: center; gap: 2rem;
+        display: flex; align-items: center; justify-content: center; gap: 2.5rem;
         margin-top: 1rem; margin-bottom: 1.5rem; background: white;
         padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
       }
-      .hero-logo { flex: 0 0 20%; text-align: center; }
-      .hero-content { flex: 1; display: flex; flex-direction: column; gap: 1.25rem; }
-      .hero-bio { display: flex; gap: 2rem; align-items: flex-start; }
-      .hero-img { flex: 0 0 220px; width: 220px; height: 220px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 4px solid white; }
+      .hero-img { flex: 0 0 180px; width: 180px; height: 180px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 4px solid white; }
+      .hero-logo { flex: 0 0 180px; width: 180px; height: 180px; object-fit: contain; }
+      .hero-content { flex: 1; display: flex; flex-direction: column; gap: 1rem; text-align: center; }
+      .hero-text { font-size: 0.95rem; line-height: 1.6; color: #475569; text-align: justify; }
       
-      @media (max-width: 768px) {
-        .hero-wrap { flex-direction: column; gap: 1.5rem; padding: 1.25rem; text-align: center; }
-        .hero-logo { flex: 0 0 auto; }
-        .hero-bio { flex-direction: column; align-items: center; gap: 1rem; }
+      @media (max-width: 900px) {
+        .hero-wrap { flex-direction: column; gap: 1.5rem; padding: 1.25rem; }
         .hero-content h2 { line-height: 1.4; }
         .hero-content h2 span { display: block; margin-top: 0.25rem; }
+        .hero-img, .hero-logo { margin: 0 auto; }
       }
     </style>
     <div class="hero-wrap">
       
-      <!-- Logo -->
-      <div class="hero-logo">
-        <img src="logo.png" alt="Teach for Change Logo" style="width:100%; max-width:180px; height:auto; object-fit:contain;" />
-      </div>
+      <!-- Left: Lakshmi Photo -->
+      <img src="lakshmi.png" alt="Lakshmi Manchu" class="hero-img" onerror="this.src='https://via.placeholder.com/130?text=Photo'" />
 
-      <!-- Bio -->
+      <!-- Middle: Bio -->
       <div class="hero-content">
-        <h2 style="color:#1e293b; font-size:1.2rem; margin:0;">Ms. Lakshmi Manchu <span style="color:#ef4444;font-weight:600;">— Chairperson & Managing Trustee</span></h2>
+        <h2 style="color:#1e293b; font-size:1.2rem; margin:0;">Ms. Lakshmi Manchu <br/><span style="color:#ef4444;font-weight:600;font-size:0.95rem;display:inline-block;margin-top:0.4rem;">Chairperson & Managing Trustee</span></h2>
         
-        <div class="hero-bio">
-          <img src="lakshmi.png" alt="Lakshmi Manchu" class="hero-img" onerror="this.src='https://via.placeholder.com/130?text=Photo'" />
-          
-          <div style="font-size:0.95rem; line-height:1.6; color:#475569; flex:1; text-align: justify;">
-            <p style="margin-bottom:0.75rem;">Teach For Change is a non-profit organisation working to improve the quality of education in government schools in India. Established in 2014, the organisation runs two programs that address the foundational challenges faced by our government schools.</p>
-            <p style="margin-bottom:0.75rem;">The flagship volunteer program provides volunteer teachers to government schools which are understaffed and face a lack of leadership. The Smart Classroom program addresses the need to improve the foundational literacy and numeracy among children from low-income communities studying in government schools.</p>
-            <p style="margin:0; font-weight: 500; color: #334155;">The Teach For Change movement is aimed towards achieving the United Nations Sustainable Development Goals (Goal 4 - Quality Education).</p>
-          </div>
+        <div class="hero-text">
+          <p style="margin-bottom:0.75rem;">Teach For Change is a non-profit organisation working to improve the quality of education in government schools in India. Established in 2014, the organisation runs two programs that address the foundational challenges faced by our government schools.</p>
+          <p style="margin:0;">The flagship volunteer program provides volunteer teachers to government schools which are understaffed and face a lack of leadership. The Smart Classroom program addresses the need to improve the foundational literacy and numeracy among children from low-income communities studying in government schools.</p>
         </div>
       </div>
+      
+      <!-- Right: Logo -->
+      <img src="logo.png" alt="Teach for Change Logo" class="hero-logo" />
+
     </div>
 
 
