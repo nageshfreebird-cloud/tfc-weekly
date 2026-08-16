@@ -134,7 +134,7 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatFullDate } from "./js/utils.js";
-  import { listenWeekSettings, getTeamMembers, verifyUserLogin } from "./js/db.js";
+  import { listenWeekSettings, getTeamMembers, verifyUserLogin, updateUserPassword } from "./js/db.js";
 
   startClock("live-clock");
 
@@ -231,7 +231,6 @@
     }
   };
 
-  import { updateUserPassword } from "./js/db.js";
 
   window.savePersonalPassword = async function() {
     const newPwd = document.getElementById("new-personal-pwd").value.trim();
