@@ -430,16 +430,22 @@ export async function updateUserPassword(name, newPassword) {
 // DISTRICTS
 // ============================================
 export async function getDistricts() {
+  const defaultStates = { "Telangana": [], "Andhra Pradesh": [], "Karnataka": [] };
   try {
     const snap = await getDoc(doc(db, "settings", "districts"));
     if (snap.exists()) {
       const data = snap.data();
-      if (data && Array.isArray(data.districts)) {
-        return data.districts;
+      if (data && data.districts) {
+        if (Array.isArray(data.districts)) {
+          // Migration from old flat list
+          return { ...defaultStates, "Telangana": data.districts };
+        } else if (typeof data.districts === "object") {
+          return { ...defaultStates, ...data.districts };
+        }
       }
     }
   } catch(e) {}
-  return [];
+  return defaultStates;
 }
 
 export async function saveDistricts(districts) {

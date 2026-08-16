@@ -104,10 +104,6 @@
           <div class="district-list" id="district-list">
             <div class="text-muted text-sm" style="padding:1rem;text-align:center;">Loading...</div>
           </div>
-          <div style="display:flex;gap:0.5rem;">
-            <input type="text" id="new-district" class="form-control" placeholder="Enter new district name" />
-            <button class="btn btn-primary" onclick="addDistrict()">Add</button>
-          </div>
         </div>
 
         <!-- Register Team -->
@@ -161,9 +157,12 @@
           
           <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
             <div style="flex:1;">
-              <label class="form-label">Supervisor</label>
-              <select id="filter-supervisor" class="form-control">
-                <option value="">Select Supervisor...</option>
+              <label class="form-label">State</label>
+              <select id="filter-state" class="form-control">
+                <option value="">Select State...</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Karnataka">Karnataka</option>
               </select>
             </div>
             <div style="flex:1;">
@@ -207,7 +206,7 @@
   window.renderDistricts = renderDistricts;
   window.renderUsers = renderUsers;
   window.renderDistrictCheckboxes = renderDistrictCheckboxes;
-  window.populateSupervisors = populateSupervisors;
+  window.renderDistrictCheckboxes = renderDistrictCheckboxes;
   
   let districts = [];
   let users = [];
@@ -226,7 +225,6 @@
       renderDistricts();
       renderUsers();
       renderDistrictCheckboxes();
-      populateSupervisors();
     } catch (e) {
       console.error(e);
       dList.innerHTML = `<div style="color:red;font-weight:bold;padding:1rem;">CRASH at getDistricts: ${e.message}</div>`;
@@ -240,58 +238,113 @@
   function renderDistricts() {
     const list = document.getElementById("district-list");
     list.innerHTML = "";
-    if (districts.length === 0) {
-      list.innerHTML = `<div class="text-muted text-sm" style="padding:1rem;text-align:center;">No districts added yet.</div>`;
+    
+    const states = ["Telangana", "Andhra Pradesh", "Karnataka"];
+    if (!districts || Array.isArray(districts)) {
+      districts = { "Telangana": [], "Andhra Pradesh": [], "Karnataka": [] };
     }
-    districts.forEach((d, i) => {
-      list.innerHTML += `
-        <div class="list-item">
-          <strong>${d}</strong>
-          <button class="btn btn-ghost btn-sm" onclick="removeDistrict(${i})" style="color:var(--danger)">✕</button>
-        </div>
+
+    states.forEach(state => {
+      const stateDistricts = districts[state] || [];
+      
+      let html = `
+        <details class="state-group" style="margin-bottom:1rem; border:1px solid #e2e8f0; border-radius:0.5rem; overflow:hidden;">
+          <summary style="padding:0.75rem 1rem; background:#f8fafc; cursor:pointer; font-weight:600; list-style:none; display:flex; justify-content:space-between; align-items:center;">
+            <span>📂 ${state} <span class="badge" style="background:#e2e8f0;color:#475569;font-size:0.75rem;padding:0.1rem 0.5rem;border-radius:1rem;">${stateDistricts.length}</span></span>
+            <span style="font-size:0.8rem;color:#64748b;">▼</span>
+          </summary>
+          <div style="padding:1rem;">
       `;
+      
+      if (stateDistricts.length === 0) {
+        html += `<div class="text-muted text-sm" style="text-align:center; padding-bottom:1rem;">No districts added in ${state}.</div>`;
+      } else {
+        stateDistricts.forEach((d, i) => {
+          html += `
+            <div class="list-item" style="border-bottom:1px solid #f1f5f9; border-radius:0;">
+              <strong>${d}</strong>
+              <button class="btn btn-ghost btn-sm" onclick="removeDistrict('${state}', ${i})" style="color:var(--danger)">✕</button>
+            </div>
+          `;
+        });
+      }
+      
+      html += `
+            <div style="display:flex;gap:0.5rem; margin-top:1rem;">
+              <input type="text" id="new-district-${state.replace(/\s+/g, '')}" class="form-control" placeholder="Add to ${state}" />
+              <button class="btn btn-primary" onclick="addDistrict('${state}')">Add</button>
+            </div>
+          </div>
+        </details>
+      `;
+      list.innerHTML += html;
     });
   }
 
   function renderDistrictCheckboxes() {
     const list = document.getElementById("assign-districts-list");
     list.innerHTML = "";
-    if (districts.length === 0) {
-      list.innerHTML = `<div class="text-muted text-sm">No districts added yet.</div>`;
-      return;
-    }
     
-    districts.forEach((d) => {
-      list.innerHTML += `
-        <label style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem;">
-          <input type="checkbox" value="${d}" class="district-cb" /> ${d}
-        </label>
+    const states = ["Telangana", "Andhra Pradesh", "Karnataka"];
+    
+    states.forEach(state => {
+      const stateDistricts = districts[state] || [];
+      if (stateDistricts.length === 0) return;
+      
+      let html = `
+        <details style="margin-bottom:0.5rem;">
+          <summary style="font-weight:bold; cursor:pointer; padding:0.25rem 0; color:#334155;">📂 ${state}</summary>
+          <div style="padding:0.5rem 0 0.5rem 1rem;">
       `;
+      
+      stateDistricts.forEach((d) => {
+        html += `
+          <label style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem;">
+            <input type="checkbox" value="${d}" class="district-cb" /> ${d}
+          </label>
+        `;
+      });
+      
+      html += `</div></details>`;
+      list.innerHTML += html;
     });
+    
+    if (list.innerHTML === "") {
+      list.innerHTML = `<div class="text-muted text-sm">No districts added globally yet.</div>`;
+    }
   }
 
-  window.addDistrict = async function() {
-    const inp = document.getElementById("new-district");
+  window.addDistrict = async function(state) {
+    const inp = document.getElementById("new-district-" + state.replace(/\s+/g, ''));
     const val = inp.value.trim();
     if (!val) return;
-    if (districts.includes(val)) { alert("District already exists"); return; }
-    districts.push(val);
+    
+    if (!districts[state]) districts[state] = [];
+    
+    // Check if exists globally to prevent duplicates across states
+    let exists = false;
+    for (const s of Object.keys(districts)) {
+      if (districts[s].includes(val)) exists = true;
+    }
+    
+    if (exists) { alert("District already exists in the system."); return; }
+    
+    districts[state].push(val);
     await saveDistricts(districts);
     inp.value = "";
     renderDistricts();
     renderDistrictCheckboxes();
   };
 
-  window.removeDistrict = async function(i) {
-    if (!confirm("Remove this district?")) return;
-    districts.splice(i, 1);
+  window.removeDistrict = async function(state, i) {
+    if (!confirm(`Remove this district from ${state}?`)) return;
+    districts[state].splice(i, 1);
     await saveDistricts(districts);
     renderDistricts();
     renderDistrictCheckboxes();
   };
 
   function renderUsers() {
-    populateSupervisors();
     const list = document.getElementById("team-list");
     list.innerHTML = "";
     if (users.length === 0) {
@@ -408,26 +461,17 @@
   });
 
   // --- DIRECTORY LOGIC ---
-  function populateSupervisors() {
-    const sel = document.getElementById("filter-supervisor");
-    sel.innerHTML = '<option value="">Select Supervisor...</option>';
-    users.forEach(u => {
-      if (u.role === 'supervisor') sel.innerHTML += `<option value="${u.name}">${u.name}</option>`;
-    });
-  }
-
-  document.getElementById("filter-supervisor").addEventListener("change", (e) => {
+  // --- DIRECTORY LOGIC ---
+  document.getElementById("filter-state").addEventListener("change", (e) => {
     const sName = e.target.value;
     const dSel = document.getElementById("filter-district");
     dSel.innerHTML = '<option value="">Select District...</option>';
     
-    if (!sName) {
+    if (!sName || !districts[sName]) {
       window.renderDirectory(); return;
     }
-    const supe = users.find(u => u.name === sName);
-    if (supe && supe.districts) {
-      supe.districts.forEach(d => dSel.innerHTML += `<option value="${d}">${d}</option>`);
-    }
+    
+    districts[sName].forEach(d => dSel.innerHTML += `<option value="${d}">${d}</option>`);
     window.renderDirectory();
   });
 
@@ -450,6 +494,10 @@
       return;
     }
 
+    // Find assigned supervisor for this district
+    let assignedSupe = users.find(u => u.districts && u.districts.includes(dist));
+    let supeName = assignedSupe ? assignedSupe.name : 'Unassigned';
+
     container.innerHTML = schools.map(s => `
       <details style="background:var(--bg);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;padding:0.5rem;width:100%;box-sizing:border-box;">
         <summary style="cursor:pointer;font-weight:600;display:flex;justify-content:space-between;align-items:center;">
@@ -461,6 +509,7 @@
           <div><strong>Location:</strong> ${s["Location"] || '-'}</div>
           <div><strong>HM:</strong> ${s["HM Name"] || '-'} (${s["HM Phone"] || '-'})</div>
           <div><strong>Teacher:</strong> ${s["Teacher Name"] || '-'} (${s["Teacher Phone"] || '-'})</div>
+          <div><strong>Supervisor:</strong> ${supeName}</div>
           <div><strong>TV:</strong> ${s["TV Working"] || '-'}</div>
           <div><strong>Pendrive:</strong> ${s["Pendrive Working"] || '-'}</div>
         </div>
