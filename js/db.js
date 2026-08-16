@@ -113,6 +113,51 @@ export function listenWeekSettings(callback) {
 }
 
 // ============================================
+// ACADEMIC YEAR
+// ============================================
+let _activeAcademicYear = null;
+
+export async function getGlobalAcademicYear() {
+  const sessionYear = sessionStorage.getItem("tfc_viewing_year");
+  if (sessionYear) return sessionYear;
+
+  if (_activeAcademicYear) return _activeAcademicYear;
+  try {
+    const snap = await getDoc(doc(db, "settings", "academic"));
+    if (snap.exists() && snap.data().activeYear) {
+      _activeAcademicYear = snap.data().activeYear;
+      return _activeAcademicYear;
+    }
+  } catch(e) {}
+  _activeAcademicYear = "2026-27";
+  return _activeAcademicYear;
+}
+
+export async function setGlobalAcademicYear(year) {
+  await setDoc(doc(db, "settings", "academic"), {
+    activeYear: year,
+    updatedAt: new Date().toISOString()
+  });
+  _activeAcademicYear = year;
+  sessionStorage.removeItem("tfc_viewing_year"); // Reset viewing when changing global
+}
+
+export function setLocalViewingYear(year) {
+  sessionStorage.setItem("tfc_viewing_year", year);
+  _activeAcademicYear = year;
+}
+
+export async function getScopedCollection(baseName) {
+  const year = await getGlobalAcademicYear();
+  return collection(db, `${baseName}_${year}`);
+}
+
+export async function getScopedDoc(baseName, docId) {
+  const year = await getGlobalAcademicYear();
+  return doc(db, `${baseName}_${year}`, docId);
+}
+
+// ============================================
 // SUBMISSIONS
 // ============================================
 
@@ -122,7 +167,8 @@ export async function submitMemberReport(weekStart, memberName, data) {
   // Initialize completed tracking array
   const completed = data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : [];
   
-  await setDoc(doc(db, "submissions", id), {
+  const docRef = await getScopedDoc("submissions", id);
+  await setDoc(docRef, {
     weekStart,
     memberName,
     submittedAt: new Date().toISOString(),
@@ -133,22 +179,10 @@ export async function submitMemberReport(weekStart, memberName, data) {
 
 /** Mark a single task as completed during the week */
 export async function markTaskCompleted(weekStart, memberName, taskIndex) {
-  const nameSafe = memberName.replace(/\s+/g,"_");
-  const datesToCheck = getWeekDatesArray(weekStart);
-  
-  let targetId = null;
-  for (const dateStr of datesToCheck) {
-    let id = `${dateStr}_${nameSafe}`;
-    let snap = await getDoc(doc(db, "submissions", id));
-    if (snap.exists()) {
-      targetId = id;
-      break;
-    }
-  }
-
-  if (targetId) {
-    const ref = doc(db, "submissions", targetId);
-    const snap = await getDoc(ref);
+  const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
+  const ref = await getScopedDoc("submissions", id);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
     const data = snap.data();
     let completed = data.thisWeekCompleted || (data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : []);
     completed[taskIndex] = true;
@@ -157,7 +191,8 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
     // Also try to update it in the 'summaries' collection if it exists,
     // so the admin printout syncs up automatically.
     try {
-      const sumSnap = await getDoc(doc(db, "summaries", weekStart));
+      const sumRef = await getScopedDoc("summaries", weekStart);
+      const sumSnap = await getDoc(sumRef);
       if (sumSnap.exists()) {
         const sumData = sumSnap.data();
         if (sumData.members && sumData.members[memberName]) {
@@ -165,7 +200,7 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
           sumCompleted[taskIndex] = true;
           // Note: using updateDoc with nested fields requires dot notation
           const fieldPath = `members.${memberName}.thisWeekCompleted`;
-          await updateDoc(doc(db, "summaries", weekStart), { [fieldPath]: sumCompleted });
+          await updateDoc(sumRef, { [fieldPath]: sumCompleted });
         }
       }
     } catch(err) { console.error("Error syncing to summary:", err); }
@@ -179,7 +214,8 @@ export async function getMemberSubmission(currentWeekStart, memberName) {
 
   for (const dateStr of datesToCheck) {
     let id = `${dateStr}_${nameSafe}`;
-    let snap = await getDoc(doc(db, "submissions", id));
+    let docRef = await getScopedDoc("submissions", id);
+    let snap = await getDoc(docRef);
     if (snap.exists()) return snap.data();
   }
   
@@ -189,8 +225,9 @@ export async function getMemberSubmission(currentWeekStart, memberName) {
 /** Get the most recent submission for a member BEFORE a given date (safe lookup) */
 export async function getLatestMemberSubmissionBefore(currentWeekStart, memberName) {
   // Query only by memberName to avoid needing a Firebase composite index
+  const colRef = await getScopedCollection("submissions");
   const q = query(
-    collection(db, "submissions"),
+    colRef,
     where("memberName", "==", memberName)
   );
   const snap = await getDocs(q);
@@ -220,14 +257,16 @@ export async function deleteMemberSubmission(weekStart, memberName) {
   // Delete across any potential date in the week
   for (const dateStr of datesToCheck) {
     let id = `${dateStr}_${nameSafe}`;
-    await deleteDoc(doc(db, "submissions", id));
+    let docRef = await getScopedDoc("submissions", id);
+    await deleteDoc(docRef);
   }
 }
 
 /** Get all submissions for a week */
 export async function getWeekSubmissions(weekStart) {
   const dates = getWeekDatesArray(weekStart);
-  const q = query(collection(db, "submissions"), where("weekStart", "in", dates));
+  const colRef = await getScopedCollection("submissions");
+  const q = query(colRef, where("weekStart", "in", dates));
   const snap = await getDocs(q);
   const result = {};
   snap.forEach(d => { result[d.data().memberName] = d.data(); });
@@ -235,9 +274,10 @@ export async function getWeekSubmissions(weekStart) {
 }
 
 /** Listen to all submissions for a week in real time */
-export function listenWeekSubmissions(weekStart, callback) {
+export async function listenWeekSubmissions(weekStart, callback) {
   const dates = getWeekDatesArray(weekStart);
-  const q = query(collection(db, "submissions"), where("weekStart", "in", dates));
+  const colRef = await getScopedCollection("submissions");
+  const q = query(colRef, where("weekStart", "in", dates));
   return onSnapshot(q, snap => {
     const result = {};
     snap.forEach(d => { result[d.data().memberName] = d.data(); });
@@ -251,7 +291,8 @@ export function listenWeekSubmissions(weekStart, callback) {
 
 /** Save edited summary */
 export async function saveSummary(weekStart, summaryData) {
-  await setDoc(doc(db, "summaries", weekStart), {
+  const docRef = await getScopedDoc("summaries", weekStart);
+  await setDoc(docRef, {
     weekStart,
     members: summaryData,
     finalized: false,
@@ -261,9 +302,10 @@ export async function saveSummary(weekStart, summaryData) {
 
 /** Finalize summary */
 export async function finalizeSummary(weekStart) {
-  const snap = await getDoc(doc(db, "summaries", weekStart));
+  const docRef = await getScopedDoc("summaries", weekStart);
+  const snap = await getDoc(docRef);
   if (snap.exists()) {
-    await updateDoc(doc(db, "summaries", weekStart), {
+    await updateDoc(docRef, {
       finalized: true,
       finalizedAt: new Date().toISOString()
     });
@@ -272,7 +314,8 @@ export async function finalizeSummary(weekStart) {
 
 /** Get summary for a week */
 export async function getSummary(weekStart) {
-  const snap = await getDoc(doc(db, "summaries", weekStart));
+  const docRef = await getScopedDoc("summaries", weekStart);
+  const snap = await getDoc(docRef);
   return snap.exists() ? snap.data() : null;
 }
 
@@ -370,17 +413,6 @@ export async function verifyUserLogin(name, password) {
   const user = users.find(u => u.name === name);
   if (user && user.password === password) return user;
   return null;
-}
-
-export async function updateUserPassword(name, newPassword) {
-  const users = await getUsers();
-  const idx = users.findIndex(u => u.name === name);
-  if (idx !== -1) {
-    users[idx].password = newPassword;
-    await saveUsers(users);
-    return true;
-  }
-  return false;
 }
 
 // ============================================
@@ -482,58 +514,58 @@ export async function getAllSheetLinks() {
 
 // --- PHASE 4: TEACHER CALLS & ASSESSMENTS ---
 
-export async function saveTeacherCalls(supervisorName, distLevel, period, data) {
-  const id = period ? `${period}_${supervisorName}_${distLevel}` : `${supervisorName}_${distLevel}`;
-  await setDoc(doc(db, "teacher_calls", id), { period, supervisorName, distLevel, data, updatedAt: Date.now() });
+export async function saveTeacherCalls(supervisorName, distLevel, data) {
+  const docRef = await getScopedDoc("teacher_calls", `${supervisorName}_${distLevel}`);
+  await setDoc(docRef, { data, updatedAt: Date.now() });
 }
 
-export async function getTeacherCalls(supervisorName, distLevel, period) {
-  const id = period ? `${period}_${supervisorName}_${distLevel}` : `${supervisorName}_${distLevel}`;
-  const snap = await getDoc(doc(db, "teacher_calls", id));
+export async function getTeacherCalls(supervisorName, distLevel) {
+  const docRef = await getScopedDoc("teacher_calls", `${supervisorName}_${distLevel}`);
+  const snap = await getDoc(docRef);
   return snap.exists() ? snap.data().data : {};
 }
 
-export async function getAllTeacherCalls(period) {
-  const snap = await getDocs(collection(db, "teacher_calls"));
+export async function getAllTeacherCalls() {
+  const colRef = await getScopedCollection("teacher_calls");
+  const snap = await getDocs(colRef);
   let all = {};
-  snap.forEach(d => {
-    const docData = d.data();
-    if (period && docData.period === period) {
-      all[`${docData.supervisorName}_${docData.distLevel}`] = docData.data;
-    } else if (!period && !docData.period) {
-      all[d.id] = docData.data;
-    }
-  });
+  snap.forEach(d => all[d.id] = d.data().data);
   return all;
 }
 
 export async function saveAssessments(supervisorName, distLevel, data) {
-  await setDoc(doc(db, "assessments_received", `${supervisorName}_${distLevel}`), { data, updatedAt: Date.now() });
+  const docRef = await getScopedDoc("assessments_received", `${supervisorName}_${distLevel}`);
+  await setDoc(docRef, { data, updatedAt: Date.now() });
 }
 
 export async function getAssessments(supervisorName, distLevel) {
-  const snap = await getDoc(doc(db, "assessments_received", `${supervisorName}_${distLevel}`));
+  const docRef = await getScopedDoc("assessments_received", `${supervisorName}_${distLevel}`);
+  const snap = await getDoc(docRef);
   return snap.exists() ? snap.data().data : {};
 }
 
 export async function getAllAssessments() {
-  const snap = await getDocs(collection(db, "assessments_received"));
+  const colRef = await getScopedCollection("assessments_received");
+  const snap = await getDocs(colRef);
   let all = {};
   snap.forEach(d => all[d.id] = d.data().data);
   return all;
 }
 
 export async function saveDriveRecords(supervisorName, distLevel, data) {
-  await setDoc(doc(db, "assessments_drive", `${supervisorName}_${distLevel}`), { data, updatedAt: Date.now() });
+  const docRef = await getScopedDoc("assessments_drive", `${supervisorName}_${distLevel}`);
+  await setDoc(docRef, { data, updatedAt: Date.now() });
 }
 
 export async function getDriveRecords(supervisorName, distLevel) {
-  const snap = await getDoc(doc(db, "assessments_drive", `${supervisorName}_${distLevel}`));
+  const docRef = await getScopedDoc("assessments_drive", `${supervisorName}_${distLevel}`);
+  const snap = await getDoc(docRef);
   return snap.exists() ? snap.data().data : {};
 }
 
 export async function getAllDriveRecords() {
-  const snap = await getDocs(collection(db, "assessments_drive"));
+  const colRef = await getScopedCollection("assessments_drive");
+  const snap = await getDocs(colRef);
   let all = {};
   snap.forEach(d => all[d.id] = d.data().data);
   return all;

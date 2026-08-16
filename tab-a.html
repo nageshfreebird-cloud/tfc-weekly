@@ -68,7 +68,15 @@
     <div class="flex-between" style="margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;">
       <div>
         <h1 style="font-size:1.4rem;font-weight:800;color:var(--primary);">📊 Manager Dashboard</h1>
-        <p class="text-muted text-sm">Live submission status for this week</p>
+        <p class="text-muted text-sm" style="display:flex; align-items:center; gap:0.5rem;">
+          Viewing Data For: 
+          <select id="view-year-select" onchange="changeViewingYear(this.value)" style="border:1px solid var(--border); border-radius:4px; padding:0.15rem 0.5rem; font-weight:600; color:var(--primary);">
+            <option value="2025-26">2025-26</option>
+            <option value="2026-27">2026-27</option>
+            <option value="2027-28">2027-28</option>
+            <option value="2028-29">2028-29</option>
+          </select>
+        </p>
       </div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
         <a href="settings.html" class="btn btn-ghost btn-sm">⚙️ Settings</a>
@@ -177,7 +185,7 @@
 <script type="module">
   import { startClock, requireManagerAuth, clearManagerSession,
            initials, formatFullDate, formatWeekRange, formatTime } from "./js/utils.js";
-  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers, deleteMemberSubmission, getUsers, getYearPlan } from "./js/db.js";
+  import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers, deleteMemberSubmission, getUsers, getYearPlan, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
@@ -187,6 +195,9 @@
   let _team = [];
 
   async function init() {
+    const year = await getGlobalAcademicYear();
+    document.getElementById("view-year-select").value = year;
+
     _team = await getTeamMembers();
     // Render initially empty
     renderMemberList({});
@@ -376,6 +387,13 @@
 
   window.closeDetail = function() {
     document.getElementById("detail-overlay").classList.add("hidden");
+  };
+
+  window.changeViewingYear = function(year) {
+    setLocalViewingYear(year);
+    if (_weekStart) {
+      startListeningSubmissions(_weekStart);
+    }
   };
 
   window.toggleSubmissions = async function(isOpen) {

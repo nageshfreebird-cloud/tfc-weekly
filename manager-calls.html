@@ -66,9 +66,17 @@
       <div id="level-1">
         <div class="drilldown-header">
           <h2>📞 15-Days Teacher Calls (Overview)</h2>
-          <select id="period-select" class="form-control" style="width:220px;" onchange="loadDataForPeriod(this.value)">
-            <option value="">Loading periods...</option>
-          </select>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <select id="view-year-select" onchange="changeViewingYear(this.value)" class="form-control" style="width:120px; font-weight:600; color:var(--primary);">
+              <option value="2025-26">2025-26</option>
+              <option value="2026-27">2026-27</option>
+              <option value="2027-28">2027-28</option>
+              <option value="2028-29">2028-29</option>
+            </select>
+            <select id="period-select" class="form-control" style="width:180px;" onchange="loadDataForPeriod(this.value)">
+              <option value="">Loading periods...</option>
+            </select>
+          </div>
         </div>
         <p class="text-muted mb-3">Click on a Supervisor to see their District & Level breakdown.</p>
         <div id="l1-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;">
@@ -102,7 +110,7 @@
 
 <script type="module">
   import { requireManagerAuth, clearManagerSession, generatePast15DayPeriods } from "./js/utils.js";
-  import { getUsers, getSchools, getAllTeacherCalls } from "./js/db.js";
+  import { getUsers, getSchools, getAllTeacherCalls, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
 
@@ -118,6 +126,9 @@
   let allSchoolsByDistCache = {};
 
   async function init() {
+    const year = await getGlobalAcademicYear();
+    document.getElementById("view-year-select").value = year;
+
     allUsers = await getUsers();
     
     // Cache schools
@@ -143,6 +154,11 @@
       await loadDataForPeriod(periods[0].label);
     }
   }
+
+  window.changeViewingYear = function(year) {
+    setLocalViewingYear(year);
+    window.location.reload(); 
+  };
 
   window.loadDataForPeriod = async function(periodLabel) {
     document.getElementById("l1-grid").innerHTML = `<div class="text-muted">Loading analytics for ${periodLabel}...</div>`;

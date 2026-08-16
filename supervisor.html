@@ -44,7 +44,28 @@
 </nav>
 
 <div class="page">
-  <div class="container-wide" style="max-width: 1400px;">
+
+  <!-- YEARLY AUDIT BLOCKER MODAL -->
+  <div id="audit-modal" style="display:none; max-width:800px; margin:2rem auto; background:white; padding:2rem; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <span style="font-size:3rem; display:block; margin-bottom:1rem;">🎓</span>
+      <h1 style="color:var(--primary); font-size:1.6rem; font-weight:800;">Welcome to the New Academic Year!</h1>
+      <p class="text-muted" style="font-size:0.95rem; margin-top:0.5rem;">
+        Before you can start logging tasks for <span id="audit-year-badge" style="font-weight:700; color:var(--primary);"></span>, you must audit your schools.<br>
+        Most levels are automatically upgraded. <strong style="color:var(--danger);">You must manually decide what happens to Level-4 schools.</strong>
+      </p>
+    </div>
+
+    <div id="audit-school-list" style="max-height:400px; overflow-y:auto; border:1px solid var(--border); padding:1rem; border-radius:4px; margin-bottom:1.5rem; background:var(--bg-alt);">
+      <div class="text-center text-muted">Loading your schools...</div>
+    </div>
+
+    <button id="audit-save-btn" class="btn btn-primary btn-block" style="font-size:1.1rem; padding:0.75rem;" onclick="saveAuditedSchools()">
+      Save & Upgrade My Schools
+    </button>
+  </div>
+
+  <div class="container-wide" id="main-dashboard-container" style="max-width: 1400px;">
 
     <div class="nav-tabs">
       <a href="supervisor.html" class="active">⚙️ Dashboard</a>
@@ -172,7 +193,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
-  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan } from "./js/db.js";
+  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -188,6 +209,9 @@
   let yearPlan = {};
   const MONTHS = ["June", "July", "August", "September", "October", "November", "December", "January", "February", "March", "April", "May"];
 
+  let _globalYear = "2026-27";
+  let _schoolsToAudit = []; // { dist, index, school }
+
   window.setMode = function(panel, mode) {
     document.getElementById(`${panel}-view`).style.display = (mode === 'view') ? 'block' : 'none';
     document.getElementById(`${panel}-manual`).style.display = (mode === 'manual') ? 'block' : 'none';
@@ -195,6 +219,8 @@
   };
 
   async function init() {
+    _globalYear = await getGlobalAcademicYear();
+    
     const users = await getUsers();
     myUser = users.find(u => u.name === userName);
     if (!myUser || !myUser.districts || myUser.districts.length === 0) {
@@ -205,12 +231,117 @@
         const el = document.getElementById(id);
         myUser.districts.forEach(d => el.innerHTML += `<option value="${d}">${d}</option>`);
       });
+      
+      // Check if schools need auditing for the new academic year
+      await checkForYearAudit();
     }
     
     yearPlan = await getYearPlan(userName);
     renderYearPlan();
-
   }
+
+  async function checkForYearAudit() {
+    _schoolsToAudit = [];
+    for (const dist of myUser.districts) {
+      let schools = await getSchools(dist);
+      for (let i = 0; i < schools.length; i++) {
+        let s = schools[i];
+        if (s.lastUpgradedYear !== _globalYear) {
+          _schoolsToAudit.push({ dist, index: i, school: s, array: schools });
+        }
+      }
+    }
+
+    if (_schoolsToAudit.length > 0) {
+      document.getElementById("main-dashboard-container").style.display = "none";
+      document.getElementById("audit-modal").style.display = "block";
+      document.getElementById("audit-year-badge").textContent = _globalYear;
+      renderAuditList();
+    }
+  }
+
+  function renderAuditList() {
+    const container = document.getElementById("audit-school-list");
+    let html = "";
+    _schoolsToAudit.forEach((item, idx) => {
+      let s = item.school;
+      let oldLevel = s.Level || "Level-1";
+      let defaultNew = "Level-2";
+      let requiresAction = false;
+
+      if (oldLevel === "Level-1") defaultNew = "Level-2";
+      else if (oldLevel === "Level-2") defaultNew = "Level-3";
+      else if (oldLevel === "Level-3") defaultNew = "Level-4";
+      else if (oldLevel === "Level-4") { defaultNew = ""; requiresAction = true; }
+
+      let selectStyle = requiresAction ? "border:2px solid var(--danger); background:#fee;" : "border:1px solid #ccc;";
+
+      html += `
+        <div style="background:white; padding:0.75rem; border-radius:4px; margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <div>
+            <div style="font-weight:600;">${s["School Name"]}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">${item.dist} • Was: <span style="font-weight:700;">${oldLevel}</span></div>
+          </div>
+          <div>
+            <select id="audit-sel-${idx}" class="form-control" style="${selectStyle} padding:0.25rem; font-weight:600; width:120px;" onchange="this.style.border='1px solid #ccc'; this.style.background='white';">
+              ${requiresAction ? `<option value="" disabled selected>⚠️ Action!</option>` : ``}
+              <option value="Level-1" ${defaultNew==='Level-1'?'selected':''}>Level-1</option>
+              <option value="Level-2" ${defaultNew==='Level-2'?'selected':''}>Level-2</option>
+              <option value="Level-3" ${defaultNew==='Level-3'?'selected':''}>Level-3</option>
+              <option value="Level-4" ${defaultNew==='Level-4'?'selected':''}>Level-4</option>
+              <option value="DELETE" style="color:red;font-weight:700;">🗑️ Delete</option>
+            </select>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  window.saveAuditedSchools = async function() {
+    // Validate
+    let hasErrors = false;
+    _schoolsToAudit.forEach((item, idx) => {
+      let val = document.getElementById(`audit-sel-${idx}`).value;
+      if (!val) { hasErrors = true; document.getElementById(`audit-sel-${idx}`).style.border = "2px solid red"; }
+    });
+    if (hasErrors) { alert("Please select an action for all highlighted Level-4 schools."); return; }
+
+    const btn = document.getElementById("audit-save-btn");
+    btn.textContent = "Saving and Upgrading...";
+    btn.disabled = true;
+
+    // Group by district to save efficiently
+    let distMap = {};
+    for (const dist of myUser.districts) {
+      distMap[dist] = await getSchools(dist);
+    }
+
+    _schoolsToAudit.forEach((item, idx) => {
+      let val = document.getElementById(`audit-sel-${idx}`).value;
+      let distSchools = distMap[item.dist];
+      let sIdx = distSchools.findIndex(x => x["School Name"] === item.school["School Name"]);
+      if (sIdx !== -1) {
+        if (val === "DELETE") {
+          distSchools[sIdx]._markDelete = true;
+        } else {
+          distSchools[sIdx].Level = val;
+          distSchools[sIdx].lastUpgradedYear = _globalYear;
+        }
+      }
+    });
+
+    for (const dist of myUser.districts) {
+      let finalSchools = distMap[dist].filter(s => !s._markDelete);
+      await saveSchools(dist, finalSchools);
+    }
+
+    alert("All schools successfully upgraded for " + _globalYear + "!");
+    
+    document.getElementById("audit-modal").style.display = "none";
+    document.getElementById("main-dashboard-container").style.display = "block";
+    renderSchoolView();
+  };
 
   // --- SCHOOLS LOGIC ---
   window.renderSchoolView = async function() {

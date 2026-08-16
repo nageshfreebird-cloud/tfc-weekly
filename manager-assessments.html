@@ -67,7 +67,13 @@
         <div class="drilldown-header" style="display:flex; justify-content:space-between; align-items:center;">
           <h2>📝 Assessments Received (Overview)</h2>
           <div style="display:flex; align-items:center; gap:0.5rem;">
-            <label class="form-label" style="margin:0;">Assessment:</label>
+            <select id="view-year-select" onchange="changeViewingYear(this.value)" class="form-control" style="width:120px; padding:0.25rem 0.5rem; font-weight:600; color:var(--primary);">
+              <option value="2025-26">2025-26</option>
+              <option value="2026-27">2026-27</option>
+              <option value="2027-28">2027-28</option>
+              <option value="2028-29">2028-29</option>
+            </select>
+            <label class="form-label" style="margin:0; margin-left:1rem;">Assessment:</label>
             <select id="assessment-filter" class="form-control" style="width:auto; padding:0.25rem 0.5rem;" onchange="processDataAndRender()">
               <option value="baseline">Baseline</option>
               <option value="midline">Midline</option>
@@ -107,7 +113,7 @@
 
 <script type="module">
   import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
-  import { getUsers, getSchools, getAllAssessments } from "./js/db.js";
+  import { getUsers, getSchools, getAllAssessments, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
 
@@ -124,6 +130,9 @@
   let allSchoolsByDist = {};
 
   async function init() {
+    const year = await getGlobalAcademicYear();
+    document.getElementById("view-year-select").value = year;
+
     usersList = await getUsers();
     callsData = await getAllAssessments(); 
     
@@ -238,12 +247,16 @@
     chartInstances.push(chart);
   }
 
-  window.showLevel = function(level) {
-    document.getElementById("level-1").classList.add("hidden");
-    document.getElementById("level-2").classList.add("hidden");
-    document.getElementById("level-3").classList.add("hidden");
-    document.getElementById(`level-${level}`).classList.remove("hidden");
-    if (level === 1) renderLevel1();
+  window.showLevel = function(lvl) {
+    document.getElementById("level-1").classList.toggle("hidden", lvl !== 1);
+    document.getElementById("level-2").classList.toggle("hidden", lvl !== 2);
+    document.getElementById("level-3").classList.toggle("hidden", lvl !== 3);
+    if (lvl === 1) renderLevel1();
+  };
+
+  window.changeViewingYear = function(year) {
+    setLocalViewingYear(year);
+    window.location.reload(); 
   };
 
   function renderLevel1() {

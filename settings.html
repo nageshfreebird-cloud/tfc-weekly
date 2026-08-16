@@ -27,6 +27,37 @@
       <a href="dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
     </div>
 
+    <!-- ===== ACADEMIC YEAR SETTINGS ===== -->
+    <div class="card" style="border:2px solid var(--primary);">
+      <div class="card-header">
+        <span class="icon">🎓</span>
+        <h2>Academic Year Rollover</h2>
+      </div>
+
+      <div id="year-saved-msg" class="alert alert-success hidden">✅ Academic Year Updated! New tracking data will be saved here.</div>
+
+      <p class="text-sm text-muted mb-3" style="margin-bottom:1rem;">
+        Change this only in June when a new Academic Year starts.
+        Changing this will give you a fresh blank slate for Tasks and Calls.
+        Your Team Members, Syllabus, and School Registry will carry over automatically.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Active Academic Year</label>
+        <select class="form-control" id="academic-year-select" style="font-weight:600;color:var(--primary);">
+          <option value="2025-26">2025-26</option>
+          <option value="2026-27">2026-27 (Current)</option>
+          <option value="2027-28">2027-28</option>
+          <option value="2028-29">2028-29</option>
+        </select>
+        <div class="form-hint">This dictates where the system saves new data.</div>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="saveAcademicYear()">
+        Set Active Academic Year
+      </button>
+    </div>
+
     <!-- ===== WEEK SETTINGS ===== -->
     <div class="card">
       <div class="card-header">
@@ -138,21 +169,33 @@
 
 <script type="module">
   import { startClock, requireManagerAuth, getMondayOf, getSaturdayOf,
-           toYMD, formatShortDate } from "./js/utils.js";
+           toYMD, formatShortDate, escHtml } from "./js/utils.js";
   import { getWeekSettings, saveWeekSettings, getAdminCredentials,
-           updateAdminCredentials, verifyAdminLogin, getTeamMembers, saveTeamMembers } from "./js/db.js";
+           updateAdminCredentials, getTeamMembers, saveTeamMembers,
+           getGlobalAcademicYear, setGlobalAcademicYear } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
 
-  // ---- Load week settings ----
+  // ---- Load week & academic settings ----
   async function loadWeek() {
     const s = await getWeekSettings();
     document.getElementById("week-start").value = s.weekStart || getMondayOf();
     document.getElementById("week-end").value   = s.weekEnd   || getSaturdayOf();
     document.getElementById("team-note").value  = s.teamNote  || "";
     populateMeetingDays(s.weekStart, s.meetingDay);
+
+    const year = await getGlobalAcademicYear();
+    document.getElementById("academic-year-select").value = year;
   }
+
+  window.saveAcademicYear = async function() {
+    const year = document.getElementById("academic-year-select").value;
+    await setGlobalAcademicYear(year);
+    const msg = document.getElementById("year-saved-msg");
+    msg.classList.remove("hidden");
+    setTimeout(() => msg.classList.add("hidden"), 3000);
+  };
 
   function populateMeetingDays(weekStartStr, selectedDay) {
     const sel = document.getElementById("meeting-day");
