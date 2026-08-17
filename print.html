@@ -78,8 +78,8 @@
 </div>
 
 <script type="module">
-  import { startClock, requireManagerAuth,
-           formatWeekRange, formatFullDate, getMondayOf } from "./js/utils.js";
+  import { startClock, requireManagerAuth, initials,
+           formatWeekRange, formatShortDate, formatFullDate, formatTime, toYMD } from "./js/utils.js";
   import { getWeekSettings, getSummary, getWeekSubmissions, getTeamMembers } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
@@ -97,13 +97,12 @@
     const sel = document.getElementById("past-weeks-select");
     sel.innerHTML = "";
     
-    // Generate the last 15 weeks mathematically
     const d = new Date(currentMondayStr + "T00:00:00");
     for (let i = 0; i < 15; i++) {
-      const monStr = d.toISOString().split("T")[0];
+      const monStr = toYMD(d);
       const sat = new Date(d);
       sat.setDate(sat.getDate() + 5);
-      const satStr = sat.toISOString().split("T")[0];
+      const satStr = toYMD(sat);
       
       const opt = document.createElement("option");
       opt.value = monStr;
@@ -132,7 +131,7 @@
     // Calculate end date (Saturday) for the header
     const d = new Date(weekStart + "T00:00:00");
     d.setDate(d.getDate() + 5);
-    const weekEnd = d.toISOString().split("T")[0];
+    const weekEnd = toYMD(d);
 
     // Header
     document.getElementById("print-week").textContent = `📅 ${formatWeekRange(weekStart, weekEnd)}`;
@@ -175,13 +174,18 @@
 
   async function renderReport(data) {
     const container = document.getElementById("report-content");
+    container.innerHTML = "";
     const team = await getTeamMembers();
+
+    // SECTION 1: This Week's Plan
+    const sec1 = document.createElement("div");
+    sec1.innerHTML = `<h2 style="font-size:1.2rem;margin-top:1rem;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.3rem;color:var(--text);">This Week's Plan</h2>`;
+    
     team.forEach((name, idx) => {
-      const d   = data[name];
+      const d = data[name];
       const div = document.createElement("div");
       div.className = "print-member";
 
-      // Name header
       const hdr = document.createElement("div");
       hdr.className = "print-member-name";
       hdr.textContent = `${idx + 1}. ${name.toUpperCase()}`;
@@ -193,44 +197,20 @@
       if (!d) {
         body.innerHTML = `<p style="color:var(--text-muted);font-size:.87rem;font-style:italic;">⏳ Did not submit this week.</p>`;
       } else {
-        // Last week review
-        if (d.lastWeekReview && d.lastWeekReview.length > 0) {
-          const title = document.createElement("div");
-          title.className = "print-section-title";
-          title.textContent = "Last Week Review";
-          body.appendChild(title);
-          d.lastWeekReview.forEach(r => {
-            const icon = r.status === "completed" ? "✅" : "🔄";
-            const p = document.createElement("div");
-            p.className = "print-task";
-            p.innerHTML = `${icon} ${escHtml(r.task)}`;
-            body.appendChild(p);
-            if (r.status === "pending" && r.reason) {
-              const rp = document.createElement("div");
-              rp.className = "print-pending-reason";
-              rp.textContent = `📌 Pending reason: ${r.reason}`;
-              body.appendChild(rp);
-            }
-          });
-        }
-
         // This week tasks
         if (d.thisWeekTasks && d.thisWeekTasks.length > 0) {
-          const title = document.createElement("div");
-          title.className = "print-section-title";
-          title.style.marginTop = ".6rem";
-          title.textContent = "This Week Tasks";
-          body.appendChild(title);
           const completedArr = d.thisWeekCompleted || [];
           d.thisWeekTasks.forEach((t, i) => {
             const isDone = completedArr[i] === true;
             const icon = isDone ? '✅ ' : '• ';
             const p = document.createElement("div");
             p.className = "print-task";
-            if (isDone) p.style.cssText = "text-decoration:line-through;color:#666;";
+            if (isDone) p.style.cssText = "color:#666;";
             p.textContent = `${icon}${t}`;
             body.appendChild(p);
           });
+        } else {
+          body.innerHTML = `<p style="color:var(--text-muted);font-size:.87rem;font-style:italic;">No tasks planned for this week.</p>`;
         }
 
         // Support
@@ -241,10 +221,52 @@
           body.appendChild(sup);
         }
       }
-
       div.appendChild(body);
-      container.appendChild(div);
+      sec1.appendChild(div);
     });
+    container.appendChild(sec1);
+
+    // SECTION 2: Last Week's Review
+    const sec2 = document.createElement("div");
+    sec2.innerHTML = `<h2 style="font-size:1.2rem;margin-top:2.5rem;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.3rem;color:var(--text);">Last Week's Review</h2>`;
+    let hasLastWeek = false;
+
+    team.forEach((name, idx) => {
+      const d = data[name];
+      if (!d || !d.lastWeekReview || d.lastWeekReview.length === 0) return;
+      hasLastWeek = true;
+
+      const div = document.createElement("div");
+      div.className = "print-member";
+
+      const hdr = document.createElement("div");
+      hdr.className = "print-member-name";
+      hdr.textContent = `${idx + 1}. ${name.toUpperCase()}`;
+      div.appendChild(hdr);
+
+      const body = document.createElement("div");
+      body.className = "print-member-body";
+
+      d.lastWeekReview.forEach(r => {
+        const icon = r.status === "completed" ? "✅" : "🔄";
+        const p = document.createElement("div");
+        p.className = "print-task";
+        p.innerHTML = `${icon} ${escHtml(r.task)}`;
+        body.appendChild(p);
+        if (r.status === "pending" && r.reason) {
+          const rp = document.createElement("div");
+          rp.className = "print-pending-reason";
+          rp.textContent = `📌 Pending reason: ${r.reason}`;
+          body.appendChild(rp);
+        }
+      });
+      div.appendChild(body);
+      sec2.appendChild(div);
+    });
+
+    if (hasLastWeek) {
+      container.appendChild(sec2);
+    }
   }
 
   function escHtml(s) {

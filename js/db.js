@@ -195,14 +195,14 @@ export async function submitMemberReport(weekStart, memberName, data) {
 }
 
 /** Mark a single task as completed during the week */
-export async function markTaskCompleted(weekStart, memberName, taskIndex) {
+export async function markTaskCompleted(weekStart, memberName, taskIndex, isDone = true) {
   const id = `${weekStart}_${memberName.replace(/\s+/g,"_")}`;
   const ref = await getScopedDoc("submissions", id);
   const snap = await getDoc(ref);
   if (snap.exists()) {
     const data = snap.data();
     let completed = data.thisWeekCompleted || (data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : []);
-    completed[taskIndex] = true;
+    completed[taskIndex] = isDone;
     await updateDoc(ref, { thisWeekCompleted: completed });
     
     // Also try to update it in the 'summaries' collection if it exists,
@@ -213,11 +213,11 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex) {
       if (sumSnap.exists()) {
         const sumData = sumSnap.data();
         if (sumData.members && sumData.members[memberName]) {
-          let sumCompleted = sumData.members[memberName].thisWeekCompleted || (sumData.members[memberName].thisWeekTasks ? sumData.members[memberName].thisWeekTasks.map(() => false) : []);
-          sumCompleted[taskIndex] = true;
-          // Note: using updateDoc with nested fields requires dot notation
-          const fieldPath = `members.${memberName}.thisWeekCompleted`;
-          await updateDoc(sumRef, { [fieldPath]: sumCompleted });
+          let memCompleted = sumData.members[memberName].thisWeekCompleted || 
+                             (sumData.members[memberName].thisWeekTasks ? sumData.members[memberName].thisWeekTasks.map(() => false) : []);
+          memCompleted[taskIndex] = isDone;
+          sumData.members[memberName].thisWeekCompleted = memCompleted;
+          await updateDoc(sumRef, { members: sumData.members });
         }
       }
     } catch(err) { console.error("Error syncing to summary:", err); }

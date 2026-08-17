@@ -270,7 +270,7 @@
         const completedArr = sub.thisWeekCompleted || [];
         sub.thisWeekTasks.forEach((t,i) => {
           const isDone = completedArr[i] === true;
-          const style = isDone ? 'text-decoration:line-through;color:var(--text-muted);' : '';
+          const style = isDone ? 'color:var(--text-muted);' : '';
           const icon = isDone ? '✅ ' : `${i+1}. `;
           html += `<div style="padding:.35rem .25rem;font-size:.88rem;${style}">${icon}${escHtml(t)}</div>`;
         });

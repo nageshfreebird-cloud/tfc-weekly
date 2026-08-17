@@ -165,8 +165,9 @@
       
       const logs = Array.isArray(savedData[sName]) ? savedData[sName] : [];
 
-      let logHtml = "";
+      let buttonText = "✅ Done";
       if (logs.length > 0) {
+        buttonText = `✅ Done ${logs.length} time${logs.length > 1 ? 's' : ''}`;
         logHtml = `<div style="margin-top:0.5rem;padding:0.5rem;background:#f8f9fa;border-radius:4px;font-size:0.85rem;">
           <strong style="color:var(--text-muted);">Call History this period:</strong>
           <ul style="margin:0.25rem 0 0 1rem;padding:0;">
@@ -204,8 +205,8 @@
               <input type="text" class="form-control call-remarks" placeholder="Optional remarks..." style="font-size:0.85rem;" />
             </div>
             
-            <div style="flex: 0 0 5%;min-width:60px;text-align:right;">
-              <button class="btn btn-success btn-sm" onclick="addCallLog('${sName.replace(/'/g, "\\'")}', ${idx})">✅ Done</button>
+            <div style="flex: 0 0 5%;min-width:110px;text-align:right;">
+              <button class="btn btn-success btn-sm" id="btn-${idx}" onclick="addCallLog('${sName.replace(/'/g, "\\'")}', ${idx})">${buttonText}</button>
             </div>
             
           </div>
@@ -231,6 +232,10 @@
       alert("Please select a date first!");
       return;
     }
+
+    const btn = document.getElementById(`btn-${idx}`);
+    btn.textContent = "⏳ Saving...";
+    btn.disabled = true;
 
     // Append to logs
     if (!Array.isArray(savedData[schoolName])) {

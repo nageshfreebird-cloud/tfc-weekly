@@ -229,14 +229,17 @@
   function renderReviewList() {
     const list = document.getElementById("review-list");
     list.innerHTML = "";
+    let pendingCount = 0;
     lastWeekTasks.forEach((task, i) => {
       const isDone = window.lastWeekCompletedData[i] === true;
+      if (!isDone) pendingCount++;
       const cChecked = isDone ? "checked" : "";
       const pChecked = isDone ? "" : "checked";
       
       const div = document.createElement("div");
       div.className = "review-task" + (isDone ? " is-completed" : " is-pending");
       div.id = `rt-${i}`;
+      if (isDone) div.style.display = "none";
       div.innerHTML = `
         <div class="review-task-header">
           <span class="review-task-num">${i+1}.</span>
@@ -258,6 +261,13 @@
       `;
       list.appendChild(div);
     });
+
+    if (pendingCount === 0) {
+      const msg = document.createElement("div");
+      msg.style.cssText = "text-align:center;padding:2rem 1rem;color:var(--success);background:#f0fdf4;border-radius:var(--radius);border:1px solid #bbf7d0;margin-top:1rem;";
+      msg.innerHTML = "<h3>🎉 Amazing work!</h3><p>You completed all your tasks from last week. Click continue to plan your next week.</p>";
+      list.appendChild(msg);
+    }
   }
 
   window.onStatusChange = function(i, status) {
@@ -388,14 +398,17 @@
         <strong style="display:block;margin-bottom:0.5rem;color:var(--primary);">🎯 Your Weekly Progress Tracker:</strong>
         <p class="text-sm text-muted" style="margin-bottom:1rem;">Check off tasks below as you complete them during the week. Once checked, they cannot be unchecked.</p>
         <div style="text-align:left;">
+        <p class="text-sm text-muted" style="margin-bottom:1rem;">Check off tasks below as you complete them during the week.</p>
+        <div id="review-this-week-tasks" style="text-align:left;">
       `;
       data.thisWeekTasks.forEach((t, i) => { 
         const isDone = completedArr[i] === true;
         html += `
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:${isDone ? '#f0fdf4' : 'var(--bg)'};border:1px solid ${isDone ? '#bbf7d0' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:0.5rem;transition:all 0.2s;">
-            <input type="checkbox" style="margin-top:0.25rem;width:1.2rem;height:1.2rem;accent-color:var(--success);" 
-              ${isDone ? 'checked disabled' : `onclick="markDone(event, ${i}, '${escHtml(t).replace(/'/g,"\\'").replace(/"/g,"&quot;")}')"`} />
-            <span style="${isDone ? 'text-decoration:line-through;color:var(--text-muted);' : 'color:var(--text);'}font-size:0.95rem;line-height:1.4;flex:1;">${escHtml(t)}</span>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:0.5rem;transition:all 0.2s;">
+            <label style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;cursor:pointer;flex:1;">
+              <input type="checkbox" onchange="toggleThisWeekTask(${i}, this.checked)" ${isDone ? 'checked' : ''} style="margin-top:.25rem;" />
+              <span style="${isDone ? 'color:var(--text-muted);' : 'color:var(--text);'}font-size:0.95rem;line-height:1.4;">${escHtml(t)}</span>
+            </label>
             <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--primary);" onclick="editTrackerTask(${i})">✏️</button>
           </div>
         `; 
@@ -433,25 +446,19 @@
     }
   };
 
-  window.markDone = async function(e, idx, taskText) {
-    e.preventDefault(); // Stop checkbox from checking immediately
-    if (confirm(`Are you sure you want to mark this task as completed?\n\n"${taskText}"\n\n(This cannot be undone)`)) {
-      try {
-        const checkbox = e.target;
-        checkbox.checked = true;
-        checkbox.disabled = true;
-        checkbox.parentElement.style.background = '#f0fdf4';
-        checkbox.parentElement.style.borderColor = '#bbf7d0';
-        checkbox.nextElementSibling.style.textDecoration = 'line-through';
-        checkbox.nextElementSibling.style.color = 'var(--text-muted)';
-        
-        await markTaskCompleted(weekSettings.weekStart, memberName, idx);
-        
-        if (window.existingData && window.existingData.thisWeekTasks) {
-          if (!window.existingData.thisWeekCompleted) {
-            window.existingData.thisWeekCompleted = window.existingData.thisWeekTasks.map(() => false);
-          }
-          window.existingData.thisWeekCompleted[idx] = true;
+  window.toggleThisWeekTask = async function(idx, checked) {
+    // Quick visual update
+    const container = document.getElementById("review-this-week-tasks");
+    const checkboxes = container.querySelectorAll("input[type='checkbox']");
+    if (checkboxes[idx]) {
+      checkboxes[idx].nextElementSibling.style.color = checked ? 'var(--text-muted)' : 'var(--text)';
+    }
+
+    try {
+      await markTaskCompleted(weekSettings.weekStart, memberName, idx, checked);
+      if (window.existingData) {
+        if (!window.existingData.thisWeekCompleted) {
+          window.existingData.thisWeekCompleted = window.existingData.thisWeekTasks.map(() => false);
         }
       } catch (err) {
         alert("Error marking task as completed: " + err.message);
