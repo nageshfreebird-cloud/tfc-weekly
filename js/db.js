@@ -107,8 +107,25 @@ export async function setSubmissionsOpen(isOpen) {
 /** Listen to week settings changes in real time */
 export function listenWeekSettings(callback) {
   return onSnapshot(doc(db, "settings", "week"), snap => {
-    if (snap.exists()) callback(snap.data());
-    else callback(null);
+    const today = new Date();
+    const currentMonday = getMondayOf(today);
+    const defaultEnd = getSaturdayOf(today);
+
+    let data = {
+      weekStart:        currentMonday,
+      weekEnd:          defaultEnd,
+      meetingDay:       currentMonday,
+      teamNote:         "",
+      submissionsOpen:  false
+    };
+
+    if (snap.exists()) {
+      const dbData = snap.data();
+      data.teamNote = dbData.teamNote || "";
+      data.submissionsOpen = dbData.submissionsOpen || false;
+    }
+    
+    callback(data);
   });
 }
 
@@ -265,24 +282,58 @@ export async function deleteMemberSubmission(weekStart, memberName) {
 /** Get all submissions for a week */
 export async function getWeekSubmissions(weekStart) {
   const dates = getWeekDatesArray(weekStart);
-  const colRef = await getScopedCollection("submissions");
-  const q = query(colRef, where("weekStart", "in", dates));
-  const snap = await getDocs(q);
   const result = {};
-  snap.forEach(d => { result[d.data().memberName] = d.data(); });
+
+  // 1. Fetch from legacy collection
+  try {
+    const legacyQ = query(collection(db, "submissions"), where("weekStart", "in", dates));
+    const legacySnap = await getDocs(legacyQ);
+    legacySnap.forEach(d => { result[d.data().memberName] = d.data(); });
+  } catch(e) { console.error(e); }
+
+  // 2. Fetch from scoped collection (overrides legacy)
+  try {
+    const colRef = await getScopedCollection("submissions");
+    const q = query(colRef, where("weekStart", "in", dates));
+    const snap = await getDocs(q);
+    snap.forEach(d => { result[d.data().memberName] = d.data(); });
+  } catch(e) { console.error(e); }
+
   return result;
 }
 
 /** Listen to all submissions for a week in real time */
 export async function listenWeekSubmissions(weekStart, callback) {
   const dates = getWeekDatesArray(weekStart);
+  
   const colRef = await getScopedCollection("submissions");
   const q = query(colRef, where("weekStart", "in", dates));
-  return onSnapshot(q, snap => {
-    const result = {};
-    snap.forEach(d => { result[d.data().memberName] = d.data(); });
-    callback(result);
+  
+  const legacyQ = query(collection(db, "submissions"), where("weekStart", "in", dates));
+
+  let scopedData = {};
+  let legacyData = {};
+
+  const emit = () => {
+    callback({ ...legacyData, ...scopedData });
+  };
+
+  const unsubScoped = onSnapshot(q, snap => {
+    scopedData = {};
+    snap.forEach(d => { scopedData[d.data().memberName] = d.data(); });
+    emit();
   });
+
+  const unsubLegacy = onSnapshot(legacyQ, snap => {
+    legacyData = {};
+    snap.forEach(d => { legacyData[d.data().memberName] = d.data(); });
+    emit();
+  });
+
+  return () => {
+    unsubScoped();
+    unsubLegacy();
+  };
 }
 
 // ============================================

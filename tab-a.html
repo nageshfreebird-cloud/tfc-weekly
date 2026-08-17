@@ -86,40 +86,12 @@
       </div>
     </div>
 
-    <!-- Week Bar -->
-    <div class="week-bar" id="week-bar">
-      <div>
-        <div class="week-label">Current Week</div>
-        <div class="week-dates" id="week-dates">—</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
-        <div class="meeting-day" id="meeting-day-display">Meeting: —</div>
-        <div id="note-badge" class="badge badge-pending hidden" style="font-size:.78rem;"></div>
-      </div>
-    </div>
+
 
     <div class="dashboard-grid">
-      
       <!-- Left Column: 75% -->
       <div class="left-col">
-        <!-- Submissions Toggle + Stats -->
-        <div class="card" style="margin-bottom:1rem;">
-          <div class="flex-between" style="flex-wrap:wrap;gap:1rem;">
-            <div class="toggle-wrap">
-              <span class="toggle-label">Submissions:</span>
-              <label class="toggle" title="Open or close submissions for team">
-                <input type="checkbox" id="submissions-toggle" onchange="toggleSubmissions(this.checked)" />
-                <span class="toggle-slider"></span>
-              </label>
-              <span id="toggle-status" class="badge badge-gray">Closed</span>
-              <span class="live-dot" id="live-dot" style="display:none;"></span>
-            </div>
-            <div style="font-size:.82rem;color:var(--text-muted);">
-              <span id="submit-count">0</span> of 9 submitted
-            </div>
-          </div>
-        </div>
-
+        
         <!-- Stats -->
         <div class="stats-bar" style="margin-bottom:1.25rem;">
           <div class="stat-box">
@@ -214,37 +186,21 @@
 
     // Listen to week settings
     listenWeekSettings(settings => {
-    if (!settings) return;
-    _weekStart = settings.weekStart;
-    document.getElementById("week-dates").textContent = formatWeekRange(settings.weekStart, settings.weekEnd);
-    document.getElementById("meeting-day-display").textContent = "Meeting: " + formatFullDate(settings.meetingDay);
-
-    const noteEl = document.getElementById("note-badge");
-    if (settings.teamNote) {
-      noteEl.textContent = "📢 " + settings.teamNote;
-      noteEl.classList.remove("hidden");
-    } else noteEl.classList.add("hidden");
-
-    const tog = document.getElementById("submissions-toggle");
-    const st  = document.getElementById("toggle-status");
-    const dot = document.getElementById("live-dot");
-    tog.checked = settings.submissionsOpen;
-    if (settings.submissionsOpen) {
-      st.className = "badge badge-success"; st.textContent = "Open";
-      dot.style.display = "inline-block";
-    } else {
-      st.className = "badge badge-gray"; st.textContent = "Closed";
-      dot.style.display = "none";
-    }
-
-    // Start listening submissions once we have weekStart
-    startListeningSubmissions(settings.weekStart);
-  });
+      if (!settings) return;
+      _weekStart = settings.weekStart;
+      startListeningSubmissions(settings.weekStart);
+    });
   }
 
   let _unsubSub = null;
-  function startListeningSubmissions(weekStart) {
-    if (_unsubSub) _unsubSub();
+  async function startListeningSubmissions(weekStart) {
+    if (typeof _unsubSub === "function") _unsubSub();
+    else if (_unsubSub instanceof Promise) {
+      try {
+        let u = await _unsubSub;
+        if (typeof u === "function") u();
+      } catch(e){}
+    }
     _unsubSub = listenWeekSubmissions(weekStart, subs => {
       _submissions = subs;
       renderMemberList(subs);
@@ -253,7 +209,6 @@
 
   function renderMemberList(subs) {
     const done = Object.keys(subs).length;
-    document.getElementById("submit-count").textContent = done;
     document.getElementById("stat-done").textContent = done;
     document.getElementById("stat-pending").textContent = 9 - done;
 
