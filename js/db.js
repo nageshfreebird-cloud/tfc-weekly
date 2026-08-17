@@ -322,13 +322,13 @@ export async function listenWeekSubmissions(weekStart, callback) {
     scopedData = {};
     snap.forEach(d => { scopedData[d.data().memberName] = d.data(); });
     emit();
-  });
+  }, err => console.error("Scoped submissions error:", err));
 
   const unsubLegacy = onSnapshot(legacyQ, snap => {
     legacyData = {};
     snap.forEach(d => { legacyData[d.data().memberName] = d.data(); });
     emit();
-  });
+  }, err => console.error("Legacy submissions error:", err));
 
   return () => {
     unsubScoped();
