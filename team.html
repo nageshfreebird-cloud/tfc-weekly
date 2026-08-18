@@ -53,6 +53,10 @@
           <span class="icon">🗓️</span>
           <h2 id="step1-title">Review Last Week's Tasks</h2>
         </div>
+        
+        <p class="text-muted text-sm" style="margin-bottom:1rem;">
+          Check the boxes for the tasks you successfully completed. Unchecked tasks will be marked as pending.
+        </p>
 
         <!-- No previous tasks message -->
         <div id="no-prev-tasks" class="alert alert-info hidden">
@@ -72,6 +76,28 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- =================== STEP 1.5 =================== -->
+    <div class="step-section" id="step-1-5">
+      <div class="card">
+        <div class="card-header">
+          <span class="icon">📝</span>
+          <h2>Reason for Pending Tasks</h2>
+        </div>
+        <p class="text-muted text-sm" style="margin-bottom:1rem;">
+          You left some tasks unchecked. Please provide a brief reason for why they are still pending.
+        </p>
+        
+        <div id="pending-reasons-list"></div>
+
+        <button class="btn btn-primary btn-block btn-lg" style="margin-top:0.5rem;" onclick="submitStep15()">
+          Continue →
+        </button>
+        <button class="btn btn-ghost btn-block" style="margin-top:0.6rem;" onclick="goStep(1)">
+          ← Back
+        </button>
+      </div>
     </div>
 
     <!-- =================== STEP 2 =================== -->
@@ -229,89 +255,98 @@
   function renderReviewList() {
     const list = document.getElementById("review-list");
     list.innerHTML = "";
-    let pendingCount = 0;
     lastWeekTasks.forEach((task, i) => {
       const isDone = window.lastWeekCompletedData[i] === true;
-      if (!isDone) pendingCount++;
-      const cChecked = isDone ? "checked" : "";
-      const pChecked = isDone ? "" : "checked";
       
       const div = document.createElement("div");
-      div.className = "review-task" + (isDone ? " is-completed" : " is-pending");
+      div.className = "review-task" + (isDone ? " is-completed" : "");
       div.id = `rt-${i}`;
-      if (isDone) div.style.display = "none";
       div.innerHTML = `
-        <div class="review-task-header">
-          <span class="review-task-num">${i+1}.</span>
-          <span class="review-task-text">${escHtml(task)}</span>
-        </div>
-        <div class="review-task-options">
-          <label class="radio-btn completed ${isDone ? 'selected' : ''}" id="rb-c-${i}">
-            <input type="radio" name="status-${i}" value="completed" onchange="onStatusChange(${i},'completed')" ${cChecked} />
-            ✅ Completed
-          </label>
-          <label class="radio-btn pending ${isDone ? '' : 'selected'}" id="rb-p-${i}">
-            <input type="radio" name="status-${i}" value="pending" onchange="onStatusChange(${i},'pending')" ${pChecked} />
-            🔄 Still Pending
-          </label>
-        </div>
-        <div class="review-reason ${isDone ? 'hidden' : ''}" id="reason-${i}">
-          <textarea placeholder="Why is it still pending? (required)" rows="2" id="reason-text-${i}"></textarea>
+        <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:${isDone ? '#f0fdf4' : 'var(--bg)'};border:1px solid ${isDone ? '#bbf7d0' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:0.5rem;transition:all 0.2s;">
+          <input type="checkbox" id="cb-${i}" ${isDone ? 'checked' : ''} onchange="onStatusChange(${i}, this.checked)" style="margin-top:0.25rem;width:1.2rem;height:1.2rem;accent-color:var(--success);" />
+          <span style="color:var(--text);font-size:0.95rem;line-height:1.4;flex:1;">${i+1}. ${escHtml(task)}</span>
         </div>
       `;
       list.appendChild(div);
     });
-
-    if (pendingCount === 0) {
-      const msg = document.createElement("div");
-      msg.style.cssText = "text-align:center;padding:2rem 1rem;color:var(--success);background:#f0fdf4;border-radius:var(--radius);border:1px solid #bbf7d0;margin-top:1rem;";
-      msg.innerHTML = "<h3>🎉 Amazing work!</h3><p>You completed all your tasks from last week. Click continue to plan your next week.</p>";
-      list.appendChild(msg);
-    }
   }
 
-  window.onStatusChange = function(i, status) {
-    const rt     = document.getElementById(`rt-${i}`);
-    const rBox   = document.getElementById(`reason-${i}`);
-    const rbC    = document.getElementById(`rb-c-${i}`);
-    const rbP    = document.getElementById(`rb-p-${i}`);
-    rt.classList.remove("is-completed","is-pending");
-    rbC.classList.remove("selected"); rbP.classList.remove("selected");
-    if (status === "completed") {
+  window.onStatusChange = function(i, isChecked) {
+    const rt = document.getElementById(`rt-${i}`);
+    const inner = rt.firstElementChild;
+    if (isChecked) {
       rt.classList.add("is-completed");
-      rbC.classList.add("selected");
-      rBox.classList.add("hidden");
+      inner.style.background = '#f0fdf4';
+      inner.style.borderColor = '#bbf7d0';
     } else {
-      rt.classList.add("is-pending");
-      rbP.classList.add("selected");
-      rBox.classList.remove("hidden");
+      rt.classList.remove("is-completed");
+      inner.style.background = 'var(--bg)';
+      inner.style.borderColor = 'var(--border)';
     }
   };
 
   window.submitStep1 = function() {
-    let valid = true;
     step1Reviews = [];
+    let hasPending = false;
+    
+    // Check which ones are completed and which are pending
     for (let i = 0; i < lastWeekTasks.length; i++) {
-      const radios = document.querySelectorAll(`input[name="status-${i}"]`);
-      let status = "";
-      radios.forEach(r => { if (r.checked) status = r.value; });
-      if (!status) {
-        valid = false;
-        alert(`Please mark task ${i+1} as Completed or Pending.`); return;
-      }
+      const isChecked = document.getElementById(`cb-${i}`).checked;
+      const status = isChecked ? "completed" : "pending";
       
-      const isPending  = (status === "pending");
-      const reason     = isPending ? document.getElementById(`reason-text-${i}`).value.trim() : "";
+      step1Reviews.push({ task: lastWeekTasks[i], status: status, reason: "" });
       
-      if (isPending && !reason) {
-        valid = false;
-        alert("Please provide a reason for all pending tasks before continuing.");
-        break;
+      if (!isChecked) {
+        hasPending = true;
       }
-
-      step1Reviews.push({ task: lastWeekTasks[i], status, reason });
     }
-    if(valid) goStep(2);
+    
+    if (hasPending) {
+      renderPendingReasonsList();
+      // Go to Step 1.5 instead of 2
+      document.querySelectorAll(".step-section").forEach(s => s.classList.remove("active"));
+      document.getElementById(`step-1-5`).classList.add("active");
+      window.scrollTo(0,0);
+    } else {
+      // All completed, go to Step 2 directly
+      goStep(2);
+    }
+  };
+
+  function renderPendingReasonsList() {
+    const list = document.getElementById("pending-reasons-list");
+    list.innerHTML = "";
+    step1Reviews.forEach((r, i) => {
+      if (r.status === "pending") {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.innerHTML = `
+          <label style="display:block; font-weight:bold; margin-bottom:0.25rem;">
+            ${i+1}. ${escHtml(r.task)}
+          </label>
+          <textarea id="reason-text-${i}" class="form-control" rows="2" placeholder="Why is this task still pending? (required)"></textarea>
+        `;
+        list.appendChild(div);
+      }
+    });
+  }
+
+  window.submitStep15 = function() {
+    let valid = true;
+    for (let i = 0; i < step1Reviews.length; i++) {
+      if (step1Reviews[i].status === "pending") {
+        const reason = document.getElementById(`reason-text-${i}`).value.trim();
+        if (!reason) {
+          valid = false;
+          alert("Please provide a reason for all pending tasks.");
+          break;
+        }
+        step1Reviews[i].reason = reason;
+      }
+    }
+    if (valid) {
+      goStep(2);
+    }
   };
 
   let thisWeekCount = 0;
@@ -398,17 +433,14 @@
         <strong style="display:block;margin-bottom:0.5rem;color:var(--primary);">🎯 Your Weekly Progress Tracker:</strong>
         <p class="text-sm text-muted" style="margin-bottom:1rem;">Check off tasks below as you complete them during the week. Once checked, they cannot be unchecked.</p>
         <div style="text-align:left;">
-        <p class="text-sm text-muted" style="margin-bottom:1rem;">Check off tasks below as you complete them during the week.</p>
-        <div id="review-this-week-tasks" style="text-align:left;">
       `;
       data.thisWeekTasks.forEach((t, i) => { 
         const isDone = completedArr[i] === true;
         html += `
-          <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:0.5rem;transition:all 0.2s;">
-            <label style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;cursor:pointer;flex:1;">
-              <input type="checkbox" onchange="toggleThisWeekTask(${i}, this.checked)" ${isDone ? 'checked' : ''} style="margin-top:.25rem;" />
-              <span style="${isDone ? 'color:var(--text-muted);' : 'color:var(--text);'}font-size:0.95rem;line-height:1.4;">${escHtml(t)}</span>
-            </label>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:${isDone ? '#f0fdf4' : 'var(--bg)'};border:1px solid ${isDone ? '#bbf7d0' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:0.5rem;transition:all 0.2s;">
+            <input type="checkbox" style="margin-top:0.25rem;width:1.2rem;height:1.2rem;accent-color:var(--success);" 
+              ${isDone ? 'checked disabled' : `onclick="markDone(event, ${i}, '${escHtml(t).replace(/'/g,"\\'").replace(/"/g,"&quot;")}')"`} />
+            <span style="${isDone ? 'color:var(--text-muted);' : 'color:var(--text);'}font-size:0.95rem;line-height:1.4;flex:1;">${escHtml(t)}</span>
             <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--primary);" onclick="editTrackerTask(${i})">✏️</button>
           </div>
         `; 
@@ -446,19 +478,24 @@
     }
   };
 
-  window.toggleThisWeekTask = async function(idx, checked) {
-    // Quick visual update
-    const container = document.getElementById("review-this-week-tasks");
-    const checkboxes = container.querySelectorAll("input[type='checkbox']");
-    if (checkboxes[idx]) {
-      checkboxes[idx].nextElementSibling.style.color = checked ? 'var(--text-muted)' : 'var(--text)';
-    }
-
-    try {
-      await markTaskCompleted(weekSettings.weekStart, memberName, idx, checked);
-      if (window.existingData) {
-        if (!window.existingData.thisWeekCompleted) {
-          window.existingData.thisWeekCompleted = window.existingData.thisWeekTasks.map(() => false);
+  window.markDone = async function(e, idx, taskText) {
+    e.preventDefault(); // Stop checkbox from checking immediately
+    if (confirm(`Are you sure you want to mark this task as completed?\n\n"${taskText}"\n\n(This cannot be undone)`)) {
+      try {
+        const checkbox = e.target;
+        checkbox.checked = true;
+        checkbox.disabled = true;
+        checkbox.parentElement.style.background = '#f0fdf4';
+        checkbox.parentElement.style.borderColor = '#bbf7d0';
+        checkbox.nextElementSibling.style.color = 'var(--text-muted)';
+        
+        await markTaskCompleted(weekSettings.weekStart, memberName, idx);
+        
+        if (window.existingData && window.existingData.thisWeekTasks) {
+          if (!window.existingData.thisWeekCompleted) {
+            window.existingData.thisWeekCompleted = window.existingData.thisWeekTasks.map(() => false);
+          }
+          window.existingData.thisWeekCompleted[idx] = true;
         }
       } catch (err) {
         alert("Error marking task as completed: " + err.message);

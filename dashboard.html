@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -88,8 +88,9 @@
       <a href="tab-a.html">Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
       <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html">📁 Assessments Record in Drive</a>
+      <a href="manager-drive.html">📊 Assessments Analytics</a>
       <a href="sheets.html">Google Sheet Links</a>
+      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
       <a href="settings.html">My Settings</a>
     </div>
 
@@ -159,7 +160,7 @@
             <div style="flex:1;">
               <label class="form-label">State</label>
               <select id="filter-state" class="form-control">
-                <option value="">Select State...</option>
+                <option value="">All States</option>
                 <option value="Telangana">Telangana</option>
                 <option value="Andhra Pradesh">Andhra Pradesh</option>
                 <option value="Karnataka">Karnataka</option>
@@ -168,7 +169,7 @@
             <div style="flex:1;">
               <label class="form-label">District</label>
               <select id="filter-district" class="form-control">
-                <option value="">Select District...</option>
+                <option value="">All Districts</option>
               </select>
             </div>
             <div style="flex:1;">
@@ -225,6 +226,9 @@
       renderDistricts();
       renderUsers();
       renderDistrictCheckboxes();
+      
+      // Auto-load all schools in the directory on load
+      window.renderDirectory();
     } catch (e) {
       console.error(e);
       dList.innerHTML = `<div style="color:red;font-weight:bold;padding:1rem;">CRASH at getDistricts: ${e.message}</div>`;
@@ -465,40 +469,43 @@
   document.getElementById("filter-state").addEventListener("change", (e) => {
     const sName = e.target.value;
     const dSel = document.getElementById("filter-district");
-    dSel.innerHTML = '<option value="">Select District...</option>';
+    dSel.innerHTML = '<option value="">All Districts</option>';
     
-    if (!sName || !districts[sName]) {
-      window.renderDirectory(); return;
+    if (sName && districts[sName]) {
+      districts[sName].forEach(d => dSel.innerHTML += `<option value="${d}">${d}</option>`);
+    } else {
+      Object.keys(districts).forEach(state => {
+        districts[state].forEach(d => dSel.innerHTML += `<option value="${d}">${d}</option>`);
+      });
     }
-    
-    districts[sName].forEach(d => dSel.innerHTML += `<option value="${d}">${d}</option>`);
     window.renderDirectory();
   });
 
   window.renderDirectory = async function() {
+    const state = document.getElementById("filter-state").value;
     const dist = document.getElementById("filter-district").value;
     const lvl = document.getElementById("filter-level").value;
     const container = document.getElementById("directory-container");
 
-    if (!dist) {
-      container.innerHTML = `<p class="text-muted" style="margin-top:2rem;">Select a District to view schools.</p>`;
-      return;
-    }
-
     container.innerHTML = `<p class="text-muted" style="margin-top:2rem;">Loading...</p>`;
-    let schools = await getSchools(dist);
+    let schools = await getSchools(dist || null);
+    
+    if (!dist && state) {
+       schools = schools.filter(s => districts[state].includes(s.District));
+    }
+    
     if (lvl) schools = schools.filter(s => s.Level === lvl);
 
     if (schools.length === 0) {
-      container.innerHTML = `<p class="text-muted" style="margin-top:2rem;">No schools found in ${dist}.</p>`;
+      container.innerHTML = `<p class="text-muted" style="margin-top:2rem;">No schools found.</p>`;
       return;
     }
 
-    // Find assigned supervisor for this district
-    let assignedSupe = users.find(u => u.districts && u.districts.includes(dist));
-    let supeName = assignedSupe ? assignedSupe.name : 'Unassigned';
-
-    container.innerHTML = schools.map(s => `
+    container.innerHTML = schools.map(s => {
+      let assignedSupe = users.find(u => u.districts && u.districts.includes(s.District));
+      let supeName = assignedSupe ? assignedSupe.name : 'Unassigned';
+      
+      return `
       <details style="background:var(--bg);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;padding:0.5rem;width:100%;box-sizing:border-box;">
         <summary style="cursor:pointer;font-weight:600;display:flex;justify-content:space-between;align-items:center;">
           <span>${s["School Name"]}</span>
@@ -514,7 +521,8 @@
           <div><strong>Pendrive:</strong> ${s["Pendrive Working"] || '-'}</div>
         </div>
       </details>
-    `).join("");
+      `;
+    }).join("");
   };
 
   document.getElementById("filter-district").addEventListener("change", window.renderDirectory);
@@ -524,3 +532,6 @@
 </script>
 </body>
 </html>
+
+
+

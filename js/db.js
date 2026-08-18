@@ -513,9 +513,29 @@ export async function saveDistricts(districts) {
 /** Get all schools for a given district */
 export async function getSchools(districtName) {
   try {
+    if (!districtName) {
+      const col = collection(db, "schools");
+      const snap = await getDocs(col);
+      let all = [];
+      snap.forEach(d => { 
+        if(d.data().list) {
+          const list = d.data().list.map(s => {
+            if(!s.District) s.District = d.id;
+            return s;
+          });
+          all = all.concat(list);
+        }
+      });
+      return all;
+    }
     const snap = await getDoc(doc(db, "schools", districtName));
-    if (snap.exists() && snap.data().list) return snap.data().list;
-  } catch(e) {}
+    if (snap.exists() && snap.data().list) {
+      return snap.data().list.map(s => {
+        if(!s.District) s.District = districtName;
+        return s;
+      });
+    }
+  } catch(e) { console.error("Error fetching schools", e); }
   return [];
 }
 
@@ -636,5 +656,50 @@ export async function getAllDriveRecords() {
   const snap = await getDocs(colRef);
   let all = {};
   snap.forEach(d => all[d.id] = d.data().data);
+  return all;
+}
+// ============================================
+// PHASE 6: STUDENT ASSESSMENTS
+// ============================================
+
+export const SCHEMA_L1_L2 = [
+  { id: "know", label: "KNOW", maxMarks: 10 },
+  { id: "read", label: "READ", maxMarks: 8 },
+  { id: "spell", label: "SPELL", maxMarks: 8 },
+  { id: "cw_read", label: "CAMERA WORD READ", maxMarks: 12 },
+  { id: "cw_spell", label: "CAMERA WORD SPELL", maxMarks: 12 }
+];
+
+export const SCHEMA_L3_L4 = [
+  { id: "phonics", label: "Phonics", maxMarks: 10 },
+  { id: "phono_aw", label: "Phonological Awareness", maxMarks: 10 },
+  { id: "vocab", label: "Vocabulary", maxMarks: 10 },
+  { id: "story", label: "Story Reading", maxMarks: 10 },
+  { id: "sentences", label: "Make sentences", maxMarks: 10 }
+];
+
+export function getSchemaForLevel(level) {
+  if (level === "Level-3" || level === "Level-4") return SCHEMA_L3_L4;
+  return SCHEMA_L1_L2;
+}
+
+export async function saveStudentAssessments(district, school, className, data) {
+  const cleanSchool = school.replace(/[^a-zA-Z0-9]/g, "_");
+  const docRef = await getScopedDoc("student_assessments", `${district}_${cleanSchool}_${className}`);
+  await setDoc(docRef, { data, updatedAt: Date.now() });
+}
+
+export async function getStudentAssessments(district, school, className) {
+  const cleanSchool = school.replace(/[^a-zA-Z0-9]/g, "_");
+  const docRef = await getScopedDoc("student_assessments", `${district}_${cleanSchool}_${className}`);
+  const snap = await getDoc(docRef);
+  return snap.exists() ? snap.data().data : [];
+}
+
+export async function getAllStudentAssessments() {
+  const colRef = await getScopedCollection("student_assessments");
+  const snap = await getDocs(colRef);
+  let all = {};
+  snap.forEach(d => { all[d.id] = d.data().data; });
   return all;
 }

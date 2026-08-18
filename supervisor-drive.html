@@ -1,42 +1,78 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Assessments Record in Drive — Teach for Change</title>
+  <title>Student Data Entry — Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-
-
-    .btn-toggle {
+    .grid-table {
       width: 100%;
-      height: 80px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      border: 2px solid var(--border);
-      background: var(--bg);
-      color: var(--text-muted);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: 0.2s;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: white;
     }
-    .btn-toggle:hover:not(:disabled) {
+    .grid-table th, .grid-table td {
+      border: 1px solid var(--border);
+      padding: 0;
+    }
+    .grid-table th {
+      background: var(--primary);
+      color: white;
+      padding: 0.5rem;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .grid-table input {
+      width: 100%;
+      border: none;
+      padding: 0.5rem;
+      text-align: center;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .grid-table input:focus {
+      background: #eef2ff;
+    }
+    .grid-table .col-name, .grid-table .col-remarks {
+      text-align: left;
+    }
+    .grid-table .col-total {
+      background: #fff3cd;
+      font-weight: bold;
+    }
+    .class-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--primary);
+      margin-bottom: 1rem;
+    }
+    .class-tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      color: var(--text-muted);
+    }
+    .class-tab.active {
+      background: var(--primary);
+      color: white;
       border-color: var(--primary);
     }
-    .btn-toggle.completed {
-      background: var(--success);
-      color: white;
-      border-color: var(--success);
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      background: var(--bg-alt);
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
     }
-    .btn-toggle.not-completed {
-      background: var(--danger);
-      color: white;
-      border-color: var(--danger);
-    }
-    .btn-toggle:disabled {
-      cursor: not-allowed;
-      opacity: 0.8;
-    }
+    .filter-bar > div { flex: 1; min-width: 150px; }
   </style>
 </head>
 <body>
@@ -57,38 +93,37 @@
 
     <div class="nav-tabs" style="margin-bottom:2rem;display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
       <a href="supervisor.html">⚙️ Dashboard</a>
-      <a href="team.html">Weekly Tasks</a>
+      <a href="team.html">📋 Weekly Tasks</a>
       <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
       <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html" class="active">📁 Assessments Record in Drive</a>
+      <a href="supervisor-drive.html" class="active">📊 Assessments Analytics</a>
       <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
     </div>
 
     <div class="setup-panel">
-      <h2>📁 Assessments Record in Drive</h2>
-      <p class="text-muted mb-3" style="margin-bottom:1.5rem;">Select your district and level to log Drive upload status.</p>
-
-      <div style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
-        <div style="flex:1;">
+      <h2>📊 Student Assessment Data Entry</h2>
+      
+      <div class="filter-bar">
+        <div>
           <label class="form-label">District</label>
-          <select id="dist-select" class="form-control" onchange="loadSchools()">
-            <option value="">Select District</option>
-          </select>
+          <select id="sel-dist" class="form-control" onchange="loadSchools()"><option value="">Select District</option></select>
         </div>
-        <div style="flex:1;">
+        <div>
           <label class="form-label">Level</label>
-          <select id="level-select" class="form-control" onchange="loadSchools()">
-            <option value="">Select Level</option>
+          <select id="sel-level" class="form-control" onchange="loadSchools()">
             <option value="Level-1">Level-1</option>
             <option value="Level-2">Level-2</option>
             <option value="Level-3">Level-3</option>
             <option value="Level-4">Level-4</option>
           </select>
         </div>
-        <div style="flex:1;">
-          <label class="form-label">Assessment</label>
-          <select id="assessment-select" class="form-control" onchange="loadSchools()">
-            <option value="">Select Assessment</option>
+        <div>
+          <label class="form-label">School</label>
+          <select id="sel-school" class="form-control" onchange="loadGrid()"><option value="">Select School</option></select>
+        </div>
+        <div>
+          <label class="form-label">Term</label>
+          <select id="sel-term" class="form-control" onchange="loadGrid()">
             <option value="baseline">Baseline</option>
             <option value="midline">Midline</option>
             <option value="endline">Endline</option>
@@ -96,19 +131,46 @@
         </div>
       </div>
 
-      <div id="schools-container" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;min-height:300px;">
-        <div class="text-muted text-center" style="margin-top:2rem;">Please select a district and level above.</div>
+      <div id="grid-container" style="display:none;">
+        <div class="class-tabs">
+          <div class="class-tab active" onclick="switchClass('3rd class')">3rd Class</div>
+          <div class="class-tab" onclick="switchClass('4th class')">4th Class</div>
+          <div class="class-tab" onclick="switchClass('5th class')">5th Class</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+          <p class="text-sm text-muted">Enter student names and marks. You can paste data directly from Excel.</p>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">⬇️ Download Template</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('upload-excel').click()">⬆️ Upload Excel</button>
+            <input type="file" id="upload-excel" accept=".xlsx" style="display:none;" onchange="handleExcelUpload(event)" />
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="grid-table" id="student-grid">
+            <thead id="grid-head">
+              <!-- Dynamically populated -->
+            </thead>
+            <tbody id="grid-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div style="margin-top:1rem;display:flex;justify-content:space-between;">
+          <button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>
+          <button class="btn btn-primary" onclick="saveGrid()" id="btn-save">💾 Save Data</button>
+        </div>
       </div>
-
-      <button id="save-btn" class="btn btn-primary btn-block hidden" style="margin-top:1.5rem;" onclick="saveDriveData()">💾 Save All Drive Data</button>
-
+      
     </div>
-
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
-  import { getUsers, getSchools, getDriveRecords, saveDriveRecords } from "./js/db.js";
+  import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -117,155 +179,297 @@
     window.location.href = "index.html";
   }
 
-  document.getElementById("welcome-name").textContent = userName;
+  document.getElementById("welcome-name").textContent = "👋 " + userName;
 
-  let currentSchools = [];
-  let savedData = {};
+  let myUser = null;
+  let currentClass = "3rd class";
+  let currentGridData = [];
+  let currentSchema = [];
+
+  window.doLogout = function() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  };
 
   async function init() {
     const users = await getUsers();
-    const myUser = users.find(u => u.name === userName);
-    if (!myUser || !myUser.districts) return;
+    myUser = users.find(u => u.name === userName);
+    if (!myUser || !myUser.districts) return alert("No districts assigned.");
 
-    const distEl = document.getElementById("dist-select");
-    myUser.districts.forEach(d => distEl.innerHTML += `<option value="${d}">${d}</option>`);
+    const distSel = document.getElementById("sel-dist");
+    myUser.districts.forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
   }
 
   window.loadSchools = async function() {
-    const dist = document.getElementById("dist-select").value;
-    const level = document.getElementById("level-select").value;
-    const assessmentType = document.getElementById("assessment-select").value;
-    const container = document.getElementById("schools-container");
-    const saveBtn = document.getElementById("save-btn");
-
-    if (!dist || !level || !assessmentType) {
-      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Please select District, Level, and Assessment above.</div>`;
-      saveBtn.classList.add("hidden");
-      return;
-    }
-
-    container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Loading schools...</div>`;
+    const dist = document.getElementById("sel-dist").value;
+    const lvl = document.getElementById("sel-level").value;
+    const schSel = document.getElementById("sel-school");
+    schSel.innerHTML = '<option value="">Select School</option>';
+    document.getElementById("grid-container").style.display = "none";
     
-    const allSchools = await getSchools(dist);
-    currentSchools = allSchools.filter(s => s.Level === level);
-    savedData = await getDriveRecords(userName, `${dist}_${level}_${assessmentType}`);
+    if (!dist) return;
+    
+    let schools = await getSchools(dist);
+    schools = schools.filter(s => s.Level === lvl);
+    
+    schools.forEach(s => {
+      schSel.innerHTML += `<option value="${s['School Name']}">${s['School Name']}</option>`;
+    });
+  };
 
-    if (currentSchools.length === 0) {
-      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found in ${dist} for ${level}.</div>`;
-      saveBtn.classList.add("hidden");
+  window.switchClass = function(clsName) {
+    document.querySelectorAll('.class-tab').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+    currentClass = clsName;
+    loadGrid();
+  };
+
+  function renderHeaders() {
+    const lvl = document.getElementById("sel-level").value;
+    currentSchema = getSchemaForLevel(lvl);
+    
+    const thead = document.getElementById("grid-head");
+    let html = `<tr>
+      <th style="width:50px;">S.No</th>
+      <th style="width:200px;">Student Name</th>`;
+    
+    currentSchema.forEach(param => {
+      html += `<th>${param.label}<br/>(${param.maxMarks})</th>`;
+    });
+    
+    html += `<th>TOTAL (50)</th><th style="width:150px;">Comprehension Level</th></tr>`;
+    thead.innerHTML = html;
+  }
+
+  window.loadGrid = async function() {
+    const dist = document.getElementById("sel-dist").value;
+    const school = document.getElementById("sel-school").value;
+    
+    if (!dist || !school) {
+      document.getElementById("grid-container").style.display = "none";
       return;
     }
-
-    let html = "";
-    currentSchools.forEach((s, idx) => {
-      const sName = s["School Name"] || "Unknown School";
-      
-      const prevData = savedData[sName] || {};
-      const status = prevData.status || ""; 
-      const prevRemarks = prevData.remarks || "";
-      
-      const isCompleted = status === "completed";
-      const isNotCompleted = status === "not_completed";
-      const frozen = status !== "";
-      const disabledAttr = frozen ? 'disabled' : '';
-
-      html += `
-        <div class="compact-row" id="row-${idx}" data-school="${sName}">
-          <div class="compact-col-info">
-            <strong>🏫 ${sName}</strong>
-          </div>
-          
-          <div class="compact-col-input" style="display:flex;gap:0.5rem;align-items:center;">
-            <button id="btn-comp-${idx}" class="compact-btn ${isCompleted ? 'active green' : ''}" 
-                    onclick="setStatus('${sName}', 'completed', ${idx})" ${disabledAttr}>
-              ✅ Completed
-            </button>
-            <button id="btn-notcomp-${idx}" class="compact-btn ${isNotCompleted ? 'active red' : ''}" 
-                    onclick="setStatus('${sName}', 'not_completed', ${idx})" ${disabledAttr}>
-              ❌ Not Completed
-            </button>
-          </div>
-          
-          <div class="compact-col-input" style="flex:2;">
-            <input type="text" id="rem-${idx}" class="form-control remarks-input" style="padding:0.4rem;" 
-                   placeholder="Enter remarks..." value="${prevRemarks}" ${disabledAttr} />
-          </div>
-          
-          <input type="hidden" class="status-val" id="status-${idx}" value="${status}" />
-          ${frozen ? `<button class="btn btn-ghost btn-sm" onclick="resetSchoolStatus('${sName}')" style="padding:0;color:var(--danger);min-width:auto;margin-left:auto;">Reset ↺</button>` : ''}
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-    saveBtn.classList.remove("hidden");
-  };
-  
-  window.setStatus = function(schoolName, status, idx) {
-    const compBtn = document.getElementById(`btn-comp-${idx}`);
-    const notCompBtn = document.getElementById(`btn-notcomp-${idx}`);
-    const statusInput = document.getElementById(`status-${idx}`);
-
-    if (status === "completed") {
-      compBtn.classList.add("active", "green");
-      notCompBtn.classList.remove("active", "red");
-      statusInput.value = "completed";
+    
+    document.getElementById("grid-container").style.display = "block";
+    renderHeaders();
+    
+    const data = await getStudentAssessments(dist, school, currentClass);
+    
+    currentGridData = [];
+    if (data.length === 0) {
+      for(let i=1; i<=10; i++) currentGridData.push({ sno: i, name: "", scores: {} });
     } else {
-      notCompBtn.classList.add("active", "red");
-      compBtn.classList.remove("active", "green");
-      statusInput.value = "not_completed";
+      currentGridData = JSON.parse(JSON.stringify(data));
     }
-  };
-
-  window.resetSchoolStatus = function(schoolName, idx) {
-    if (idx === undefined) {
-      loadSchools();
-      return;
-    }
-    const row = document.querySelector(`.compact-row[data-school="${schoolName}"]`);
-    const compBtn = document.getElementById(`btn-comp-${idx}`);
-    const notCompBtn = document.getElementById(`btn-notcomp-${idx}`);
-    const statusInput = row.querySelector(".status-val");
     
-    compBtn.classList.remove("completed");
-    notCompBtn.classList.remove("not-completed");
-    compBtn.disabled = false;
-    notCompBtn.disabled = false;
-    statusInput.value = "";
+    drawGrid();
   };
 
-  window.saveDriveData = async function() {
-    const dist = document.getElementById("dist-select").value;
-    const level = document.getElementById("level-select").value;
-    const assessmentType = document.getElementById("assessment-select").value;
-    if (!dist || !level || !assessmentType) return;
+  function drawGrid() {
+    const tbody = document.getElementById("grid-body");
+    const term = document.getElementById("sel-term").value;
+    tbody.innerHTML = "";
+    
+    currentGridData.forEach((row, rIdx) => {
+      let tr = document.createElement("tr");
+      
+      tr.innerHTML += `<td><input type="text" data-row="${rIdx}" data-col="sno" value="${row.sno || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+      tr.innerHTML += `<td><input type="text" class="col-name" data-row="${rIdx}" data-col="name" value="${row.name || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+      
+      let total = 0;
+      currentSchema.forEach((param, cIdx) => {
+        let val = "";
+        if (row[term] && row[term][param.id] !== undefined) {
+          val = row[term][param.id];
+          total += Number(val);
+        }
+        tr.innerHTML += `<td><input type="number" min="0" max="${param.maxMarks}" data-row="${rIdx}" data-col="${param.id}" value="${val}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+      });
+      
+      tr.innerHTML += `<td><input type="text" class="col-total" readonly value="${total || ''}"/></td>`;
+      
+      // Remarks
+      let remark = "";
+      if (row[term] && row[term].remarks !== undefined) remark = row[term].remarks;
+      tr.innerHTML += `<td><input type="text" class="col-remarks" data-row="${rIdx}" data-col="remarks" value="${remark}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+      
+      tbody.appendChild(tr);
+    });
+  }
 
-    const rows = document.querySelectorAll(".compact-row");
-    let newData = {};
+  window.updateData = function(inputEl) {
+    const rIdx = inputEl.getAttribute("data-row");
+    const col = inputEl.getAttribute("data-col");
+    const term = document.getElementById("sel-term").value;
+    
+    if (col === "sno" || col === "name") {
+      currentGridData[rIdx][col] = inputEl.value;
+    } else {
+      if (!currentGridData[rIdx][term]) currentGridData[rIdx][term] = {};
+      currentGridData[rIdx][term][col] = inputEl.value;
+      
+      let total = 0;
+      currentSchema.forEach(param => {
+        if (currentGridData[rIdx][term] && currentGridData[rIdx][term][param.id]) {
+          total += Number(currentGridData[rIdx][term][param.id]);
+        }
+      });
+      inputEl.closest("tr").querySelector(".col-total").value = total || "";
+    }
+  };
 
-    rows.forEach(row => {
-      const sName = row.getAttribute("data-school");
-      const status = row.querySelector(".status-val").value;
-      const remarks = row.querySelector(".remarks-input").value.trim();
+  window.addRow = function() {
+    currentGridData.push({ sno: currentGridData.length + 1, name: "", scores: {} });
+    drawGrid();
+  };
 
-      newData[sName] = {
-        status: status,
-        remarks: remarks
-      };
+  window.handlePaste = function(e, inputEl) {
+    e.preventDefault();
+    const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+    const rows = pasteData.split(/\r?\n/).filter(r => r.trim() !== "");
+    const startRow = parseInt(inputEl.getAttribute("data-row"));
+    const colName = inputEl.getAttribute("data-col");
+    let startColIdx = 0;
+    
+    if (colName === "name") startColIdx = 1;
+    else if (colName === "remarks") startColIdx = 2 + currentSchema.length;
+    else if (colName !== "sno") {
+      startColIdx = 2 + currentSchema.findIndex(p => p.id === colName);
+    }
+    const term = document.getElementById("sel-term").value;
+
+    rows.forEach((rowStr, i) => {
+      const cells = rowStr.split('\t');
+      const rIdx = startRow + i;
+      while(rIdx >= currentGridData.length) currentGridData.push({ sno: currentGridData.length + 1, name: "", scores: {} });
+      
+      cells.forEach((cellVal, j) => {
+        const cIdx = startColIdx + j;
+        const val = cellVal.trim();
+        if (cIdx === 0) currentGridData[rIdx].sno = val;
+        else if (cIdx === 1) currentGridData[rIdx].name = val;
+        else if (cIdx >= 2 && cIdx < 2 + currentSchema.length) {
+          const paramId = currentSchema[cIdx-2].id;
+          if (!currentGridData[rIdx][term]) currentGridData[rIdx][term] = {};
+          currentGridData[rIdx][term][paramId] = val;
+        }
+        else if (cIdx === 2 + currentSchema.length) { // past the total column technically, or just past parameters
+          // Wait, Excel has TOTAL column. So Remarks is actually at 2 + schema.length + 1
+        }
+      });
+    });
+    
+    // Proper paste logic for Remarks considering Total column offset:
+    // If they copy from Excel, Excel has TOTAL at index `2 + schema.length`.
+    // Remarks is at `2 + schema.length + 1`.
+    rows.forEach((rowStr, i) => {
+      const cells = rowStr.split('\t');
+      const rIdx = startRow + i;
+      cells.forEach((cellVal, j) => {
+        const cIdx = startColIdx + j;
+        const val = cellVal.trim();
+        if (cIdx === 3 + currentSchema.length) { // 2 params + schema length + 1 (total) = 3 + length
+           if (!currentGridData[rIdx][term]) currentGridData[rIdx][term] = {};
+           currentGridData[rIdx][term].remarks = val;
+        }
+      });
     });
 
-    await saveDriveRecords(userName, `${dist}_${level}_${assessmentType}`, newData);
-    alert("Drive data saved successfully!");
-    loadSchools();
+    drawGrid();
   };
 
-  window.doLogout = function() {
-    sessionStorage.removeItem("tfc_member_name");
-    sessionStorage.removeItem("tfc_member_role");
-    window.location.href = "index.html";
+  window.saveGrid = async function() {
+    const dist = document.getElementById("sel-dist").value;
+    const school = document.getElementById("sel-school").value;
+    const btn = document.getElementById("btn-save");
+    const validData = currentGridData.filter(r => r.name && r.name.trim() !== "");
+    
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+    try {
+      await saveStudentAssessments(dist, school, currentClass, validData);
+      alert("Saved successfully!");
+      await loadGrid();
+    } catch(err) {
+      alert("Error saving data");
+      console.error(err);
+    }
+    btn.textContent = "💾 Save Data";
+    btn.disabled = false;
+  };
+
+  window.downloadTemplate = function() {
+    const term = document.getElementById("sel-term").value;
+    const headers = ["S.No", "Student Name"];
+    currentSchema.forEach(p => headers.push(`${p.label} (${p.maxMarks})`));
+    headers.push("Total (50)", "Comprehension Level");
+    
+    const exportData = [];
+    currentGridData.forEach(r => {
+      if (!r.name) return;
+      let row = [r.sno, r.name];
+      let total = 0;
+      currentSchema.forEach(p => {
+        let val = r[term] && r[term][p.id] ? r[term][p.id] : "";
+        row.push(val);
+        if (val) total += Number(val);
+      });
+      row.push(total);
+      row.push(r[term] && r[term].remarks ? r[term].remarks : "");
+      exportData.push(row);
+    });
+    if (exportData.length === 0) exportData.push([1, "", "", "", "", "", "", ""]);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...exportData]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
+    XLSX.writeFile(wb, `${document.getElementById("sel-school").value}_${currentClass}_${term}.xlsx`);
+  };
+
+  window.handleExcelUpload = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const term = document.getElementById("sel-term").value;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const bstr = evt.target.result;
+      const wb = XLSX.read(bstr, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      
+      for (let i = 1; i < data.length; i++) {
+        let rowData = data[i];
+        if (!rowData || rowData.length === 0) continue;
+        let sno = rowData[0];
+        let name = rowData[1];
+        if (!name) continue;
+        
+        let rIdx = currentGridData.findIndex(r => r.name === name || r.sno == sno);
+        if (rIdx === -1) {
+          rIdx = currentGridData.length;
+          currentGridData.push({ sno: sno || rIdx+1, name: name });
+        }
+        if (!currentGridData[rIdx][term]) currentGridData[rIdx][term] = {};
+        
+        currentSchema.forEach((param, pIdx) => {
+          let score = rowData[2 + pIdx];
+          if (score !== undefined && score !== "") currentGridData[rIdx][term][param.id] = score;
+        });
+        
+        // remarks is after schema and total
+        let remarks = rowData[2 + currentSchema.length + 1];
+        if (remarks !== undefined && remarks !== "") currentGridData[rIdx][term].remarks = remarks;
+      }
+      drawGrid();
+      e.target.value = "";
+      alert("Excel data mapped successfully! Click Save Data when ready.");
+    };
+    reader.readAsBinaryString(file);
   };
 
   init();
 </script>
 </body>
 </html>
+
+

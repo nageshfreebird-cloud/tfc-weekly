@@ -3,22 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manager Analytics - Drive Records</title>
+  <title>Manager Assessments Analytics</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .chart-card {
-      background: var(--bg);
+      background: white;
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 1.5rem;
       text-align: center;
+      transition: all 0.2s;
       cursor: pointer;
-      transition: 0.2s;
     }
     .chart-card:hover {
+      box-shadow: var(--shadow);
       border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .chart-card.active {
+      border: 2px solid var(--primary);
+      box-shadow: var(--shadow);
     }
     .chart-container {
       position: relative;
@@ -26,11 +30,37 @@
       width: 150px;
       margin: 0 auto 1rem auto;
     }
+    .grid-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
     .drilldown-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
+    }
+    .split-layout {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+    .split-left {
+      flex: 1;
+      min-width: 0;
+    }
+    .split-right {
+      flex: 1;
+      min-width: 0;
+      position: sticky;
+      top: 2rem;
+    }
+    .analytics-panel {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
     }
   </style>
 </head>
@@ -47,330 +77,290 @@
 </nav>
 
 <div class="page">
-  <div class="container-wide" style="max-width: 1400px;">
+  <div class="container-wide" style="max-width: 1400px; margin: 0 auto;">
 
     <!-- Navigation Tabs -->
     <div class="nav-tabs" style="justify-content:center;margin-bottom:2rem;flex-wrap:wrap;">
       <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html">Weekly Tasks</a>
+      <a href="tab-a.html">📋 Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
       <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html" class="active">📁 Assessments Record in Drive</a>
-      <a href="sheets.html">Google Sheet Links</a>
-      <a href="settings.html">My Settings</a>
+      <a href="manager-drive.html" class="active">📊 Assessments Analytics</a>
+      <a href="sheets.html">🔗 Google Sheet Links</a>
+      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
+      <a href="settings.html">⚙️ My Settings</a>
     </div>
 
-    <div class="setup-panel">
+    <div class="split-layout">
+
+      <!-- LEVEL 1: Completion Circles -->
+      <div class="split-left" id="level-1">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <h2 style="font-size:1.4rem; color:var(--text);"><span class="icon">📊</span> Data Entry Completion</h2>
+          <select id="view-term" class="form-control" style="width:150px; padding: 0.3rem 0.5rem;" onchange="renderCompletion()">
+            <option value="Baseline">Baseline</option>
+            <option value="Midline">Midline</option>
+            <option value="Endline">Endline</option>
+          </select>
+        </div>
+        <p class="text-muted mb-3" style="margin-bottom:1.5rem;">Click on a supervisor's card to view their detailed performance analytics.</p>
+
+        <div class="grid-wrap" id="completion-grid">
+          <!-- Generated Circles -->
+          <p class="text-muted">Loading data...</p>
+        </div>
+      </div>
       
-      <!-- LEVEL 1: Overview -->
-      <div id="level-1">
-        <div class="drilldown-header" style="display:flex; justify-content:space-between; align-items:center;">
-          <h2>📁 Assessments Record in Drive (Overview)</h2>
-          <div style="display:flex; align-items:center; gap:0.5rem;">
-            <select id="view-year-select" onchange="changeViewingYear(this.value)" class="form-control" style="width:120px; padding:0.25rem 0.5rem; font-weight:600; color:var(--primary);">
-              <option value="2025-26">2025-26</option>
-              <option value="2026-27">2026-27</option>
-              <option value="2027-28">2027-28</option>
-              <option value="2028-29">2028-29</option>
-            </select>
-            <label class="form-label" style="margin:0; margin-left:1rem;">Assessment:</label>
-            <select id="assessment-filter" class="form-control" style="width:auto; padding:0.25rem 0.5rem;" onchange="processDataAndRender()">
-              <option value="baseline">Baseline</option>
-              <option value="midline">Midline</option>
-              <option value="endline">Endline</option>
-            </select>
+      <!-- LEVEL 2: Analytics Panel -->
+      <div class="split-right">
+        <div class="analytics-panel" id="level-2" style="visibility:hidden;">
+          <div class="drilldown-header">
+            <h2 id="analytics-title">📊 Analytics</h2>
           </div>
-        </div>
-        <p class="text-muted mb-3">Click on a Supervisor to see their District & Level breakdown.</p>
-        <div id="l1-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;">
-          <div class="text-muted">Loading analytics...</div>
+          
+          <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;">
+             <select id="analytics-class" class="form-control" onchange="drawAnalytics()">
+               <option value="3rd class">3rd Class</option>
+               <option value="4th class">4th Class</option>
+               <option value="5th class">5th Class</option>
+             </select>
+             <select id="analytics-level" class="form-control" onchange="drawAnalytics()">
+               <option value="Level-1">Level-1 & Level-2 Schools</option>
+               <option value="Level-3">Level-3 & Level-4 Schools</option>
+             </select>
+          </div>
+          
+          <canvas id="analyticsChart" style="width:100%;max-height:400px;display:none;"></canvas>
+          <div id="analytics-empty" class="text-muted text-center" style="margin-top:2rem;">No data found for this selection.</div>
         </div>
       </div>
-
-      <!-- LEVEL 2: District & Level -->
-      <div id="level-2" class="hidden">
-        <div class="drilldown-header">
-          <h2 id="l2-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">← Back to Overview</button>
-        </div>
-        <p class="text-muted mb-3">Click on a District_Level to see the raw data for schools.</p>
-        <div id="l2-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;"></div>
-      </div>
-
-      <!-- LEVEL 3: Raw Data Table -->
-      <div id="level-3" class="hidden">
-        <div class="drilldown-header">
-          <h2 id="l3-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">← Back to Supervisor</button>
-        </div>
-        <div id="l3-content" style="overflow-x:auto;"></div>
-      </div>
-
-    </div>
+    
+    </div> <!-- end split-layout -->
 
   </div>
 </div>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
-  import { getUsers, getSchools, getAllDriveRecords, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
+  import { requireManagerAuth } from "./js/utils.js";
+  import { getUsers, getSchools, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  requireManagerAuth();
 
   window.doLogout = function() {
-    clearManagerSession();
+    sessionStorage.clear();
     window.location.href = "index.html";
   };
 
-  let globalData = {}; 
-  let chartInstances = [];
+  let users = [];
+  let allSchools = [];
+  let allAssessments = {};
+  
+  let chartsMap = {};
+  let currentActiveCard = null;
 
-  let usersList = [];
-  let callsData = {};
-  let allSchoolsByDist = {};
+  let currentSup = null; // currently selected supervisor for analytics
+  let analyticsChartInst = null;
 
   async function init() {
-    const year = await getGlobalAcademicYear();
-    document.getElementById("view-year-select").value = year;
-
-    usersList = await getUsers();
-    callsData = await getAllDriveRecords(); 
-    
-    const supervisors = usersList.filter(u => u.role === 'supervisor');
-    
-    for (let u of supervisors) {
-      if (!u.districts) continue;
-      for (let d of u.districts) {
-        if (!allSchoolsByDist[d]) {
-          allSchoolsByDist[d] = await getSchools(d);
-        }
-      }
+    try {
+      users = await getUsers();
+      allSchools = await getSchools(); // fetch all across all districts
+      allAssessments = await getAllStudentAssessments();
+      
+      renderCompletion();
+    } catch (e) {
+      console.error(e);
+      document.getElementById("completion-grid").innerHTML = `<div class="text-danger">Failed to load data: ${e.message}</div>`;
     }
-    processDataAndRender();
   }
 
-  window.processDataAndRender = function() {
-    const supervisors = usersList.filter(u => u.role === 'supervisor');
-    const assessmentType = document.getElementById("assessment-filter").value;
-    globalData = {};
+  window.renderCompletion = function() {
+    const term = document.getElementById("view-term").value;
+    const grid = document.getElementById("completion-grid");
+    grid.innerHTML = "";
+    
+    // Clear old charts
+    Object.values(chartsMap).forEach(c => c.destroy());
+    chartsMap = {};
 
-    supervisors.forEach(u => {
-      globalData[u.name] = {};
-      if (!u.districts) return;
+    const supervisors = users.filter(u => u.role === 'supervisor');
+    let renderedCount = 0;
 
-      u.districts.forEach(dist => {
-        const distSchools = allSchoolsByDist[dist] || [];
-        let levelsInDist = {};
-        distSchools.forEach(s => {
-          if (!s.Level) return;
-          if (!levelsInDist[s.Level]) levelsInDist[s.Level] = [];
-          levelsInDist[s.Level].push(s);
-        });
-
-        Object.keys(levelsInDist).forEach(lvl => {
-          const distLevelKey = `${dist}_${lvl}`;
-          const fetchKey = `${u.name}_${distLevelKey}_${assessmentType}`;
-          const schoolsInLvl = levelsInDist[lvl];
-          const savedForThisLvl = callsData[fetchKey] || {};
+    supervisors.forEach(sup => {
+      let totalAssigned = 0;
+      let totalEntered = 0;
+      
+      if (sup.districts && sup.districts.length > 0) {
+        sup.districts.forEach(dist => {
+          const schoolsInDist = allSchools.filter(s => s.District === dist);
+          totalAssigned += schoolsInDist.length;
           
-          let doneCount = 0;
-          let schoolDetails = [];
-          
-          schoolsInLvl.forEach(s => {
-            const sName = s["School Name"];
-            const sData = savedForThisLvl[sName];
-            
-            const isDone = sData && (sData.status === "completed");
-            if (isDone) doneCount++;
-            
-            schoolDetails.push({
-              name: sName,
-              status: sData ? sData.status : "",
-              remarks: sData ? sData.remarks : "",
-              isDone: !!isDone
+          schoolsInDist.forEach(s => {
+            let hasData = false;
+            ["3rd class", "4th class", "5th class"].forEach(cls => {
+              const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
+              const key = `${dist}_${cleanSchool}_${cls}`;
+              const clsData = allAssessments[key];
+              if (clsData && clsData.some(row => row[term])) {
+                hasData = true;
+              }
             });
+            if (hasData) totalEntered++;
           });
-
-          globalData[u.name][distLevelKey] = {
-            total: schoolsInLvl.length,
-            done: doneCount,
-            schools: schoolDetails
-          };
         });
+      }
+      
+      renderedCount++;
+      let pct = totalAssigned > 0 ? Math.round((totalEntered / totalAssigned) * 100) : 0;
+      
+      const card = document.createElement("div");
+      card.className = "chart-card";
+      card.id = `card-${sup.name.replace(/\s+/g,'-')}`;
+      card.onclick = () => openAnalytics(sup, card);
+      
+      const cid = `chart-${sup.name.replace(/\s+/g,'-')}`;
+      
+      card.innerHTML = `
+        <div class="chart-container" style="margin-top:1rem;">
+          <canvas id="${cid}"></canvas>
+          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-weight:bold; font-size:1.4rem; color:var(--text);">
+            ${pct}%
+          </div>
+        </div>
+        <h3 style="margin-top:1rem;margin-bottom:0.25rem;color:var(--text);font-size:1.1rem;font-weight:700;">${sup.name}</h3>
+        <p class="text-sm text-muted" style="margin-bottom:0.5rem;">${totalEntered} / ${totalAssigned} Schools</p>
+      `;
+      grid.appendChild(card);
+      
+      // Draw Doughnut
+      const ctx = document.getElementById(cid).getContext('2d');
+      const entered = totalEntered;
+      const pending = totalAssigned > 0 ? (totalAssigned - totalEntered) : 1; // if 0 assigned, just draw a grey circle
+      const bgColors = totalAssigned > 0 ? ['#22c55e', '#e2e8f0'] : ['#e2e8f0', '#e2e8f0'];
+      
+      chartsMap[cid] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Entered', 'Pending'],
+          datasets: [{
+            data: [entered, pending],
+            backgroundColor: bgColors,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          cutout: '75%',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
       });
     });
 
-    renderLevel1();
+    if (renderedCount === 0) {
+       grid.innerHTML = `<p class="text-muted" style="width:100%; text-align:center; padding: 2rem;">No supervisors with assigned schools found.</p>`;
+    } else {
+       // Automatically select the first supervisor so the right panel isn't empty
+       const firstCard = grid.querySelector('.chart-card');
+       if (firstCard) {
+         firstCard.click();
+       }
+    }
   };
 
-  function destroyCharts() {
-    chartInstances.forEach(c => c.destroy());
-    chartInstances = [];
-  }
-
-  function createChart(canvasId, label, percentage) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    const color = percentage === 100 ? '#10b981' : (percentage > 50 ? '#3b82f6' : '#f59e0b');
+  window.openAnalytics = function(sup, cardElement) {
+    currentSup = sup;
     
-    const chart = new Chart(ctx, {
-      type: 'doughnut',
+    // Manage active state
+    if (currentActiveCard) {
+      currentActiveCard.classList.remove('active');
+    }
+    cardElement.classList.add('active');
+    currentActiveCard = cardElement;
+
+    // Show analytics panel
+    const panel = document.getElementById("level-2");
+    panel.style.visibility = "visible";
+    
+    document.getElementById("analytics-title").textContent = `📊 Analytics: ${sup.name}`;
+    drawAnalytics();
+  };
+
+  window.drawAnalytics = function() {
+    if (!currentSup) return;
+    
+    const term = document.getElementById("view-term").value;
+    const cls = document.getElementById("analytics-class").value;
+    const lvlCat = document.getElementById("analytics-level").value;
+    const schema = (lvlCat === "Level-1") ? SCHEMA_L1_L2 : SCHEMA_L3_L4;
+    
+    const canvas = document.getElementById("analyticsChart");
+    const emptyMsg = document.getElementById("analytics-empty");
+    
+    // Gather students
+    let filteredStudents = [];
+    currentSup.districts.forEach(dist => {
+      const schoolsInDist = allSchools.filter(s => s.District === dist);
+      schoolsInDist.forEach(s => {
+        // Check if school level matches selection
+        const sLvl = s.Level;
+        if (lvlCat === "Level-1" && (sLvl === "Level-1" || sLvl === "Level-2")) {
+          // match
+        } else if (lvlCat === "Level-3" && (sLvl === "Level-3" || sLvl === "Level-4")) {
+          // match
+        } else {
+          return; // skip
+        }
+        
+        const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
+        const key = `${dist}_${cleanSchool}_${cls}`;
+        const arr = allAssessments[key] || [];
+        // Filter by term
+        arr.forEach(row => {
+          if (row[term]) filteredStudents.push(row);
+        });
+      });
+    });
+    
+    if (filteredStudents.length === 0) {
+      if (analyticsChartInst) analyticsChartInst.destroy();
+      canvas.style.display = "none";
+      emptyMsg.style.display = "block";
+      return;
+    }
+    
+    // Compute Averages
+    let avgData = [];
+    schema.forEach(param => {
+      let sum = 0; let count = 0;
+      filteredStudents.forEach(row => {
+        const val = parseFloat(row[param]);
+        if (!isNaN(val)) { sum += val; count++; }
+      });
+      avgData.push(count > 0 ? (sum / count).toFixed(1) : 0);
+    });
+    
+    canvas.style.display = "block";
+    emptyMsg.style.display = "none";
+    
+    if (analyticsChartInst) analyticsChartInst.destroy();
+    analyticsChartInst = new Chart(canvas, {
+      type: 'bar',
       data: {
+        labels: schema,
         datasets: [{
-          data: [percentage, Math.max(0, 100 - percentage)],
-          backgroundColor: [color, '#e2e8f0'],
-          borderWidth: 0
+          label: `${term} Averages`,
+          data: avgData,
+          backgroundColor: '#3b82f6',
+          borderRadius: 4
         }]
       },
       options: {
-        cutout: '75%',
         responsive: true,
-        maintainAspectRatio: false,
-        plugins: { tooltip: { enabled: false }, legend: { display: false } }
-      },
-      plugins: [{
-        id: 'textCenter',
-        beforeDraw: function(chart) {
-          var width = chart.width, height = chart.height, ctx = chart.ctx;
-          ctx.restore();
-          var fontSize = (height / 100).toFixed(2);
-          ctx.font = "bold " + fontSize + "em sans-serif";
-          ctx.textBaseline = "middle";
-          var text = percentage + "%",
-              textX = Math.round((width - ctx.measureText(text).width) / 2),
-              textY = height / 2;
-          ctx.fillStyle = '#1e293b';
-          ctx.fillText(text, textX, textY);
-          ctx.save();
-        }
-      }]
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 10 } } // assuming scores are out of 10
+      }
     });
-    chartInstances.push(chart);
-  }
-
-  window.showLevel = function(lvl) {
-    document.getElementById("level-1").classList.toggle("hidden", lvl !== 1);
-    document.getElementById("level-2").classList.toggle("hidden", lvl !== 2);
-    document.getElementById("level-3").classList.toggle("hidden", lvl !== 3);
-    if (lvl === 1) renderLevel1();
-  };
-
-  window.changeViewingYear = function(year) {
-    setLocalViewingYear(year);
-    window.location.reload(); 
-  };
-
-  function renderLevel1() {
-    destroyCharts();
-    const container = document.getElementById("l1-grid");
-    container.innerHTML = "";
-    
-    Object.keys(globalData).forEach((supeName, idx) => {
-      let totalSchools = 0;
-      let totalDone = 0;
-      Object.keys(globalData[supeName]).forEach(dl => {
-        totalSchools += globalData[supeName][dl].total;
-        totalDone += globalData[supeName][dl].done;
-      });
-      
-      const pct = totalSchools === 0 ? 0 : Math.round((totalDone / totalSchools) * 100);
-      const cId = `chart-l1-${idx}`;
-      
-      container.innerHTML += `
-        <div class="chart-card" onclick="renderLevel2('${supeName}')">
-          <div class="chart-container"><canvas id="${cId}"></canvas></div>
-          <h3 style="margin:0;font-size:1.1rem;color:var(--primary);">${supeName}</h3>
-          <p class="text-muted text-sm" style="margin-top:0.25rem;">${totalDone} / ${totalSchools} Schools Uploaded</p>
-        </div>
-      `;
-    });
-    
-    setTimeout(() => {
-      Object.keys(globalData).forEach((supeName, idx) => {
-        let ts = 0, td = 0;
-        Object.keys(globalData[supeName]).forEach(dl => { ts += globalData[supeName][dl].total; td += globalData[supeName][dl].done; });
-        createChart(`chart-l1-${idx}`, supeName, ts === 0 ? 0 : Math.round((td / ts) * 100));
-      });
-    }, 50);
-  }
-
-  window.renderLevel2 = function(supeName) {
-    destroyCharts();
-    window.currentSupe = supeName;
-    document.getElementById("l2-title").textContent = `Supervisor: ${supeName}`;
-    const container = document.getElementById("l2-grid");
-    container.innerHTML = "";
-    
-    const supeData = globalData[supeName];
-    const dlKeys = Object.keys(supeData);
-    
-    if (dlKeys.length === 0) {
-      container.innerHTML = `<div class="text-muted">No districts/levels found for this supervisor.</div>`;
-    }
-    
-    dlKeys.forEach((dl, idx) => {
-      const data = supeData[dl];
-      const pct = data.total === 0 ? 0 : Math.round((data.done / data.total) * 100);
-      const cId = `chart-l2-${idx}`;
-      
-      container.innerHTML += `
-        <div class="chart-card" onclick="renderLevel3('${dl}')">
-          <div class="chart-container"><canvas id="${cId}"></canvas></div>
-          <h3 style="margin:0;font-size:1rem;color:var(--text);">${dl}</h3>
-          <p class="text-muted text-sm" style="margin-top:0.25rem;">${data.done} / ${data.total} Schools</p>
-        </div>
-      `;
-    });
-    
-    showLevel(2);
-    
-    setTimeout(() => {
-      dlKeys.forEach((dl, idx) => {
-        const d = supeData[dl];
-        createChart(`chart-l2-${idx}`, dl, d.total === 0 ? 0 : Math.round((d.done / d.total) * 100));
-      });
-    }, 50);
-  };
-
-  window.renderLevel3 = function(dl) {
-    document.getElementById("l3-title").textContent = `${dl} (Raw Data)`;
-    const container = document.getElementById("l3-content");
-    const schools = globalData[window.currentSupe][dl].schools;
-    
-    let html = `<table style="width:100%;border-collapse:collapse;background:var(--bg);border-radius:var(--radius-sm);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-      <thead style="background:var(--bg-alt);border-bottom:2px solid var(--border);text-align:left;">
-        <tr>
-          <th style="padding:1rem;">School</th>
-          <th style="padding:1rem;">Status</th>
-          <th style="padding:1rem;">Remarks</th>
-        </tr>
-      </thead>
-      <tbody>
-    `;
-    
-    schools.forEach(s => {
-      let statusBadge = `<span class="text-muted">-</span>`;
-      if (s.status === "completed") statusBadge = `<span style="background:#dcfce7;color:#166534;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">✅ Completed</span>`;
-      if (s.status === "not_completed") statusBadge = `<span style="background:#fee2e2;color:#991b1b;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">❌ Not Completed</span>`;
-
-      html += `
-        <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:1rem;font-weight:600;">
-            ${s.name}
-          </td>
-          <td style="padding:1rem;">
-            ${statusBadge}
-          </td>
-          <td style="padding:1rem;">
-            <span style="font-size:0.9rem;">${s.remarks || '-'}</span>
-          </td>
-        </tr>
-      `;
-    });
-    
-    html += `</tbody></table>`;
-    container.innerHTML = html;
-    
-    showLevel(3);
   };
 
   init();

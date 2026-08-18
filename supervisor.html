@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -29,6 +29,7 @@
       border-bottom: 1px solid var(--border);
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -69,10 +70,10 @@
 
     <div class="nav-tabs">
       <a href="supervisor.html" class="active">⚙️ Dashboard</a>
-      <a href="team.html">Weekly Tasks</a>
+      <a href="team.html">📋 Weekly Tasks</a>
       <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
       <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html">📁 Assessments Record in Drive</a>
+      <a href="supervisor-drive.html">📊 Assessments Analytics</a>
       <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
     </div>
 
@@ -133,55 +134,57 @@
         </div>
       </div>
 
-      <!-- Part 2: Syllabus Registry -->
-      <div class="setup-panel" id="panel-syllabus">
-        <h2>📚 Syllabus Registry</h2>
-        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-          <button class="btn btn-outline btn-sm" onclick="setMode('syllabus', 'view')">👁️ View</button>
-          <button class="btn btn-outline btn-sm" onclick="setMode('syllabus', 'manual')">✍️ Manual</button>
-          <button class="btn btn-outline btn-sm" onclick="setMode('syllabus', 'upload')">📁 Upload</button>
+      <!-- Part 2: Assessment Analytics -->
+      <div class="setup-panel" id="panel-analytics">
+        <h2>📈 Analytics</h2>
+        <p class="text-sm text-muted">View student performance data.</p>
+        <div style="display:flex;gap:0.5rem;margin:1rem 0;">
+           <select id="analytics-school" class="form-control" onchange="loadAnalytics()"><option value="">Select School</option></select>
+           <select id="analytics-class" class="form-control" onchange="loadAnalytics()">
+             <option value="3rd class">3rd Class</option>
+             <option value="4th class">4th Class</option>
+             <option value="5th class">5th Class</option>
+           </select>
         </div>
+        <canvas id="analyticsChart" style="width:100%;max-height:300px;display:none;"></canvas>
+        <div id="analytics-empty" class="text-muted text-center" style="margin-top:2rem;">Select a school to view data</div>
+      </div>
 
-        <div id="syllabus-view" style="display:block;">
-          <select id="view-syl-level" class="form-control" style="margin-bottom:1rem;" onchange="renderSyllabusView()">
-            <option value="">Select Level</option>
-            <option value="Level-1">Level-1</option>
-            <option value="Level-2">Level-2</option>
-            <option value="Level-3">Level-3</option>
-            <option value="Level-4">Level-4</option>
+      <!-- Part 3: Right Column -->
+      <div style="display:flex; flex-direction:column; gap:1.5rem;">
+        
+        <!-- Year Plan -->
+        <div class="setup-panel">
+          <h2>🗓️ Year Plan</h2>
+          <p class="text-sm text-muted mb-3" style="margin-bottom:1rem;">Plan your long-term goals for each academic month.</p>
+          
+          <select id="year-plan-month" class="form-control" style="margin-bottom:1rem;" onchange="renderYearPlan()">
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
           </select>
-          <div id="syllabus-view-list" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:200px;max-height:400px;overflow-y:auto;padding:0.5rem;">
-            <div class="text-muted text-center" style="margin-top:2rem;">Select Level to view syllabus.</div>
+
+          <div id="year-plan-container" style="max-height:400px;overflow-y:auto;padding-right:0.5rem;">
+            <!-- Dynamically populated based on selected month -->
           </div>
         </div>
 
-        <div id="syllabus-manual" style="display:none;">
-          <select id="man-syl-level" class="form-control" style="margin-bottom:0.5rem;">
-            <option value="Level-1">Level-1</option><option value="Level-2">Level-2</option><option value="Level-3">Level-3</option><option value="Level-4">Level-4</option>
-          </select>
-          <input type="text" id="man-syl-topic" class="form-control" style="margin-bottom:0.5rem;" placeholder="Topic Name" />
-          <textarea id="man-syl-desc" class="form-control" style="margin-bottom:1rem;height:60px;" placeholder="Description (Optional)"></textarea>
-          <button class="btn btn-success btn-block" onclick="submitSyllabusManual()">Save Topic</button>
-        </div>
-
-        <div id="syllabus-upload" style="display:none;">
-          <select id="up-syl-level" class="form-control" style="margin-bottom:1rem;">
-            <option value="Level-1">Level-1</option><option value="Level-2">Level-2</option><option value="Level-3">Level-3</option><option value="Level-4">Level-4</option>
-          </select>
-          <div class="alert alert-info text-sm mb-3">Upload an Excel (.xlsx) file with Syllabus data.</div>
-          <button class="btn btn-outline btn-block mb-2" style="margin-bottom:0.5rem;" onclick="downloadSyllabusTemplate()">⬇️ Download Template</button>
-          <button class="btn btn-primary btn-block mb-3" style="margin-bottom:1rem;" onclick="uploadSyllabusExcel()">⬆️ Upload Syllabus File</button>
-        </div>
-      </div>
-
-      <!-- Part 3: Year Plan -->
-      <div class="setup-panel">
-        <h2>🗓️ Year Plan (June-May)</h2>
-        <p class="text-sm text-muted mb-3" style="margin-bottom:1rem;">Plan your long-term goals for each academic month.</p>
-        
-        <div id="year-plan-container" style="max-height:500px;overflow-y:auto;padding-right:0.5rem;">
-          <!-- Dynamically populated -->
-          <div class="text-muted text-center" style="margin-top:2rem;">Loading Year Plan...</div>
+        <!-- Google Sheet Links -->
+        <div class="setup-panel" id="panel-sheet-links">
+          <h2>🔗 My Google Sheets</h2>
+          <p class="text-sm text-muted">Links assigned to you by the manager.</p>
+          <div id="sheet-links-container" style="margin-top:1rem;display:flex;flex-direction:column;gap:0.75rem;">
+            <div class="text-muted text-center" style="margin-top:2rem;">Loading links...</div>
+          </div>
         </div>
 
       </div>
@@ -193,7 +196,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
-  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear } from "./js/db.js";
+  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -237,7 +240,31 @@
     }
     
     yearPlan = await getYearPlan(userName);
+    
+    // Set default month to current month
+    const currentMonthIndex = new Date().getMonth();
+    const currentMonthName = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][currentMonthIndex];
+    document.getElementById("year-plan-month").value = currentMonthName;
+    
     renderYearPlan();
+    populateAnalyticsSchools();
+
+    // Render Sheet Links
+    const savedLinks = await getSheetLinks(userName);
+    const linksContainer = document.getElementById("sheet-links-container");
+    if (savedLinks.length === 0) {
+      linksContainer.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No links assigned yet.</div>`;
+    } else {
+      linksContainer.innerHTML = savedLinks.map(link => `
+        <a href="${link.url}" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);text-decoration:none;color:var(--text);">
+          <span style="font-size:1.5rem;">🔗</span>
+          <div style="flex:1;">
+            <div style="font-weight:600;color:var(--primary);">${link.name}</div>
+            <div class="text-sm text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">${link.url}</div>
+          </div>
+        </a>
+      `).join("");
+    }
   }
 
   async function checkForYearAudit() {
@@ -490,133 +517,132 @@
     renderSchoolView();
   };
 
-  // --- SYLLABUS LOGIC ---
-  window.renderSyllabusView = async function() {
-    const lvl = document.getElementById("view-syl-level").value;
-    const listEl = document.getElementById("syllabus-view-list");
-    if (!lvl) { listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Select Level to view syllabus.</div>`; return; }
-    
-    listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Loading...</div>`;
-    let topics = await getSyllabus(lvl);
+  // Syllabus logic has been moved to Manager Dashboard.
 
-    if (topics.length === 0) {
-      listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No topics found for ${lvl}.</div>`;
+  
+  // --- ANALYTICS LOGIC ---
+  let analyticsChartInstance = null;
+  let allMySchoolsList = [];
+
+  window.populateAnalyticsSchools = async function() {
+    allMySchoolsList = [];
+    const sel = document.getElementById("analytics-school");
+    for (const dist of myUser.districts) {
+      let schools = await getSchools(dist);
+      schools.forEach(s => {
+        s.district = dist;
+        allMySchoolsList.push(s);
+        sel.innerHTML += `<option value="${s['School Name']}">${s['School Name']}</option>`;
+      });
+    }
+  };
+
+  window.loadAnalytics = async function() {
+    const schoolName = document.getElementById("analytics-school").value;
+    const clsName = document.getElementById("analytics-class").value;
+    const canvas = document.getElementById("analyticsChart");
+    const emptyMsg = document.getElementById("analytics-empty");
+    
+    if (!schoolName) {
+      canvas.style.display = "none";
+      emptyMsg.style.display = "block";
       return;
     }
 
-    listEl.innerHTML = topics.map((t, index) => `
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;padding:0.75rem;">
-        <div style="font-weight:600;">📘 ${t["Topic Name"]}</div>
-        ${t.Description ? `<div class="text-sm text-muted" style="margin-top:0.25rem;">${t.Description}</div>` : ''}
-        <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem;">
-          <button class="btn btn-outline btn-sm" onclick="editSyllabus('${lvl}', ${index})">Edit</button>
-          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSyllabus('${lvl}', ${index})">Delete</button>
-        </div>
-      </div>
-    `).join("");
-  };
-
-  window.downloadSyllabusTemplate = function() {
-    const ws = XLSX.utils.aoa_to_sheet([["Topic Name", "Description"]]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Syllabus");
-    XLSX.writeFile(wb, "Syllabus_Template.xlsx");
-  };
-
-  window.uploadSyllabusExcel = function() {
-    const lvl = document.getElementById("up-syl-level").value;
-    if (!lvl) return;
-
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".xlsx, .xls";
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        const bstr = evt.target.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
-        
-        let existing = await getSyllabus(lvl);
-        existing = existing.concat(data);
-        await saveSyllabus(lvl, existing);
-        alert(`Successfully imported syllabus topics for ${lvl}!`);
-        setMode('syllabus', 'view');
-      };
-      reader.readAsBinaryString(file);
-    };
-    input.click();
-  };
-  
-  let editingSyllabus = null;
-
-  window.editSyllabus = async function(lvl, index) {
-    let topics = await getSyllabus(lvl);
-    const t = topics[index];
-    if (!t) return;
+    const schoolObj = allMySchoolsList.find(s => s["School Name"] === schoolName);
+    const data = await getStudentAssessments(schoolObj.district, schoolName, clsName);
     
-    document.getElementById("man-syl-level").value = lvl;
-    document.getElementById("man-syl-topic").value = t["Topic Name"] || "";
-    document.getElementById("man-syl-desc").value = t.Description || "";
-    
-    editingSyllabus = { lvl, index };
-    setMode('syllabus', 'manual');
-  };
-
-  window.deleteSyllabus = async function(lvl, index) {
-    if (!confirm("Are you sure you want to delete this topic?")) return;
-    let topics = await getSyllabus(lvl);
-    topics.splice(index, 1);
-    await saveSyllabus(lvl, topics);
-    renderSyllabusView();
-  };
-
-  window.submitSyllabusManual = async function() {
-    const lvl = document.getElementById("man-syl-level").value;
-    const topic = document.getElementById("man-syl-topic").value.trim();
-    const desc = document.getElementById("man-syl-desc").value.trim();
-    if (!topic) return alert("Topic Name is required.");
-
-    let existing = await getSyllabus(lvl);
-    const newTopic = { "Topic Name": topic, "Description": desc };
-
-    if (editingSyllabus && editingSyllabus.lvl === lvl) {
-      existing[editingSyllabus.index] = newTopic;
-      editingSyllabus = null;
-    } else {
-      existing.push(newTopic);
+    if (data.length === 0 || !data.some(r => r.baseline || r.midline || r.endline)) {
+      canvas.style.display = "none";
+      emptyMsg.style.display = "block";
+      emptyMsg.textContent = "No assessment data available for this class yet.";
+      return;
     }
+
+    canvas.style.display = "block";
+    emptyMsg.style.display = "none";
     
-    await saveSyllabus(lvl, existing);
-    alert("Topic saved!");
+    const schema = (schoolObj.Level === "Level-3" || schoolObj.Level === "Level-4") ? SCHEMA_L3_L4 : SCHEMA_L1_L2;
+    const labels = schema.map(s => s.label);
     
-    document.getElementById("man-syl-topic").value = "";
-    document.getElementById("man-syl-desc").value = "";
-    setMode('syllabus', 'view');
-    renderSyllabusView();
+    const calcAvg = (term) => {
+      let sums = Array(schema.length).fill(0);
+      let count = 0;
+      data.forEach(r => {
+        if (r[term]) {
+          let hasData = false;
+          schema.forEach((p, i) => {
+            if (r[term][p.id] !== undefined && r[term][p.id] !== "") {
+              sums[i] += Number(r[term][p.id]);
+              hasData = true;
+            }
+          });
+          if (hasData) count++;
+        }
+      });
+      if (count === 0) return Array(schema.length).fill(0);
+      return sums.map((s, i) => Math.round((s / count) / schema[i].maxMarks * 100));
+    };
+
+    const avgBase = calcAvg("baseline");
+    const avgMid = calcAvg("midline");
+    const avgEnd = calcAvg("endline");
+
+    if (analyticsChartInstance) analyticsChartInstance.destroy();
+
+    analyticsChartInstance = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          { label: "Baseline (%)", data: avgBase, backgroundColor: "#cbd5e1" },
+          { label: "Midline (%)", data: avgMid, backgroundColor: "#3b82f6" },
+          { label: "Endline (%)", data: avgEnd, backgroundColor: "#22c55e" }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, max: 100 } },
+        plugins: {
+          title: { display: true, text: `Average Performance (%) - ${clsName}` }
+        }
+      }
+    });
   };
 
   // --- YEAR PLAN LOGIC ---
-  function renderYearPlan() {
+  window.renderYearPlan = function() {
     const ypContainer = document.getElementById("year-plan-container");
+    const selectedMonth = document.getElementById("year-plan-month").value;
+    
     ypContainer.innerHTML = "";
-    MONTHS.forEach(m => {
-      const tasks = yearPlan[m] || [];
-      let taskHtml = tasks.map((t, i) => `<div class="text-sm" style="margin-top:0.4rem;padding:0.3rem;background:var(--bg);border-radius:4px;display:flex;justify-content:space-between;"><span>✅ ${t}</span> <div style="display:flex;gap:0.5rem;"><button class="btn btn-ghost btn-sm" style="padding:0;color:var(--primary);" onclick="editYearTask('${m}', ${i})">✎</button><button class="btn btn-ghost btn-sm" style="padding:0;color:var(--danger);" onclick="deleteYearTask('${m}', ${i})">✕</button></div></div>`).join("");
-      
-      ypContainer.innerHTML += `
-        <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.75rem;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <strong>${m}</strong>
-            <button class="btn btn-outline btn-sm" onclick="addYearTask('${m}')">+ Add Task</button>
-          </div>
-          <div style="margin-top:0.5rem;">${taskHtml}</div>
+    
+    if (!selectedMonth) return;
+
+    const tasks = yearPlan[selectedMonth] || [];
+    let taskHtml = tasks.map((t, i) => `
+      <div class="text-sm" style="margin-top:0.4rem;padding:0.5rem;background:var(--bg);border-radius:4px;display:flex;justify-content:space-between;align-items:flex-start;border:1px solid var(--border);">
+        <span style="flex:1;">• ${t}</span> 
+        <div style="display:flex;gap:0.75rem;margin-left:1rem;">
+          <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--primary);" onclick="editYearTask('${selectedMonth}', ${i})">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--danger);" onclick="deleteYearTask('${selectedMonth}', ${i})">🗑️</button>
         </div>
-      `;
-    });
+      </div>
+    `).join("");
+    
+    if (tasks.length === 0) {
+      taskHtml = `<div class="text-muted text-center" style="margin:1rem 0;">No tasks added for ${selectedMonth} yet.</div>`;
+    }
+
+    ypContainer.innerHTML = `
+      <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:0.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <strong style="font-size:1.1rem;color:var(--primary);">${selectedMonth} Tasks</strong>
+          <button class="btn btn-primary btn-sm" onclick="addYearTask('${selectedMonth}')">+ Add Task</button>
+        </div>
+        <div>${taskHtml}</div>
+      </div>
+    `;
   }
 
   window.addYearTask = async function(month) {
@@ -626,6 +652,7 @@
     yearPlan[month].push(task);
     await saveYearPlan(userName, yearPlan);
     renderYearPlan();
+    populateAnalyticsSchools();
   };
   
   window.editYearTask = async function(month, index) {
@@ -635,6 +662,7 @@
       yearPlan[month][index] = newTask.trim();
       await saveYearPlan(userName, yearPlan);
       renderYearPlan();
+    populateAnalyticsSchools();
     }
   };
   
@@ -643,6 +671,7 @@
     yearPlan[month].splice(index, 1);
     await saveYearPlan(userName, yearPlan);
     renderYearPlan();
+    populateAnalyticsSchools();
   };
 
   window.doLogout = function() {
@@ -657,3 +686,6 @@
 </script>
 </body>
 </html>
+
+
+

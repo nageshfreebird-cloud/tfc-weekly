@@ -1,0 +1,349 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syllabus Registry - Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .registry-header {
+      background: linear-gradient(135deg, var(--primary), #1e40af);
+      color: white;
+      padding: 2rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .registry-header h2 { margin: 0; color: white; }
+    .registry-header p { margin: 0.5rem 0 0 0; opacity: 0.9; }
+    
+    .action-bar {
+      display: flex;
+      gap: 1rem;
+      background: white;
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .action-bar .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: auto;
+    }
+    
+    .topic-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1rem;
+      padding: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      transition: 0.2s;
+    }
+    .topic-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .topic-content h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .topic-content p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    
+    .panel-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="container-wide" style="max-width: 1200px;">
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs" style="justify-content:center;margin-bottom:2rem;flex-wrap:wrap;">
+      <a href="dashboard.html">⚙️ Dashboard</a>
+      <a href="tab-a.html">Weekly Tasks</a>
+      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">📝 Assessments Received</a>
+      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="sheets.html">🔗 Google Sheet Links</a>
+      <a href="manager-syllabus.html" class="active">📘 Syllabus Registry</a>
+      <a href="settings.html">My Settings</a>
+    </div>
+
+    <div class="registry-header">
+      <div>
+        <h2>📘 Syllabus Registry</h2>
+        <p>Manage the master curriculum for all levels across the organization.</p>
+      </div>
+      <div>
+        <img src="https://cdn-icons-png.flaticon.com/512/3389/3389081.png" style="width:80px; opacity:0.8; filter:invert(1);" alt="Book" />
+      </div>
+    </div>
+    
+    <div class="action-bar">
+      <div style="display:flex; align-items:center; gap:1rem; flex:1;">
+        <label style="font-weight:600; color:var(--text); white-space:nowrap;">Select Level:</label>
+        <select id="view-syl-level" class="form-control" style="max-width:200px;" onchange="renderSyllabusView()">
+          <option value="">-- Choose Level --</option>
+          <option value="Level-1">Level-1</option>
+          <option value="Level-2">Level-2</option>
+          <option value="Level-3">Level-3</option>
+          <option value="Level-4">Level-4</option>
+        </select>
+      </div>
+      
+      <div class="btn-group" id="action-buttons" style="display:none;">
+        <button class="btn btn-outline" onclick="setMode('manual')">➕ Add Topic</button>
+        <button class="btn btn-outline" onclick="setMode('upload')">📤 Bulk Upload Excel</button>
+      </div>
+    </div>
+
+    <!-- VIEW LIST -->
+    <div id="syllabus-view" style="display:block;">
+      <div id="syllabus-view-list">
+        <div class="panel-box text-center text-muted" style="padding: 4rem 2rem;">
+          <h3 style="color:var(--border); margin-bottom:1rem;">No Level Selected</h3>
+          <p>Please select a curriculum level from the dropdown above to view or edit topics.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANUAL ADD/EDIT PANEL -->
+    <div id="syllabus-manual" class="panel-box" style="display:none; max-width: 600px; margin: 0 auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 id="manual-title" style="margin:0;">Add New Topic</h3>
+        <button class="btn btn-ghost btn-sm" onclick="setMode('view')">✕ Cancel</button>
+      </div>
+      
+      <label class="form-label">Topic Name</label>
+      <input type="text" id="man-syl-topic" class="form-control" style="margin-bottom:1rem;" placeholder="e.g., Introduction to Vowels" />
+      
+      <label class="form-label">Description & Activities (Optional)</label>
+      <textarea id="man-syl-desc" class="form-control" style="margin-bottom:1.5rem;height:100px;" placeholder="Detailed breakdown of the topic..."></textarea>
+      
+      <button class="btn btn-primary btn-block" onclick="submitSyllabusManual()">💾 Save Topic</button>
+    </div>
+
+    <!-- EXCEL UPLOAD PANEL -->
+    <div id="syllabus-upload" class="panel-box" style="display:none; max-width: 600px; margin: 0 auto; text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="margin:0;">Bulk Upload via Excel</h3>
+        <button class="btn btn-ghost btn-sm" onclick="setMode('view')">✕ Cancel</button>
+      </div>
+      
+      <div class="alert alert-info text-sm mb-3 text-left">
+        <strong>Instructions:</strong>
+        <ol style="margin-top:0.5rem; margin-bottom:0; padding-left:1.5rem;">
+          <li>Download the template file.</li>
+          <li>Fill in the <b>Topic Name</b> and <b>Description</b> columns.</li>
+          <li>Upload the completed file to append topics to the selected level.</li>
+        </ol>
+      </div>
+      
+      <div style="display:flex; gap:1rem; justify-content:center; margin-top:2rem;">
+        <button class="btn btn-outline" onclick="downloadSyllabusTemplate()">⬇️ Download Template</button>
+        <button class="btn btn-primary" onclick="uploadSyllabusExcel()">⬆️ Upload File</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+  import { getSyllabus, saveSyllabus } from "./js/db.js";
+  import { requireManagerAuth } from "./js/utils.js";
+
+  requireManagerAuth();
+
+  window.doLogout = function() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  };
+
+  window.setMode = function(mode) {
+    document.getElementById("syllabus-view").style.display = (mode === 'view') ? 'block' : 'none';
+    document.getElementById("syllabus-manual").style.display = (mode === 'manual') ? 'block' : 'none';
+    document.getElementById("syllabus-upload").style.display = (mode === 'upload') ? 'block' : 'none';
+    
+    if (mode === 'manual' && !editingSyllabus) {
+      document.getElementById("manual-title").textContent = "Add New Topic";
+      document.getElementById("man-syl-topic").value = "";
+      document.getElementById("man-syl-desc").value = "";
+    }
+  };
+
+  // --- SYLLABUS LOGIC ---
+  window.renderSyllabusView = async function() {
+    const lvl = document.getElementById("view-syl-level").value;
+    const listEl = document.getElementById("syllabus-view-list");
+    const actions = document.getElementById("action-buttons");
+    
+    if (!lvl) { 
+      listEl.innerHTML = `
+        <div class="panel-box text-center text-muted" style="padding: 4rem 2rem;">
+          <h3 style="color:var(--border); margin-bottom:1rem;">No Level Selected</h3>
+          <p>Please select a curriculum level from the dropdown above to view or edit topics.</p>
+        </div>`; 
+      actions.style.display = 'none';
+      return; 
+    }
+    
+    actions.style.display = 'flex';
+    listEl.innerHTML = `<div class="text-center text-muted" style="margin-top:2rem;">Loading topics...</div>`;
+    
+    let topics = await getSyllabus(lvl);
+
+    if (topics.length === 0) {
+      listEl.innerHTML = `
+        <div class="panel-box text-center text-muted" style="padding: 4rem 2rem; background: var(--bg-alt);">
+          <h3 style="color:var(--border); margin-bottom:1rem;">No Topics Found</h3>
+          <p>The curriculum for ${lvl} is currently empty.</p>
+          <button class="btn btn-primary" style="margin-top:1rem;" onclick="setMode('manual')">Add First Topic</button>
+        </div>`;
+      return;
+    }
+
+    listEl.innerHTML = topics.map((t, index) => `
+      <div class="topic-card">
+        <div class="topic-content" style="flex:1;">
+          <h4><span style="color:var(--primary); font-size:1.2rem;">📖</span> ${t["Topic Name"]}</h4>
+          ${t.Description ? `<p>${t.Description.replace(/\n/g, '<br/>')}</p>` : '<p style="font-style:italic;">No description provided.</p>'}
+        </div>
+        <div style="display:flex;gap:0.5rem; margin-left:1rem;">
+          <button class="btn btn-outline btn-sm" onclick="editSyllabus('${lvl}', ${index})">✏️ Edit</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSyllabus('${lvl}', ${index})">🗑️ Delete</button>
+        </div>
+      </div>
+    `).join("");
+  };
+
+  window.downloadSyllabusTemplate = function() {
+    const ws = XLSX.utils.aoa_to_sheet([["Topic Name", "Description"]]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Syllabus");
+    XLSX.writeFile(wb, "Syllabus_Template.xlsx");
+  };
+
+  window.uploadSyllabusExcel = function() {
+    const lvl = document.getElementById("view-syl-level").value;
+    if (!lvl) return alert("Select a level first.");
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx, .xls";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        let existing = await getSyllabus(lvl);
+        existing = existing.concat(data);
+        await saveSyllabus(lvl, existing);
+        alert(`Successfully imported syllabus topics for ${lvl}!`);
+        setMode('view');
+        renderSyllabusView();
+      };
+      reader.readAsBinaryString(file);
+    };
+    input.click();
+  };
+  
+  let editingSyllabus = null;
+
+  window.editSyllabus = async function(lvl, index) {
+    let topics = await getSyllabus(lvl);
+    const t = topics[index];
+    if (!t) return;
+    
+    document.getElementById("manual-title").textContent = "Edit Topic";
+    document.getElementById("man-syl-topic").value = t["Topic Name"] || "";
+    document.getElementById("man-syl-desc").value = t.Description || "";
+    
+    editingSyllabus = { lvl, index };
+    setMode('manual');
+  };
+
+  window.deleteSyllabus = async function(lvl, index) {
+    if (!confirm("Are you sure you want to delete this topic?")) return;
+    let topics = await getSyllabus(lvl);
+    topics.splice(index, 1);
+    await saveSyllabus(lvl, topics);
+    renderSyllabusView();
+  };
+
+  window.submitSyllabusManual = async function() {
+    const lvl = document.getElementById("view-syl-level").value;
+    if (!lvl) return alert("Select a level first.");
+    
+    const topic = document.getElementById("man-syl-topic").value.trim();
+    const desc = document.getElementById("man-syl-desc").value.trim();
+    if (!topic) return alert("Topic Name is required.");
+
+    let existing = await getSyllabus(lvl);
+    const newTopic = { "Topic Name": topic, "Description": desc };
+
+    if (editingSyllabus && editingSyllabus.lvl === lvl) {
+      existing[editingSyllabus.index] = newTopic;
+      editingSyllabus = null;
+    } else {
+      existing.push(newTopic);
+    }
+    
+    await saveSyllabus(lvl, existing);
+    
+    document.getElementById("man-syl-topic").value = "";
+    document.getElementById("man-syl-desc").value = "";
+    setMode('view');
+    renderSyllabusView();
+  };
+
+  // Auto-nav
+  window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("level")) {
+      document.getElementById("view-syl-level").value = params.get("level");
+      renderSyllabusView();
+    }
+  };
+</script>
+</body>
+</html>
+
