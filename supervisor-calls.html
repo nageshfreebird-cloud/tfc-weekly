@@ -145,8 +145,11 @@
     const allSchools = await getSchools(dist);
     currentSchools = allSchools.filter(s => s.Level === level);
     currentSyllabus = await getSyllabus(level);
-    const allCallsData = await getTeacherCalls(userName, `${dist}_${level}`);
-    savedData = allCallsData[currentPeriod.label] || {};
+    window.allCallsData = await getTeacherCalls(userName, `${dist}_${level}`);
+    if (typeof window.allCallsData !== 'object' || window.allCallsData === null) {
+      window.allCallsData = {};
+    }
+    savedData = window.allCallsData[currentPeriod.label] || {};
 
     if (currentSchools.length === 0) {
       container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found in ${dist} for ${level}.</div>`;
@@ -254,9 +257,11 @@
       remarks: remarksVal
     });
 
+    window.allCallsData[currentPeriod.label] = savedData;
+
     try {
       // Save to DB under this period
-      await saveTeacherCalls(userName, `${dist}_${level}`, currentPeriod.label, savedData);
+      await saveTeacherCalls(userName, `${dist}_${level}`, window.allCallsData);
       
       // Rerender to show new log and clear inputs
       loadSchools();
