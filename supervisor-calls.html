@@ -165,9 +165,14 @@
       
       const logs = Array.isArray(savedData[sName]) ? savedData[sName] : [];
 
-      let buttonText = "✅ Done";
+      let buttonText = "Call";
+      let logHtml = "";
       if (logs.length > 0) {
-        buttonText = `✅ Done ${logs.length} time${logs.length > 1 ? 's' : ''}`;
+        if (logs.length === 1) {
+          buttonText = "Call done";
+        } else {
+          buttonText = `Call ${logs.length} times`;
+        }
         logHtml = `<div style="margin-top:0.5rem;padding:0.5rem;background:#f8f9fa;border-radius:4px;font-size:0.85rem;">
           <strong style="color:var(--text-muted);">Call History this period:</strong>
           <ul style="margin:0.25rem 0 0 1rem;padding:0;">
