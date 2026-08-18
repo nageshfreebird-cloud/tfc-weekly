@@ -145,7 +145,8 @@
     const allSchools = await getSchools(dist);
     currentSchools = allSchools.filter(s => s.Level === level);
     currentSyllabus = await getSyllabus(level);
-    savedData = await getTeacherCalls(userName, `${dist}_${level}`, currentPeriod.label);
+    const allCallsData = await getTeacherCalls(userName, `${dist}_${level}`);
+    savedData = allCallsData[currentPeriod.label] || {};
 
     if (currentSchools.length === 0) {
       container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found in ${dist} for ${level}.</div>`;
@@ -253,11 +254,18 @@
       remarks: remarksVal
     });
 
-    // Save to DB under this period
-    await saveTeacherCalls(userName, `${dist}_${level}`, currentPeriod.label, savedData);
-    
-    // Rerender to show new log and clear inputs
-    loadSchools();
+    try {
+      // Save to DB under this period
+      await saveTeacherCalls(userName, `${dist}_${level}`, currentPeriod.label, savedData);
+      
+      // Rerender to show new log and clear inputs
+      loadSchools();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving: " + err.message);
+      btn.textContent = "Call";
+      btn.disabled = false;
+    }
   };
 
   window.doLogout = function() {
