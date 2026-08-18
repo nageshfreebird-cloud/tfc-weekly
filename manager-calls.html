@@ -186,7 +186,8 @@
         Object.keys(levelsInDist).forEach(lvl => {
           const distLevelKey = `${dist}_${lvl}`;
           const schoolsInLvl = levelsInDist[lvl];
-          const savedForThisLvl = callsData[`${u.name}_${distLevelKey}`] || {};
+          const fullData = callsData[`${u.name}_${distLevelKey}`] || {};
+          const savedForThisLvl = fullData[periodLabel] || {};
           
           let doneCount = 0;
           let schoolDetails = [];
