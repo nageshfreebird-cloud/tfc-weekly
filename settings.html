@@ -3,19 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Settings — Teach for Change</title>
+  <title>Manager Setup ⚙️ Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-
+  <!-- Sidebar Navigation -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Logo" />
+      <h2>Teach for Change</h2>
+    </div>
+    <div class="sidebar-nav">
+      <a href="dashboard.html">⚙️ Dashboard</a>
+      <a href="tab-a.html">📋 Weekly Tasks</a>
+      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">📥 Assessments Received</a>
+      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="sheets.html">🔗 Google Sheet Links</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="settings.html" class="active">⚙️ My Settings</a>
+    </div>
+  </div>
 <nav class="navbar">
   <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
-  <div class="navbar-datetime">
-    <span class="time-icon">🕐</span>
-    <span id="live-clock">Loading...</span>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <div>
+      <span class="time-icon">🕒</span>
+      <span id="live-clock">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -24,7 +46,7 @@
 
     <div class="flex-between" style="margin-bottom:1.5rem;">
       <h1 style="font-size:1.4rem;font-weight:800;color:var(--primary);">⚙️ Settings</h1>
-      <a href="dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+      <a href="dashboard.html" class="btn btn-ghost btn-sm">⚙️ Dashboard</a>
     </div>
 
     <!-- ===== ACADEMIC YEAR SETTINGS ===== -->
@@ -58,70 +80,38 @@
       </button>
     </div>
 
-    <!-- ===== WEEK SETTINGS ===== -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">📅</span>
-        <h2>Week & Meeting Settings</h2>
-      </div>
+    <div class="card" style="margin-bottom:1.5rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;">
+  <div class="flex-between" style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+    <h2 style="font-size:1.2rem;color:var(--primary);">📍 Register Districts</h2>
+  </div>
+  <div class="district-list" id="district-list" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:250px;overflow-y:auto;padding:.5rem;margin-bottom:1rem;">
+  </div>
+</div>
 
-      <div id="week-saved-msg" class="alert alert-success hidden">✅ Week settings saved!</div>
-
-      <div class="form-group">
-        <label class="form-label">Week Period (auto-calculated)</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-          <div>
-            <label class="form-label" style="font-weight:400;color:var(--text-muted);font-size:.8rem;">Start (Monday)</label>
-            <input type="date" class="form-control" id="week-start" disabled readonly style="background:#e5e7eb;cursor:not-allowed;" />
-          </div>
-          <div>
-            <label class="form-label" style="font-weight:400;color:var(--text-muted);font-size:.8rem;">End (Saturday)</label>
-            <input type="date" class="form-control" id="week-end" disabled readonly style="background:#e5e7eb;cursor:not-allowed;" />
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">📅 Meeting Day</label>
-        <select class="form-control" id="meeting-day">
-          <option value="">— Select meeting day —</option>
-        </select>
-        <div class="form-hint">Select the day the meeting will be held this week.</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">📢 Note to Team (optional)</label>
-        <input type="text" class="form-control" id="team-note"
-          placeholder="e.g. Monday is public holiday, meeting on Tuesday" />
-        <div class="form-hint">This note will be shown to team members on the home page.</div>
-      </div>
-
-      <button class="btn btn-primary btn-block" onclick="saveWeek()">
-        Save Week Settings
-      </button>
+<div class="card" style="margin-bottom:1.5rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;">
+  <div class="flex-between" style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+    <h2 style="font-size:1.2rem;color:var(--primary);">👥 Register Team Members</h2>
+  </div>
+  <div class="team-list" id="team-list" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:250px;overflow-y:auto;padding:.5rem;margin-bottom:1rem;">
+  </div>
+  <div id="team-form" style="display:flex;flex-direction:column;gap:1rem;margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem;">
+    <h3 id="form-title" style="font-size:1rem;font-weight:bold;">+ Add New Member</h3>
+    <input type="text" id="tm-name" class="form-control" placeholder="Member Name" />
+    <select id="tm-role" class="form-control">
+      <option value="supervisor">Field Supervisor</option>
+      <option value="manager">Manager</option>
+    </select>
+    <div id="district-assign-group" style="display:block;">
+      <label style="display:block;margin-bottom:.5rem;font-weight:600;">Assign Districts</label>
+      <div id="assign-districts-list" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:150px;overflow-y:auto;padding:.5rem;"></div>
     </div>
-
-    <!-- ===== MANAGE TEAM MEMBERS ===== -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">👥</span>
-        <h2>Manage Team Members</h2>
-      </div>
-      
-      <div id="team-saved-msg" class="alert alert-success hidden">✅ Team updated!</div>
-
-      <div class="form-group">
-        <div style="display:flex;gap:.5rem;">
-          <input type="text" id="new-member-name" class="form-control" placeholder="New member name..." />
-          <button class="btn btn-secondary" style="white-space:nowrap;background:var(--secondary);color:white;border:none;border-radius:var(--radius-sm);padding:0 1rem;font-weight:600;" onclick="addMember()">+ Add</button>
-        </div>
-      </div>
-
-      <div class="task-list" id="settings-team-list" style="margin-top:1rem;">
-        <!-- Dynamically filled -->
-      </div>
+    <input type="text" id="tm-pwd" class="form-control" placeholder="Default Password: tfc@2014" value="tfc@2014" />
+    <div style="display:flex;gap:1rem;">
+      <button class="btn btn-primary" id="form-submit-btn" onclick="saveTeamMember()" style="flex:1;">Save Team Member</button>
+      <button class="btn btn-outline hidden" id="form-cancel-btn" onclick="cancelEdit()" style="flex:1;">Cancel Edit</button>
     </div>
-
+  </div>
+</div>
     <!-- ===== CHANGE CREDENTIALS ===== -->
     <div class="card">
       <div class="card-header">
@@ -169,25 +159,268 @@
 
 <script type="module">
   import { startClock, requireManagerAuth, getMondayOf, getSaturdayOf,
-           toYMD, formatShortDate, escHtml } from "./js/utils.js";
-  import { getWeekSettings, saveWeekSettings, getAdminCredentials,
-           updateAdminCredentials, getTeamMembers, saveTeamMembers,
-           getGlobalAcademicYear, setGlobalAcademicYear } from "./js/db.js";
+           toYMD, formatShortDate } from "./js/utils.js";
+  import { getDistricts, saveDistricts, getUsers, saveUsers, getAdminCredentials,
+           updateAdminCredentials, getGlobalAcademicYear, setGlobalAcademicYear } from "./js/db.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
 
-  // ---- Load week & academic settings ----
-  async function loadWeek() {
-    const s = await getWeekSettings();
-    document.getElementById("week-start").value = s.weekStart || getMondayOf();
-    document.getElementById("week-end").value   = s.weekEnd   || getSaturdayOf();
-    document.getElementById("team-note").value  = s.teamNote  || "";
-    populateMeetingDays(s.weekStart, s.meetingDay);
+    let districts = [];
+  let users = [];
+  let editUserIndex = -1;
 
+  async function init() {
     const year = await getGlobalAcademicYear();
-    document.getElementById("academic-year-select").value = year;
+    const yearSelect = document.getElementById('academic-year-select');
+    if(yearSelect) yearSelect.value = year;
+    
+    const currentMonth = new Date().getMonth();
+    if (currentMonth !== 5 && yearSelect) {
+      yearSelect.innerHTML = '<option value="' + year + '">' + year + '</option>';
+      yearSelect.disabled = true;
+      yearSelect.style.backgroundColor = '#e9ecef';
+      yearSelect.style.color = '#6c757d';
+      yearSelect.style.cursor = 'not-allowed';
+      
+      const saveBtn = document.getElementById('btn-save-year');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Setting Locked (Only allowed in June)';
+        saveBtn.style.backgroundColor = '#6c757d';
+        saveBtn.style.borderColor = '#6c757d';
+      }
+    }
+
+    districts = await getDistricts();
+    users = await getUsers();
+    
+    if (typeof renderDistricts === 'function') renderDistricts();
+    if (typeof renderUsers === 'function') renderUsers();
+    if (typeof renderDistrictCheckboxes === 'function') renderDistrictCheckboxes();
   }
+  init();
+  function renderDistricts() {
+    const list = document.getElementById("district-list");
+    list.innerHTML = "";
+    
+    const states = ["Telangana", "Andhra Pradesh", "Karnataka"];
+    if (!districts || Array.isArray(districts)) {
+      districts = { "Telangana": [], "Andhra Pradesh": [], "Karnataka": [] };
+    }
+
+    states.forEach(state => {
+      const stateDistricts = districts[state] || [];
+      
+      let html = `
+        <details class="state-group" style="margin-bottom:1rem; border:1px solid #e2e8f0; border-radius:0.5rem; overflow:hidden;">
+          <summary style="padding:0.75rem 1rem; background:#f8fafc; cursor:pointer; font-weight:600; list-style:none; display:flex; justify-content:space-between; align-items:center;">
+            <span>🗺️ ${state} <span class="badge" style="background:#e2e8f0;color:#475569;font-size:0.75rem;padding:0.1rem 0.5rem;border-radius:1rem;">${stateDistricts.length}</span></span>
+            <span style="font-size:0.8rem;color:#64748b;">▼</span>
+          </summary>
+          <div style="padding:1rem;">
+      `;
+      
+      if (stateDistricts.length === 0) {
+        html += `<div class="text-muted text-sm" style="text-align:center; padding-bottom:1rem;">No districts added in ${state}.</div>`;
+      } else {
+        stateDistricts.forEach((d, i) => {
+          html += `
+            <div class="list-item" style="border-bottom:1px solid #f1f5f9; border-radius:0;">
+              <strong>${d}</strong>
+              <button class="btn btn-ghost btn-sm" onclick="removeDistrict('${state}', ${i})" style="color:var(--danger)">🗑️</button>
+            </div>
+          `;
+        });
+      }
+      
+      html += `
+            <div style="display:flex;gap:0.5rem; margin-top:1rem;">
+              <input type="text" id="new-district-${state.replace(/\s+/g, '')}" class="form-control" placeholder="Add to ${state}" />
+              <button class="btn btn-primary" onclick="addDistrict('${state}')">Add</button>
+            </div>
+          </div>
+        </details>
+      `;
+      list.innerHTML += html;
+    });
+  }
+
+  function renderDistrictCheckboxes() {
+    const list = document.getElementById("assign-districts-list");
+    list.innerHTML = "";
+    
+    const states = ["Telangana", "Andhra Pradesh", "Karnataka"];
+    
+    states.forEach(state => {
+      const stateDistricts = districts[state] || [];
+      if (stateDistricts.length === 0) return;
+      
+      let html = `
+        <details style="margin-bottom:0.5rem;">
+          <summary style="font-weight:bold; cursor:pointer; padding:0.25rem 0; color:#334155;">🗺️ ${state}</summary>
+          <div style="padding:0.5rem 0 0.5rem 1rem;">
+      `;
+      
+      stateDistricts.forEach((d) => {
+        html += `
+          <label style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem;">
+            <input type="checkbox" value="${d}" class="district-cb" /> ${d}
+          </label>
+        `;
+      });
+      
+      html += `</div></details>`;
+      list.innerHTML += html;
+    });
+    
+    if (list.innerHTML === "") {
+      list.innerHTML = `<div class="text-muted text-sm">No districts added globally yet.</div>`;
+    }
+  }
+
+  window.addDistrict = async function(state) {
+    const inp = document.getElementById("new-district-" + state.replace(/\s+/g, ''));
+    const val = inp.value.trim();
+    if (!val) return;
+    
+    if (!districts[state]) districts[state] = [];
+    
+    // Check if exists globally to prevent duplicates across states
+    let exists = false;
+    for (const s of Object.keys(districts)) {
+      if (districts[s].includes(val)) exists = true;
+    }
+    
+    if (exists) { alert("District already exists in the system."); return; }
+    
+    districts[state].push(val);
+    await saveDistricts(districts);
+    inp.value = "";
+    renderDistricts();
+    renderDistrictCheckboxes();
+  };
+
+  window.removeDistrict = async function(state, i) {
+    if (!confirm(`Remove this district from ${state}?`)) return;
+    districts[state].splice(i, 1);
+    await saveDistricts(districts);
+    renderDistricts();
+    renderDistrictCheckboxes();
+  };
+
+  function renderUsers() {
+    const list = document.getElementById("team-list");
+    list.innerHTML = "";
+    if (users.length === 0) {
+      list.innerHTML = `<div class="text-muted text-sm" style="padding:1rem;text-align:center;">No team members yet.</div>`;
+    }
+    users.forEach((u, i) => {
+      list.innerHTML += `
+        <div class="list-item" style="display:block;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+            <strong>${u.name}</strong>
+            <div style="display:flex;gap:0.25rem;">
+              <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.name.replace(/'/g, "\\'")}')" title="Reset password to tfc@2014">🔄 Reset Pwd</button>
+              <button class="btn btn-outline btn-sm" onclick="editUser(${i})">Edit</button>
+              <button class="btn btn-ghost btn-sm" onclick="removeUser(${i})" style="color:var(--danger)">🗑️</button>
+            </div>
+          </div>
+          <div class="text-sm text-muted">Role: ${u.role === 'supervisor' ? 'Field Supervisor' : 'Other'}</div>
+          ${u.role === 'supervisor' && u.districts && u.districts.length > 0 ? `<div class="text-sm" style="color:var(--primary)">📍 ${u.districts.join(", ")}</div>` : ''}
+        </div>
+      `;
+    });
+  }
+
+  window.editUser = function(i) {
+    editUserIndex = i;
+    const u = users[i];
+    document.getElementById("form-title").textContent = "✏️ Edit Member: " + u.name;
+    document.getElementById("tm-name").value = u.name;
+    const role = u.role || 'supervisor';
+    document.getElementById("tm-role").value = role;
+    document.getElementById("tm-pwd").value = u.password || "tfc@2014";
+    document.getElementById("district-assign-group").style.display = (role === 'supervisor') ? 'block' : 'none';
+    
+    document.getElementById("form-submit-btn").textContent = "Update Team Member";
+    document.getElementById("form-cancel-btn").classList.remove("hidden");
+    
+    renderDistrictCheckboxes(); // re-render to free up their currently assigned districts
+    
+    // Check their boxes
+    if (u.districts) {
+      document.querySelectorAll(".district-cb").forEach(cb => {
+        if (u.districts.includes(cb.value)) cb.checked = true;
+      });
+    }
+  };
+
+  window.resetUserPassword = async function(name) {
+    if (confirm(`Are you sure you want to reset ${name}'s password back to tfc@2014?`)) {
+      const idx = users.findIndex(u => u.name === name);
+      if (idx !== -1) {
+        users[idx].password = 'tfc@2014';
+        await saveUsers(users);
+        alert(`Password for ${name} has been reset to tfc@2014.`);
+      }
+    }
+  };
+
+  window.cancelEdit = function() {
+    editUserIndex = -1;
+    document.getElementById("form-title").textContent = "+ Add New Member";
+    document.getElementById("tm-name").value = "";
+    document.getElementById("tm-role").value = "supervisor";
+    document.getElementById("tm-pwd").value = "tfc@2014";
+    document.getElementById("district-assign-group").style.display = 'block';
+    
+    document.getElementById("form-submit-btn").textContent = "Save Team Member";
+    document.getElementById("form-cancel-btn").classList.add("hidden");
+    
+    renderDistrictCheckboxes();
+  };
+
+  window.saveTeamMember = async function() {
+    const name = document.getElementById("tm-name").value.trim();
+    const role = document.getElementById("tm-role").value;
+    const pwd = document.getElementById("tm-pwd").value.trim() || 'tfc@2014';
+    
+    if (!name || !pwd) { alert("Name and password are required."); return; }
+    
+    if (editUserIndex === -1 && users.find(u => u.name === name)) { 
+      alert("User already exists!"); return; 
+    }
+
+    const assigned = [];
+    if (role === 'supervisor') {
+      document.querySelectorAll(".district-cb:checked").forEach(cb => assigned.push(cb.value));
+    }
+
+    if (editUserIndex > -1) {
+      users[editUserIndex] = { name, role, password: pwd, districts: assigned };
+    } else {
+      users.push({ name, role, password: pwd, districts: assigned });
+    }
+
+    await saveUsers(users);
+    cancelEdit();
+    renderUsers();
+  };
+
+  window.removeUser = async function(i) {
+    if (!confirm(`Delete user ${users[i].name}?`)) return;
+    users.splice(i, 1);
+    await saveUsers(users);
+    renderUsers();
+  };
+
+
+
+  // Toggle district select based on role
+  document.getElementById("tm-role").addEventListener("change", (e) => {
+    document.getElementById("district-assign-group").style.display = (e.target.value === 'supervisor') ? 'block' : 'none';
+  });
 
   window.saveAcademicYear = async function() {
     const year = document.getElementById("academic-year-select").value;
@@ -197,52 +430,6 @@
     setTimeout(() => msg.classList.add("hidden"), 3000);
   };
 
-  function populateMeetingDays(weekStartStr, selectedDay) {
-    const sel = document.getElementById("meeting-day");
-    sel.innerHTML = `<option value="">— Select meeting day —</option>`;
-    const dayNames = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
-    const start = new Date((weekStartStr || getMondayOf()) + "T00:00:00");
-    for (let i = 0; i < 5; i++) {
-      const d = new Date(start); d.setDate(d.getDate() + i);
-      const val = toYMD(d);
-      const opt = document.createElement("option");
-      opt.value = val;
-      opt.textContent = `${dayNames[i]}, ${formatShortDate(val)}`;
-      if (val === selectedDay) opt.selected = true;
-      sel.appendChild(opt);
-    }
-  }
-
-  // When week-start changes, refresh meeting day options
-  document.getElementById("week-start").addEventListener("change", function() {
-    const v = this.value;
-    // Auto-set Friday
-    const mon = new Date(v + "T00:00:00");
-    mon.setDate(mon.getDate() + 4);
-    document.getElementById("week-end").value = toYMD(mon);
-    populateMeetingDays(v, "");
-  });
-
-  window.saveWeek = async function() {
-    const ws = document.getElementById("week-start").value;
-    const we = document.getElementById("week-end").value;
-    const md = document.getElementById("meeting-day").value;
-    const nt = document.getElementById("team-note").value.trim();
-    if (!ws || !we) { alert("Please set week start and end dates."); return; }
-    if (!md) { alert("Please select a meeting day."); return; }
-
-    // Get current submissionsOpen state
-    const cur = await getWeekSettings();
-    await saveWeekSettings({
-      weekStart: ws, weekEnd: we,
-      meetingDay: md, teamNote: nt,
-      submissionsOpen: cur.submissionsOpen || false
-    });
-    const msg = document.getElementById("week-saved-msg");
-    msg.classList.remove("hidden");
-    setTimeout(() => msg.classList.add("hidden"), 3000);
-    populateMeetingDays(ws, md);
-  };
 
   // ---- Credentials ----
   window.saveCredentials = async function(e) {
@@ -276,65 +463,32 @@
     setTimeout(() => okEl.classList.add("hidden"), 4000);
   };
 
-  // ---- Team Members ----
-  let _team = [];
-
-  async function loadTeam() {
-    _team = await getTeamMembers();
-    renderTeam();
-  }
-
-  function renderTeam() {
-    const list = document.getElementById("settings-team-list");
-    list.innerHTML = "";
-    _team.forEach((name, i) => {
-      const item = document.createElement("div");
-      item.className = "task-item";
-      item.innerHTML = `
-        <span class="task-num" style="min-width:24px;">${i+1}.</span>
-        <div style="flex:1;font-size:0.92rem;font-weight:500;">${escHtml(name)}</div>
-        <button class="task-remove" title="Remove" onclick="removeMember(${i})">✕</button>
-      `;
-      list.appendChild(item);
-    });
-  }
-
-  window.addMember = async function() {
-    const inp = document.getElementById("new-member-name");
-    const name = inp.value.trim();
-    if (!name) return;
-    if (_team.includes(name)) { alert("Member already exists!"); return; }
-    
-    _team.push(name);
-    inp.value = "";
-    renderTeam();
-    await saveTeamMembers(_team);
-    showTeamSaved();
-  };
-
-  window.removeMember = async function(idx) {
-    if (!confirm(`Remove ${_team[idx]} from the team?`)) return;
-    _team.splice(idx, 1);
-    renderTeam();
-    await saveTeamMembers(_team);
-    showTeamSaved();
-  };
-
-  function showTeamSaved() {
-    const msg = document.getElementById("team-saved-msg");
-    msg.classList.remove("hidden");
-    setTimeout(() => msg.classList.add("hidden"), 2000);
-  }
-
-  function escHtml(s) {
-    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  }
-
-  loadWeek();
-  loadTeam();
+  
 </script>
+  <script>
+    window.toggleSidebar = function() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if(sidebar) sidebar.classList.toggle('active');
+      if(overlay) overlay.classList.toggle('active');
+    };
+    window.doLogout = function() {
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    };
+  </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 
 
 

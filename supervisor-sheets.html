@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Sheet Links — Teach for Change</title>
+  <title>🔗 Google Sheet Links — Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
     .link-row {
@@ -25,6 +25,7 @@
 
 <nav class="navbar">
   <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
@@ -37,14 +38,24 @@
 <div class="page">
   <div class="container-wide" style="max-width: 900px;">
 
-    <!-- Navigation Tabs -->
-    <div class="nav-tabs" style="margin-bottom:2rem;display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+        <!-- Sidebar Navigation -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+      <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+      <div class="sidebar-header">
+        <img src="logo.png" alt="Logo" />
+        <h2>Teach for Change</h2>
+      </div>
+      <div class="sidebar-nav">
+
       <a href="supervisor.html">⚙️ Dashboard</a>
       <a href="team.html">📋 Weekly Tasks</a>
       <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
       <a href="supervisor-assessments.html">📝 Assessments Received</a>
       <a href="supervisor-drive.html">📊 Assessments Analytics</a>
       <a href="supervisor-sheets.html" class="active">🔗 Google Sheet Links</a>
+    
+      </div>
     </div>
 
     <div class="setup-panel">
@@ -151,7 +162,18 @@
 
   init();
 </script>
+<script>
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+</script>
 </body>
 </html>
+
+
+
 
 

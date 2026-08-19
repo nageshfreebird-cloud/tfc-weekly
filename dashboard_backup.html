@@ -10,6 +10,7 @@
 
 <nav class="navbar">
   <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
@@ -280,6 +281,17 @@
 
   init();
 </script>
+<script>
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+</script>
 </body>
 </html>
+
+
+
 

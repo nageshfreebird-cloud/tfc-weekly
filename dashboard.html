@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manager Setup — Teach for Change</title>
+  <title>Manager Setup ⚙️ Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
     .dashboard-grid {
@@ -72,6 +72,7 @@
 
 <nav class="navbar">
   <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
@@ -83,74 +84,32 @@
 <div class="page">
   <div class="container-wide" style="max-width: 1400px;">
 
-    <div class="nav-tabs">
+        <!-- Sidebar Navigation -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+      <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+      <div class="sidebar-header">
+        <img src="logo.png" alt="Logo" />
+        <h2>Teach for Change</h2>
+      </div>
+      <div class="sidebar-nav">
+
       <a href="dashboard.html" class="active">⚙️ Dashboard</a>
-      <a href="tab-a.html">Weekly Tasks</a>
+      <a href="tab-a.html">📋 Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
-      <a href="manager-assessments.html">📝 Assessments Received</a>
+      <a href="manager-assessments.html">📥 Assessments Received</a>
       <a href="manager-drive.html">📊 Assessments Analytics</a>
-      <a href="sheets.html">Google Sheet Links</a>
-      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
-      <a href="settings.html">My Settings</a>
+      <a href="sheets.html">🔗 Google Sheet Links</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="settings.html">⚙️ My Settings</a>
+    
+      </div>
     </div>
 
-    <div class="dashboard-grid">
+    <div class="dashboard-grid" style="grid-template-columns: 1fr;">
       
-      <!-- LEFT HALF: SETUP AREA -->
-      <div class="left-half">
-        
-        <!-- Register Districts -->
-        <div class="setup-panel">
-          <h2>📍 Register Districts</h2>
-          <div class="district-list" id="district-list">
-            <div class="text-muted text-sm" style="padding:1rem;text-align:center;">Loading...</div>
-          </div>
-        </div>
-
-        <!-- Register Team -->
-        <div class="setup-panel">
-          <h2>👥 Register Team Members</h2>
-          
-          <!-- Team List -->
-          <div class="team-list" id="team-list">
-            <div class="text-muted text-sm" style="padding:1rem;text-align:center;">Loading...</div>
-          </div>
-
-          <!-- Add Team Form -->
-          <h3 id="form-title" style="font-size:1rem;margin:1.5rem 0 0.5rem 0;">+ Add New Member</h3>
-          <div style="background:var(--bg-alt);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--border);">
-            <div class="form-group">
-              <label class="form-label">Name</label>
-              <input type="text" id="tm-name" class="form-control" placeholder="Full Name" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Role</label>
-              <select id="tm-role" class="form-control">
-                <option value="supervisor">Field Supervisor (Has access to all tabs)</option>
-                <option value="other">Other (Only Tab A)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Password</label>
-              <input type="text" id="tm-pwd" class="form-control" value="tfc@2014" />
-            </div>
-            
-            <div class="form-group" id="district-assign-group">
-              <label class="form-label">Assign Districts (Select multiple)</label>
-              <div id="assign-districts-list" style="max-height:150px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);padding:0.5rem;border-radius:var(--radius-sm);">
-                <div class="text-muted text-sm">Add districts first...</div>
-              </div>
-            </div>
-
-            <button id="form-submit-btn" class="btn btn-success btn-block" style="margin-bottom:0.5rem;" onclick="saveTeamMember()">Save Team Member</button>
-            <button id="form-cancel-btn" class="btn btn-ghost btn-block hidden" onclick="cancelEdit()">Cancel Edit</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- RIGHT HALF: DIRECTORY VIEWER -->
-      <div class="right-half">
+      <!-- FULL PAGE: DIRECTORY VIEWER -->
+      <div class="full-width">
         
         <div class="setup-panel" style="min-height: 80vh;">
           <h2>🏫 School Info Directory</h2>
@@ -196,275 +155,34 @@
 </div>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession } from "./js/utils.js";
+  import { requireManagerAuth, clearManagerSession, startClock } from "./js/utils.js";
   import { getDistricts, saveDistricts, getUsers, saveUsers, getSchools } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  if (!requireManagerAuth()) throw new Error("Not auth");`r`n  startClock("live-clock");
 
   window.clearManagerSession = clearManagerSession;
   window.getDistricts = getDistricts;
   window.getUsers = getUsers;
-  window.renderDistricts = renderDistricts;
-  window.renderUsers = renderUsers;
-  window.renderDistrictCheckboxes = renderDistrictCheckboxes;
-  window.renderDistrictCheckboxes = renderDistrictCheckboxes;
   
   let districts = [];
   let users = [];
   let editUserIndex = -1;
 
   async function init() {
-    const dList = document.getElementById("district-list");
-    const uList = document.getElementById("team-list");
     try {
-      dList.innerHTML = "Fetching districts...";
       districts = await getDistricts();
-      
-      uList.innerHTML = "Fetching users...";
       users = await getUsers();
-      
-      renderDistricts();
-      renderUsers();
-      renderDistrictCheckboxes();
-      
       // Auto-load all schools in the directory on load
       window.renderDirectory();
     } catch (e) {
       console.error(e);
-      dList.innerHTML = `<div style="color:red;font-weight:bold;padding:1rem;">CRASH at getDistricts: ${e.message}</div>`;
-      uList.innerHTML = `<div style="color:red;font-weight:bold;padding:1rem;">CRASH at getUsers: ${e.message}</div>`;
     }
   }
 
   // Auto-run init
   init();
 
-  function renderDistricts() {
-    const list = document.getElementById("district-list");
-    list.innerHTML = "";
-    
-    const states = ["Telangana", "Andhra Pradesh", "Karnataka"];
-    if (!districts || Array.isArray(districts)) {
-      districts = { "Telangana": [], "Andhra Pradesh": [], "Karnataka": [] };
-    }
-
-    states.forEach(state => {
-      const stateDistricts = districts[state] || [];
-      
-      let html = `
-        <details class="state-group" style="margin-bottom:1rem; border:1px solid #e2e8f0; border-radius:0.5rem; overflow:hidden;">
-          <summary style="padding:0.75rem 1rem; background:#f8fafc; cursor:pointer; font-weight:600; list-style:none; display:flex; justify-content:space-between; align-items:center;">
-            <span>📂 ${state} <span class="badge" style="background:#e2e8f0;color:#475569;font-size:0.75rem;padding:0.1rem 0.5rem;border-radius:1rem;">${stateDistricts.length}</span></span>
-            <span style="font-size:0.8rem;color:#64748b;">▼</span>
-          </summary>
-          <div style="padding:1rem;">
-      `;
-      
-      if (stateDistricts.length === 0) {
-        html += `<div class="text-muted text-sm" style="text-align:center; padding-bottom:1rem;">No districts added in ${state}.</div>`;
-      } else {
-        stateDistricts.forEach((d, i) => {
-          html += `
-            <div class="list-item" style="border-bottom:1px solid #f1f5f9; border-radius:0;">
-              <strong>${d}</strong>
-              <button class="btn btn-ghost btn-sm" onclick="removeDistrict('${state}', ${i})" style="color:var(--danger)">✕</button>
-            </div>
-          `;
-        });
-      }
-      
-      html += `
-            <div style="display:flex;gap:0.5rem; margin-top:1rem;">
-              <input type="text" id="new-district-${state.replace(/\s+/g, '')}" class="form-control" placeholder="Add to ${state}" />
-              <button class="btn btn-primary" onclick="addDistrict('${state}')">Add</button>
-            </div>
-          </div>
-        </details>
-      `;
-      list.innerHTML += html;
-    });
-  }
-
-  function renderDistrictCheckboxes() {
-    const list = document.getElementById("assign-districts-list");
-    list.innerHTML = "";
-    
-    const states = ["Telangana", "Andhra Pradesh", "Karnataka"];
-    
-    states.forEach(state => {
-      const stateDistricts = districts[state] || [];
-      if (stateDistricts.length === 0) return;
-      
-      let html = `
-        <details style="margin-bottom:0.5rem;">
-          <summary style="font-weight:bold; cursor:pointer; padding:0.25rem 0; color:#334155;">📂 ${state}</summary>
-          <div style="padding:0.5rem 0 0.5rem 1rem;">
-      `;
-      
-      stateDistricts.forEach((d) => {
-        html += `
-          <label style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem;">
-            <input type="checkbox" value="${d}" class="district-cb" /> ${d}
-          </label>
-        `;
-      });
-      
-      html += `</div></details>`;
-      list.innerHTML += html;
-    });
-    
-    if (list.innerHTML === "") {
-      list.innerHTML = `<div class="text-muted text-sm">No districts added globally yet.</div>`;
-    }
-  }
-
-  window.addDistrict = async function(state) {
-    const inp = document.getElementById("new-district-" + state.replace(/\s+/g, ''));
-    const val = inp.value.trim();
-    if (!val) return;
-    
-    if (!districts[state]) districts[state] = [];
-    
-    // Check if exists globally to prevent duplicates across states
-    let exists = false;
-    for (const s of Object.keys(districts)) {
-      if (districts[s].includes(val)) exists = true;
-    }
-    
-    if (exists) { alert("District already exists in the system."); return; }
-    
-    districts[state].push(val);
-    await saveDistricts(districts);
-    inp.value = "";
-    renderDistricts();
-    renderDistrictCheckboxes();
-  };
-
-  window.removeDistrict = async function(state, i) {
-    if (!confirm(`Remove this district from ${state}?`)) return;
-    districts[state].splice(i, 1);
-    await saveDistricts(districts);
-    renderDistricts();
-    renderDistrictCheckboxes();
-  };
-
-  function renderUsers() {
-    const list = document.getElementById("team-list");
-    list.innerHTML = "";
-    if (users.length === 0) {
-      list.innerHTML = `<div class="text-muted text-sm" style="padding:1rem;text-align:center;">No team members yet.</div>`;
-    }
-    users.forEach((u, i) => {
-      list.innerHTML += `
-        <div class="list-item" style="display:block;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
-            <strong>${u.name}</strong>
-            <div style="display:flex;gap:0.25rem;">
-              <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.name.replace(/'/g, "\\'")}')" title="Reset password to tfc@2014">🔄 Reset Pwd</button>
-              <button class="btn btn-outline btn-sm" onclick="editUser(${i})">Edit</button>
-              <button class="btn btn-ghost btn-sm" onclick="removeUser(${i})" style="color:var(--danger)">🗑️</button>
-            </div>
-          </div>
-          <div class="text-sm text-muted">Role: ${u.role === 'supervisor' ? 'Field Supervisor' : 'Other'}</div>
-          ${u.role === 'supervisor' && u.districts && u.districts.length > 0 ? `<div class="text-sm" style="color:var(--primary)">📍 ${u.districts.join(", ")}</div>` : ''}
-        </div>
-      `;
-    });
-  }
-
-  window.editUser = function(i) {
-    editUserIndex = i;
-    const u = users[i];
-    document.getElementById("form-title").textContent = "✏️ Edit Member: " + u.name;
-    document.getElementById("tm-name").value = u.name;
-    const role = u.role || 'supervisor';
-    document.getElementById("tm-role").value = role;
-    document.getElementById("tm-pwd").value = u.password || "tfc@2014";
-    document.getElementById("district-assign-group").style.display = (role === 'supervisor') ? 'block' : 'none';
-    
-    document.getElementById("form-submit-btn").textContent = "Update Team Member";
-    document.getElementById("form-cancel-btn").classList.remove("hidden");
-    
-    renderDistrictCheckboxes(); // re-render to free up their currently assigned districts
-    
-    // Check their boxes
-    if (u.districts) {
-      document.querySelectorAll(".district-cb").forEach(cb => {
-        if (u.districts.includes(cb.value)) cb.checked = true;
-      });
-    }
-  };
-
-  window.resetUserPassword = async function(name) {
-    if (confirm(`Are you sure you want to reset ${name}'s password back to tfc@2014?`)) {
-      const idx = users.findIndex(u => u.name === name);
-      if (idx !== -1) {
-        users[idx].password = 'tfc@2014';
-        await saveUsers(users);
-        alert(`Password for ${name} has been reset to tfc@2014.`);
-      }
-    }
-  };
-
-  window.cancelEdit = function() {
-    editUserIndex = -1;
-    document.getElementById("form-title").textContent = "+ Add New Member";
-    document.getElementById("tm-name").value = "";
-    document.getElementById("tm-role").value = "supervisor";
-    document.getElementById("tm-pwd").value = "tfc@2014";
-    document.getElementById("district-assign-group").style.display = 'block';
-    
-    document.getElementById("form-submit-btn").textContent = "Save Team Member";
-    document.getElementById("form-cancel-btn").classList.add("hidden");
-    
-    renderDistrictCheckboxes();
-  };
-
-  window.saveTeamMember = async function() {
-    const name = document.getElementById("tm-name").value.trim();
-    const role = document.getElementById("tm-role").value;
-    const pwd = document.getElementById("tm-pwd").value.trim() || 'tfc@2014';
-    
-    if (!name || !pwd) { alert("Name and password are required."); return; }
-    
-    if (editUserIndex === -1 && users.find(u => u.name === name)) { 
-      alert("User already exists!"); return; 
-    }
-
-    const assigned = [];
-    if (role === 'supervisor') {
-      document.querySelectorAll(".district-cb:checked").forEach(cb => assigned.push(cb.value));
-    }
-
-    if (editUserIndex > -1) {
-      users[editUserIndex] = { name, role, password: pwd, districts: assigned };
-    } else {
-      users.push({ name, role, password: pwd, districts: assigned });
-    }
-
-    await saveUsers(users);
-    cancelEdit();
-    renderUsers();
-  };
-
-  window.removeUser = async function(i) {
-    if (!confirm(`Delete user ${users[i].name}?`)) return;
-    users.splice(i, 1);
-    await saveUsers(users);
-    renderUsers();
-  };
-
-  window.doLogout = function() {
-    clearManagerSession();
-    window.location.href = "index.html";
-  };
-
-  // Toggle district select based on role
-  document.getElementById("tm-role").addEventListener("change", (e) => {
-    document.getElementById("district-assign-group").style.display = (e.target.value === 'supervisor') ? 'block' : 'none';
-  });
-
-  // --- DIRECTORY LOGIC ---
+// --- DIRECTORY LOGIC ---
   // --- DIRECTORY LOGIC ---
   document.getElementById("filter-state").addEventListener("change", (e) => {
     const sName = e.target.value;
@@ -530,8 +248,28 @@
 
   // init() already called above
 </script>
+<script>
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

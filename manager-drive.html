@@ -3,71 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manager Assessments Analytics</title>
+  <title>Manager Analytics - Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .chart-card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
-      text-align: center;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-    .chart-card:hover {
-      box-shadow: var(--shadow);
-      border-color: var(--primary);
-    }
-    .chart-card.active {
-      border: 2px solid var(--primary);
-      box-shadow: var(--shadow);
-    }
-    .chart-container {
-      position: relative;
-      height: 150px;
-      width: 150px;
-      margin: 0 auto 1rem auto;
-    }
-    .grid-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-    }
-    .drilldown-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-    .split-layout {
-      display: flex;
-      gap: 2rem;
-      align-items: flex-start;
-    }
-    .split-left {
-      flex: 1;
-      min-width: 0;
-    }
-    .split-right {
-      flex: 1;
-      min-width: 0;
-      position: sticky;
-      top: 2rem;
-    }
-    .analytics-panel {
-      background: white;
-      padding: 2rem;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border);
-    }
+    .split-layout { display: flex; gap: 2rem; align-items: flex-start; }
+    .split-left { flex: 0 0 35%; min-width: 0; background: white; padding: 1.5rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+    .split-right { flex: 1; min-width: 0; position: sticky; top: 2rem; background: white; padding: 1.5rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+    
+    .tree-item { margin-top: 0.5rem; }
+    .tree-header { cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-radius: 6px; background: var(--bg); transition: 0.2s; font-weight: 600; }
+    .tree-header:hover { background: #e2e8f0; }
+    .tree-children { margin-left: 1rem; padding-left: 1rem; border-left: 2px solid var(--border); display: none; margin-top: 0.5rem; }
+    .tree-children.open { display: block; }
+    
+    .tree-school { cursor: pointer; padding: 0.4rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); transition: 0.2s; }
+    .tree-school:hover { background: var(--bg); color: var(--primary); }
+    
+    .filter-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .filter-group select { flex: 1; min-width: 150px; }
+    
+    #sheet-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; }
+    #sheet-modal.open { display: flex; }
+    .modal-content { background: white; width: 100%; max-width: 900px; border-radius: 12px; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative; }
+    .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+    
+    .grid-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .grid-table th, .grid-table td { border: 1px solid var(--border); padding: 0.4rem; text-align: center; }
+    .grid-table th { background: var(--primary); color: white; }
   </style>
 </head>
 <body>
 
 <nav class="navbar">
   <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
@@ -77,290 +47,394 @@
 </nav>
 
 <div class="page">
-  <div class="container-wide" style="max-width: 1400px; margin: 0 auto;">
-
-    <!-- Navigation Tabs -->
-    <div class="nav-tabs" style="justify-content:center;margin-bottom:2rem;flex-wrap:wrap;">
-      <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html">📋 Weekly Tasks</a>
-      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
-      <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html" class="active">📊 Assessments Analytics</a>
-      <a href="sheets.html">🔗 Google Sheet Links</a>
-      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
-      <a href="settings.html">⚙️ My Settings</a>
+  <div class="container-wide">
+    
+    <!-- Sidebar Navigation -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+      <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+      <div class="sidebar-header">
+        <img src="logo.png" alt="Logo" />
+        <h2>Teach for Change</h2>
+      </div>
+      <div class="sidebar-nav">
+        <a href="dashboard.html">⚙️ Dashboard</a>
+        <a href="tab-a.html">📋 Weekly Tasks</a>
+        <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
+        <a href="manager-assessments.html">📝 Assessments Received</a>
+        <a href="manager-drive.html" class="active">📊 Assessments Analytics</a>
+        <a href="sheets.html">🔗 Google Sheet Links</a>
+        <a href="manager-syllabus.html">📘 Syllabus Registry</a>
+        <a href="settings.html">⚙️ My Settings</a>
+      </div>
     </div>
 
     <div class="split-layout">
+      
+      <!-- LEFT PANEL: DATA ENTRY TRACKER -->
+      <div class="split-left">
+        <h2 style="margin-top:0; font-size:1.3rem;">Data Entry Tracker</h2>
+        <p class="text-sm text-muted">A school is Complete (✅) only if 3rd, 4th, and 5th class data is submitted.</p>
+        <hr style="margin: 1rem 0; border:none; border-top:1px solid var(--border);" />
+        
+        <div id="tree-container">
+          <p class="text-muted text-center">Loading tracker...</p>
+        </div>
+      </div>
 
-      <!-- LEVEL 1: Completion Circles -->
-      <div class="split-left" id="level-1">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-          <h2 style="font-size:1.4rem; color:var(--text);"><span class="icon">📊</span> Data Entry Completion</h2>
-          <select id="view-term" class="form-control" style="width:150px; padding: 0.3rem 0.5rem;" onchange="renderCompletion()">
-            <option value="Baseline">Baseline</option>
-            <option value="Midline">Midline</option>
-            <option value="Endline">Endline</option>
+      <!-- RIGHT PANEL: ANALYTICS -->
+      <div class="split-right">
+        <h2 style="margin-top:0; font-size:1.3rem;">Performance Analytics</h2>
+        
+        <div class="filter-group">
+          <select id="filt-term" class="form-control" onchange="renderAnalytics()">
+            <option value="baseline">Baseline</option>
+            <option value="midline">Midline</option>
+            <option value="endline">Endline</option>
+          </select>
+          <select id="filt-schema" class="form-control" onchange="renderAnalytics()">
+            <option value="L1_L2">Level 1 & 2 (Know/Read/Spell/CWR/CWS)</option>
+            <option value="L3_L4">Level 3 & 4 (Phonics/Vocab/Story/Sentences)</option>
           </select>
         </div>
-        <p class="text-muted mb-3" style="margin-bottom:1.5rem;">Click on a supervisor's card to view their detailed performance analytics.</p>
-
-        <div class="grid-wrap" id="completion-grid">
-          <!-- Generated Circles -->
-          <p class="text-muted">Loading data...</p>
+        
+        <div class="filter-group">
+          <select id="filt-state" class="form-control" onchange="updateDistricts(); renderAnalytics()">
+            <option value="">All States</option>
+          </select>
+          <select id="filt-dist" class="form-control" onchange="updateSchools(); renderAnalytics()">
+            <option value="">All Districts</option>
+          </select>
+          <select id="filt-school" class="form-control" onchange="renderAnalytics()">
+            <option value="">All Schools</option>
+          </select>
         </div>
-      </div>
-      
-      <!-- LEVEL 2: Analytics Panel -->
-      <div class="split-right">
-        <div class="analytics-panel" id="level-2" style="visibility:hidden;">
-          <div class="drilldown-header">
-            <h2 id="analytics-title">📊 Analytics</h2>
-          </div>
-          
-          <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;">
-             <select id="analytics-class" class="form-control" onchange="drawAnalytics()">
-               <option value="3rd class">3rd Class</option>
-               <option value="4th class">4th Class</option>
-               <option value="5th class">5th Class</option>
-             </select>
-             <select id="analytics-level" class="form-control" onchange="drawAnalytics()">
-               <option value="Level-1">Level-1 & Level-2 Schools</option>
-               <option value="Level-3">Level-3 & Level-4 Schools</option>
-             </select>
-          </div>
-          
+
+        <div style="margin-top: 2rem;">
           <canvas id="analyticsChart" style="width:100%;max-height:400px;display:none;"></canvas>
-          <div id="analytics-empty" class="text-muted text-center" style="margin-top:2rem;">No data found for this selection.</div>
+          <div id="analytics-empty" class="text-muted text-center" style="margin-top:2rem; padding: 2rem; background: var(--bg); border-radius: var(--radius-md);">
+            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">📈</div>
+            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">No Data Found</h3>
+            <p>No assessment data matched your current filters.</p>
+          </div>
         </div>
       </div>
-    
-    </div> <!-- end split-layout -->
 
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Mark Sheet -->
+<div id="sheet-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <h2 id="modal-title" style="margin-top:0;">School Mark Sheet</h2>
+    
+    <div style="display:flex; gap:1rem; margin:1rem 0;">
+       <select id="modal-term" class="form-control" style="width:150px;" onchange="renderModalContent()">
+         <option value="baseline">Baseline</option>
+         <option value="midline">Midline</option>
+         <option value="endline">Endline</option>
+       </select>
+       <select id="modal-class" class="form-control" style="width:150px;" onchange="renderModalContent()">
+         <option value="3rd class">3rd Class</option>
+         <option value="4th class">4th Class</option>
+         <option value="5th class">5th Class</option>
+       </select>
+    </div>
+    
+    <div id="modal-body" style="margin-top:1rem; overflow-x:auto;">
+       <p class="text-muted text-center">Loading...</p>
+    </div>
   </div>
 </div>
 
 <script type="module">
-  import { requireManagerAuth } from "./js/utils.js";
-  import { getUsers, getSchools, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js";
+  import { getUsers, getSchools, getDistricts, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4, getSchemaForLevel } from "./js/db.js";
 
-  requireManagerAuth();
+  import { requireManagerAuth } from "./js/utils.js";
+
+  let allUsers = [];
+  let allSchools = [];
+  let allStatesData = {};
+  let allAssessments = [];
+  let chartInstance = null;
+  
+  let currentModalSchool = null;
 
   window.doLogout = function() {
     sessionStorage.clear();
-    window.location.href = "index.html";
+    window.location.href = "login.html";
+  };
+  
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+  
+  window.closeModal = function() {
+    document.getElementById("sheet-modal").classList.remove("open");
+  };
+  
+  window.openSchoolModal = function(distName, schoolName, level) {
+    currentModalSchool = { distName, schoolName, level };
+    document.getElementById("modal-title").textContent = schoolName;
+    document.getElementById("sheet-modal").classList.add("open");
+    renderModalContent();
   };
 
-  let users = [];
-  let allSchools = [];
-  let allAssessments = {};
-  
-  let chartsMap = {};
-  let currentActiveCard = null;
-
-  let currentSup = null; // currently selected supervisor for analytics
-  let analyticsChartInst = null;
-
   async function init() {
+    if (!requireManagerAuth()) return;
+
+    allStatesData = await getDistricts();
+    allUsers = await getUsers();
+    allSchools = await getSchools(null);
+    allAssessments = await getAllStudentAssessments();
+
+    // Populate Filters
+    const stateSel = document.getElementById("filt-state");
+    Object.keys(allStatesData).forEach(s => {
+      stateSel.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+
+    buildTrackerTree();
+    updateDistricts();
+    renderAnalytics();
+  }
+  
+  function buildTrackerTree() {
+    const container = document.getElementById("tree-container");
     try {
-      users = await getUsers();
-      allSchools = await getSchools(); // fetch all across all districts
-      allAssessments = await getAllStudentAssessments();
+      const supervisors = allUsers.filter(u => u.role === 'supervisor');
+      container.innerHTML = "";
       
-      renderCompletion();
-    } catch (e) {
-      console.error(e);
-      document.getElementById("completion-grid").innerHTML = `<div class="text-danger">Failed to load data: ${e.message}</div>`;
+      supervisors.forEach(sup => {
+        const supDiv = document.createElement("div");
+        supDiv.className = "tree-item";
+        
+        let supHtml = `<div class="tree-header" onclick="this.nextElementSibling.classList.toggle('open')">
+          <span>🧑‍💼 ${sup.name}</span>
+          <span style="font-size:0.8rem;">${sup.districts ? sup.districts.length : 0} Districts ▼</span>
+        </div>`;
+        
+        let distsHtml = `<div class="tree-children">`;
+        if (sup.districts) {
+          sup.districts.forEach(distName => {
+            const distSchools = allSchools.filter(s => s && s.District === distName);
+            distsHtml += `<div class="tree-item">
+              <div class="tree-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <span>📍 ${distName}</span>
+                <span style="font-size:0.8rem;">${distSchools.length} Schools ▼</span>
+              </div>
+              <div class="tree-children">`;
+              
+            distSchools.forEach(sch => {
+              if (!sch || !sch['School Name']) return;
+              const classes = ["3rd class", "4th class", "5th class"];
+              let completedCount = 0;
+              let cleanSchool = "";
+              try {
+                cleanSchool = sch['School Name'].replace(/[^a-zA-Z0-9]/g, "_");
+              } catch(e) { return; }
+              
+              classes.forEach(c => {
+                const docId = `${distName}_${cleanSchool}_${c}`;
+                const students = allAssessments[docId];
+                if (students && students.length > 0) completedCount++;
+              });
+              
+              const isComplete = (completedCount === 3);
+              const icon = isComplete ? "✅" : "❌";
+              
+              distsHtml += `<div class="tree-school" onclick="openSchoolModal('${distName}', '${sch['School Name']}', '${sch.Level}')">
+                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:200px;">${sch['School Name']}</span>
+                <span>${completedCount}/3 ${icon}</span>
+              </div>`;
+            });
+            
+            distsHtml += `</div></div>`;
+          });
+        }
+        distsHtml += `</div>`;
+        
+        supDiv.innerHTML = supHtml + distsHtml;
+        container.appendChild(supDiv);
+      });
+    } catch(err) {
+      container.innerHTML = `<div style="color:red; padding:1rem;"><b>Error building tree:</b><br/>${err.message}<br/>${err.stack}</div>`;
+      console.error(err);
     }
   }
 
-  window.renderCompletion = function() {
-    const term = document.getElementById("view-term").value;
-    const grid = document.getElementById("completion-grid");
-    grid.innerHTML = "";
+  window.updateDistricts = function() {
+    const st = document.getElementById("filt-state").value;
+    const distSel = document.getElementById("filt-dist");
+    distSel.innerHTML = '<option value="">All Districts</option>';
     
-    // Clear old charts
-    Object.values(chartsMap).forEach(c => c.destroy());
-    chartsMap = {};
-
-    const supervisors = users.filter(u => u.role === 'supervisor');
-    let renderedCount = 0;
-
-    supervisors.forEach(sup => {
-      let totalAssigned = 0;
-      let totalEntered = 0;
-      
-      if (sup.districts && sup.districts.length > 0) {
-        sup.districts.forEach(dist => {
-          const schoolsInDist = allSchools.filter(s => s.District === dist);
-          totalAssigned += schoolsInDist.length;
-          
-          schoolsInDist.forEach(s => {
-            let hasData = false;
-            ["3rd class", "4th class", "5th class"].forEach(cls => {
-              const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
-              const key = `${dist}_${cleanSchool}_${cls}`;
-              const clsData = allAssessments[key];
-              if (clsData && clsData.some(row => row[term])) {
-                hasData = true;
-              }
-            });
-            if (hasData) totalEntered++;
-          });
-        });
-      }
-      
-      renderedCount++;
-      let pct = totalAssigned > 0 ? Math.round((totalEntered / totalAssigned) * 100) : 0;
-      
-      const card = document.createElement("div");
-      card.className = "chart-card";
-      card.id = `card-${sup.name.replace(/\s+/g,'-')}`;
-      card.onclick = () => openAnalytics(sup, card);
-      
-      const cid = `chart-${sup.name.replace(/\s+/g,'-')}`;
-      
-      card.innerHTML = `
-        <div class="chart-container" style="margin-top:1rem;">
-          <canvas id="${cid}"></canvas>
-          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-weight:bold; font-size:1.4rem; color:var(--text);">
-            ${pct}%
-          </div>
-        </div>
-        <h3 style="margin-top:1rem;margin-bottom:0.25rem;color:var(--text);font-size:1.1rem;font-weight:700;">${sup.name}</h3>
-        <p class="text-sm text-muted" style="margin-bottom:0.5rem;">${totalEntered} / ${totalAssigned} Schools</p>
-      `;
-      grid.appendChild(card);
-      
-      // Draw Doughnut
-      const ctx = document.getElementById(cid).getContext('2d');
-      const entered = totalEntered;
-      const pending = totalAssigned > 0 ? (totalAssigned - totalEntered) : 1; // if 0 assigned, just draw a grey circle
-      const bgColors = totalAssigned > 0 ? ['#22c55e', '#e2e8f0'] : ['#e2e8f0', '#e2e8f0'];
-      
-      chartsMap[cid] = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Entered', 'Pending'],
-          datasets: [{
-            data: [entered, pending],
-            backgroundColor: bgColors,
-            borderWidth: 0
-          }]
-        },
-        options: {
-          cutout: '75%',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { enabled: false } }
-        }
-      });
-    });
-
-    if (renderedCount === 0) {
-       grid.innerHTML = `<p class="text-muted" style="width:100%; text-align:center; padding: 2rem;">No supervisors with assigned schools found.</p>`;
+    let dists = [];
+    if (st && allStatesData[st]) {
+      dists = allStatesData[st];
     } else {
-       // Automatically select the first supervisor so the right panel isn't empty
-       const firstCard = grid.querySelector('.chart-card');
-       if (firstCard) {
-         firstCard.click();
-       }
+      Object.values(allStatesData).forEach(arr => dists = dists.concat(arr));
     }
+    
+    dists.forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
+    updateSchools();
+  };
+  
+  window.updateSchools = function() {
+    const dist = document.getElementById("filt-dist").value;
+    const schSel = document.getElementById("filt-school");
+    schSel.innerHTML = '<option value="">All Schools</option>';
+    
+    allSchools.forEach(s => {
+      if (!s || !s['School Name']) return;
+      if (!dist || s.District === dist) {
+        schSel.innerHTML += `<option value="${s['School Name']}">${s['School Name']}</option>`;
+      }
+    });
   };
 
-  window.openAnalytics = function(sup, cardElement) {
-    currentSup = sup;
+  window.renderAnalytics = function() {
+    const state = document.getElementById("filt-state").value;
+    const dist = document.getElementById("filt-dist").value;
+    const school = document.getElementById("filt-school").value;
+    const term = document.getElementById("filt-term").value;
+    const schemaType = document.getElementById("filt-schema").value;
     
-    // Manage active state
-    if (currentActiveCard) {
-      currentActiveCard.classList.remove('active');
+    const schema = (schemaType === "L3_L4") ? SCHEMA_L3_L4 : SCHEMA_L1_L2;
+    const validLevels = (schemaType === "L3_L4") ? ["Level-3", "Level-4"] : ["Level-1", "Level-2"];
+    
+    let filteredSchools = allSchools.filter(s => s && s['School Name'] && validLevels.includes(s.Level));
+    
+    if (state) {
+       const stateDists = allStatesData[state] || [];
+       filteredSchools = filteredSchools.filter(s => stateDists.includes(s.District));
     }
-    cardElement.classList.add('active');
-    currentActiveCard = cardElement;
-
-    // Show analytics panel
-    const panel = document.getElementById("level-2");
-    panel.style.visibility = "visible";
+    if (dist) filteredSchools = filteredSchools.filter(s => s.District === dist);
+    if (school) filteredSchools = filteredSchools.filter(s => s['School Name'] === school);
     
-    document.getElementById("analytics-title").textContent = `📊 Analytics: ${sup.name}`;
-    drawAnalytics();
-  };
-
-  window.drawAnalytics = function() {
-    if (!currentSup) return;
+    let sums = {};
+    let counts = {};
+    schema.forEach(p => { sums[p.id] = 0; counts[p.id] = 0; });
     
-    const term = document.getElementById("view-term").value;
-    const cls = document.getElementById("analytics-class").value;
-    const lvlCat = document.getElementById("analytics-level").value;
-    const schema = (lvlCat === "Level-1") ? SCHEMA_L1_L2 : SCHEMA_L3_L4;
+    let hasData = false;
+    
+    filteredSchools.forEach(sch => {
+       const cleanSchool = sch['School Name'].replace(/[^a-zA-Z0-9]/g, "_");
+       const classes = ["3rd class", "4th class", "5th class"];
+       
+       classes.forEach(cls => {
+         const docId = `${sch.District}_${cleanSchool}_${cls}`;
+         const students = allAssessments[docId];
+         if (students) {
+           students.forEach(student => {
+             if (student[term]) {
+               schema.forEach(p => {
+                 const val = student[term][p.id];
+                 if (val !== undefined && val !== "") {
+                   sums[p.id] += Number(val);
+                   counts[p.id]++;
+                   hasData = true;
+                 }
+               });
+             }
+           });
+         }
+       });
+    });
     
     const canvas = document.getElementById("analyticsChart");
-    const emptyMsg = document.getElementById("analytics-empty");
+    const empty = document.getElementById("analytics-empty");
     
-    // Gather students
-    let filteredStudents = [];
-    currentSup.districts.forEach(dist => {
-      const schoolsInDist = allSchools.filter(s => s.District === dist);
-      schoolsInDist.forEach(s => {
-        // Check if school level matches selection
-        const sLvl = s.Level;
-        if (lvlCat === "Level-1" && (sLvl === "Level-1" || sLvl === "Level-2")) {
-          // match
-        } else if (lvlCat === "Level-3" && (sLvl === "Level-3" || sLvl === "Level-4")) {
-          // match
-        } else {
-          return; // skip
-        }
-        
-        const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
-        const key = `${dist}_${cleanSchool}_${cls}`;
-        const arr = allAssessments[key] || [];
-        // Filter by term
-        arr.forEach(row => {
-          if (row[term]) filteredStudents.push(row);
-        });
-      });
-    });
-    
-    if (filteredStudents.length === 0) {
-      if (analyticsChartInst) analyticsChartInst.destroy();
+    if (!hasData) {
       canvas.style.display = "none";
-      emptyMsg.style.display = "block";
+      empty.style.display = "block";
       return;
     }
     
-    // Compute Averages
-    let avgData = [];
-    schema.forEach(param => {
-      let sum = 0; let count = 0;
-      filteredStudents.forEach(row => {
-        const val = parseFloat(row[param]);
-        if (!isNaN(val)) { sum += val; count++; }
-      });
-      avgData.push(count > 0 ? (sum / count).toFixed(1) : 0);
-    });
-    
     canvas.style.display = "block";
-    emptyMsg.style.display = "none";
+    empty.style.display = "none";
     
-    if (analyticsChartInst) analyticsChartInst.destroy();
-    analyticsChartInst = new Chart(canvas, {
-      type: 'bar',
+    const labels = schema.map(p => p.label);
+    const dataAvg = schema.map(p => counts[p.id] > 0 ? (sums[p.id] / counts[p.id]).toFixed(1) : 0);
+    
+    if (chartInstance) chartInstance.destroy();
+    
+    const ctx = canvas.getContext("2d");
+    chartInstance = new Chart(ctx, {
+      type: "bar",
       data: {
-        labels: schema,
+        labels: labels,
         datasets: [{
-          label: `${term} Averages`,
-          data: avgData,
-          backgroundColor: '#3b82f6',
+          label: `Average Score (${term})`,
+          data: dataAvg,
+          backgroundColor: "#2563eb",
           borderRadius: 4
         }]
       },
       options: {
         responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, max: 10 } } // assuming scores are out of 10
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
       }
     });
+  };
+
+  window.renderModalContent = function() {
+    if (!currentModalSchool) return;
+    const term = document.getElementById("modal-term").value;
+    const cls = document.getElementById("modal-class").value;
+    
+    const cleanSchool = currentModalSchool.schoolName.replace(/[^a-zA-Z0-9]/g, "_");
+    const docId = `${currentModalSchool.distName}_${cleanSchool}_${cls}`;
+    const students = allAssessments[docId];
+    
+    const tbody = document.getElementById("modal-body");
+    
+    if (!students || students.length === 0) {
+      tbody.innerHTML = `<p class="text-muted text-center" style="margin:2rem;">No data entered for this class yet.</p>`;
+      return;
+    }
+    
+    const schema = getSchemaForLevel(currentModalSchool.level);
+    
+    let html = `<table class="grid-table">
+      <thead>
+        <tr>
+          <th style="width:50px;">S.No</th>
+          <th>Student Name</th>`;
+          
+    schema.forEach(p => {
+      html += `<th>${p.label}</th>`;
+    });
+    
+    html += `<th>Total</th><th>Remarks</th></tr></thead><tbody>`;
+    
+    students.forEach(row => {
+      if (!row.name) return;
+      let total = 0;
+      let rHtml = `<tr><td>${row.sno || ''}</td><td>${row.name}</td>`;
+      
+      schema.forEach(p => {
+        let val = (row[term] && row[term][p.id] !== undefined) ? row[term][p.id] : "-";
+        if (val !== "-") total += Number(val);
+        rHtml += `<td>${val}</td>`;
+      });
+      
+      let rem = (row[term] && row[term].remarks) ? row[term].remarks : "";
+      rHtml += `<td><strong>${total}</strong></td><td>${rem}</td></tr>`;
+      html += rHtml;
+    });
+    
+    html += `</tbody></table>`;
+    tbody.innerHTML = html;
   };
 
   init();

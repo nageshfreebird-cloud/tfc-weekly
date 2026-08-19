@@ -18,6 +18,7 @@
 
 <nav class="navbar no-print">
   <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
@@ -36,7 +37,7 @@
     </select>
   </div>
   <div style="display:flex;gap:.6rem;">
-    <a href="dashboard.html" class="btn btn-outline btn-sm">Dashboard</a>
+    <a href="dashboard.html" class="btn btn-outline btn-sm">⚙️ Dashboard</a>
     <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
   </div>
 </div>
@@ -275,6 +276,17 @@
 
   init();
 </script>
+<script>
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+</script>
 </body>
 </html>
+
+
+
 
