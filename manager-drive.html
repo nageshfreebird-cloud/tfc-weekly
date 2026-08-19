@@ -41,8 +41,13 @@
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
-  <div class="navbar-datetime">
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
+    <div>
+      <span class="time-icon">🕒</span>
+      <span id="live-clock">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -152,7 +157,7 @@
 <script type="module">
   import { getUsers, getSchools, getDistricts, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4, getSchemaForLevel } from "./js/db.js";
 
-  import { requireManagerAuth } from "./js/utils.js";
+  import { requireManagerAuth , startClock } from "./js/utils.js";
 
   let allUsers = [];
   let allSchools = [];
@@ -187,6 +192,7 @@
 
   async function init() {
     if (!requireManagerAuth()) return;
+  startClock("live-clock");
 
     allStatesData = await getDistricts();
     allUsers = await getUsers();
@@ -332,14 +338,14 @@
          if (students) {
            students.forEach(student => {
              if (student[term]) {
-               schema.forEach(p => {
-                 const val = student[term][p.id];
-                 if (val !== undefined && val !== "") {
-                   sums[p.id] += Number(val);
-                   counts[p.id]++;
-                   hasData = true;
-                 }
-               });
+                schema.forEach(p => {
+                  const val = student[term][p.id];
+                  if (val !== undefined && val !== "" && val.toString().toLowerCase() !== "a") {
+                    sums[p.id] += Number(val);
+                    counts[p.id]++;
+                    hasData = true;
+                  }
+                });
              }
            });
          }
@@ -441,3 +447,4 @@
 </script>
 </body>
 </html>
+

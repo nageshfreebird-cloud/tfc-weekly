@@ -46,9 +46,13 @@
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
-  <div class="navbar-datetime">
-    <span id="welcome-name" style="margin-right:1rem;font-weight:600;"></span>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
+    <div>
+      <span class="time-icon">🕒</span>
+      <span id="live-clock">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -69,7 +73,7 @@
       <a href="team.html">📋 Weekly Tasks</a>
       <a href="supervisor-calls.html" class="active">📞 15-Days Teacher Calls</a>
       <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html">📊 Assessments Analytics</a>
+      <a href="supervisor-drive.html">📊 Assessment Entry</a>
       <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
     
       </div>
@@ -111,7 +115,7 @@
 </div>
 
 <script type="module">
-  import { getCurrent15DayPeriod } from "./js/utils.js";
+  import { getCurrent15DayPeriod , startClock } from "./js/utils.js";
   import { getUsers, getSchools, getSyllabus, getTeacherCalls, saveTeacherCalls } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
@@ -120,6 +124,7 @@
   if (!userName || userRole !== 'supervisor') {
     window.location.href = "index.html";
   }
+  startClock("live-clock");
 
   document.getElementById("welcome-name").textContent = userName;
 
@@ -288,7 +293,8 @@
     sessionStorage.removeItem("tfc_member_name");
     sessionStorage.removeItem("tfc_member_role");
     window.location.href = "index.html";
-  };
+  }
+  startClock("live-clock");;
 
   init();
 </script>
@@ -302,6 +308,9 @@
 </script>
 </body>
 </html>
+
+
+
 
 
 

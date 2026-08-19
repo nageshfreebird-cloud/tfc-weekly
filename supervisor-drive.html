@@ -83,9 +83,13 @@
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
-  <div class="navbar-datetime">
-    <span id="welcome-name" style="margin-right:1rem;font-weight:600;"></span>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
+    <div>
+      <span class="time-icon">🕒</span>
+      <span id="live-clock">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -106,7 +110,7 @@
       <a href="team.html">📋 Weekly Tasks</a>
       <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
       <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html" class="active">📊 Assessments Analytics</a>
+      <a href="supervisor-drive.html" class="active">📊 Assessment Entry</a>
       <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
     
       </div>
@@ -182,6 +186,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
+  import { startClock } from "./js/utils.js";
   import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
@@ -190,6 +195,7 @@
   if (!userName || userRole !== 'supervisor') {
     window.location.href = "index.html";
   }
+  startClock("live-clock");
 
   document.getElementById("welcome-name").textContent = "👋 " + userName;
 
@@ -201,7 +207,8 @@
   window.doLogout = function() {
     sessionStorage.clear();
     window.location.href = "index.html";
-  };
+  }
+  startClock("live-clock");;
 
   async function init() {
     const users = await getUsers();
@@ -289,16 +296,19 @@
       tr.innerHTML += `<td><input type="text" class="col-name" data-row="${rIdx}" data-col="name" value="${row.name || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
       
       let total = 0;
+      let isAbsent = false;
       currentSchema.forEach((param, cIdx) => {
         let val = "";
         if (row[term] && row[term][param.id] !== undefined) {
           val = row[term][param.id];
-          total += Number(val);
+          if (cIdx === 0 && val.toString().toLowerCase() === "a") isAbsent = true;
+          else if (!isAbsent) total += Number(val) || 0;
         }
-        tr.innerHTML += `<td><input type="number" min="0" max="${param.maxMarks}" data-row="${rIdx}" data-col="${param.id}" value="${val}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+        let roAttr = (isAbsent && cIdx > 0) ? "readonly" : "";
+        tr.innerHTML += `<td><input type="text" data-max="${param.maxMarks}" data-row="${rIdx}" data-col="${param.id}" value="${val}" ${roAttr} onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
       });
       
-      tr.innerHTML += `<td><input type="text" class="col-total" readonly value="${total || ''}"/></td>`;
+      tr.innerHTML += `<td><input type="text" class="col-total" readonly value="${isAbsent ? 'Absent' : (total || '')}"/></td>`;
       
       // Remarks
       let remark = "";
@@ -313,20 +323,73 @@
     const rIdx = inputEl.getAttribute("data-row");
     const col = inputEl.getAttribute("data-col");
     const term = document.getElementById("sel-term").value;
+    const tr = inputEl.closest("tr");
     
     if (col === "sno" || col === "name") {
       currentGridData[rIdx][col] = inputEl.value;
     } else {
       if (!currentGridData[rIdx][term]) currentGridData[rIdx][term] = {};
-      currentGridData[rIdx][term][col] = inputEl.value;
       
-      let total = 0;
-      currentSchema.forEach(param => {
-        if (currentGridData[rIdx][term] && currentGridData[rIdx][term][param.id]) {
-          total += Number(currentGridData[rIdx][term][param.id]);
+      let paramObj = currentSchema.find(p => p.id === col);
+      if (paramObj) {
+        let val = inputEl.value.trim();
+        let isFirstCol = (currentSchema[0].id === col);
+        
+        if (isFirstCol && val.toLowerCase() === "a") {
+          currentGridData[rIdx][term][col] = "A";
+          inputEl.value = "A";
+          
+          currentSchema.forEach((p, idx) => {
+            if (idx > 0) {
+              currentGridData[rIdx][term][p.id] = "";
+              let childInput = tr.querySelector(`input[data-col="${p.id}"]`);
+              if (childInput) {
+                childInput.value = "";
+                childInput.setAttribute("readonly", "true");
+              }
+            }
+          });
+          
+          tr.querySelector(".col-total").value = "Absent";
+        } else {
+          let max = Number(inputEl.getAttribute("data-max"));
+          let numVal = Number(val);
+          
+          if (val.toLowerCase() === "a" && !isFirstCol) {
+             alert("Absent (A) can only be entered in the first column.");
+             inputEl.value = currentGridData[rIdx][term][col] || "";
+             return;
+          }
+          
+          if (val !== "" && (isNaN(numVal) || numVal < 0 || numVal > max)) {
+            alert(`Please enter a valid number between 0 and ${max}`);
+            inputEl.value = currentGridData[rIdx][term][col] || "";
+            return;
+          }
+          
+          currentGridData[rIdx][term][col] = val;
+          
+          if (isFirstCol) {
+             currentSchema.forEach((p, idx) => {
+               if (idx > 0) {
+                 let childInput = tr.querySelector(`input[data-col="${p.id}"]`);
+                 if (childInput) childInput.removeAttribute("readonly");
+               }
+             });
+          }
+          
+          let total = 0;
+          currentSchema.forEach(p => {
+             let pval = currentGridData[rIdx][term][p.id];
+             if (pval !== undefined && pval !== "" && pval.toString().toLowerCase() !== "a") {
+                total += Number(pval);
+             }
+          });
+          tr.querySelector(".col-total").value = total || "";
         }
-      });
-      inputEl.closest("tr").querySelector(".col-total").value = total || "";
+      } else {
+        currentGridData[rIdx][term][col] = inputEl.value;
+      }
     }
   };
 
@@ -491,6 +554,13 @@
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 

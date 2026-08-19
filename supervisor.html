@@ -39,9 +39,13 @@
     <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
-  <div class="navbar-datetime">
-    <span id="welcome-name" style="margin-right:1rem;font-weight:600;"></span>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
+    <div>
+      <span class="time-icon">🕒</span>
+      <span id="live-clock">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -83,7 +87,7 @@
       <a href="team.html">📋 Weekly Tasks</a>
       <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
       <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html">📊 Assessments Analytics</a>
+      <a href="supervisor-drive.html">📊 Assessment Entry</a>
       <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
     
       </div>
@@ -208,6 +212,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
+  import { startClock } from "./js/utils.js";
   import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
@@ -217,6 +222,7 @@
     alert("Unauthorized access.");
     window.location.href = "index.html";
   }
+  startClock("live-clock");
 
   document.getElementById("welcome-name").textContent = "👋 " + userName;
 
@@ -443,7 +449,7 @@
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws);
-        
+        data.forEach(s => s.lastUpgradedYear = _globalYear);
         let existing = await getSchools(selectedDist);
         existing = existing.concat(data); // Append new
         await saveSchools(selectedDist, existing);
@@ -504,8 +510,7 @@
       "Teacher Phone": document.getElementById("man-school-teacherph").value, 
       "Location": document.getElementById("man-school-loc").value, 
       "TV Working": document.getElementById("man-school-tv").checked ? "Yes" : "No", 
-      "Pendrive Working": document.getElementById("man-school-pd").checked ? "Yes" : "No"
-    };
+      "Pendrive Working": document.getElementById("man-school-pd").checked ? "Yes" : "No", lastUpgradedYear: _globalYear };
 
     if (editingSchool && editingSchool.dist === dist) {
       existing[editingSchool.index] = newSchool;
@@ -584,8 +589,9 @@
         if (r[term]) {
           let hasData = false;
           schema.forEach((p, i) => {
-            if (r[term][p.id] !== undefined && r[term][p.id] !== "") {
-              sums[i] += Number(r[term][p.id]);
+            let val = r[term][p.id];
+            if (val !== undefined && val !== "" && val.toString().toLowerCase() !== "a") {
+              sums[i] += Number(val);
               hasData = true;
             }
           });
@@ -690,7 +696,8 @@
     sessionStorage.removeItem("tfc_member_name");
     sessionStorage.removeItem("tfc_member_role");
     window.location.href = "index.html";
-  };
+  }
+  startClock("live-clock");;
 
 
 
@@ -706,6 +713,10 @@
 </script>
 </body>
 </html>
+
+
+
+
 
 
 
