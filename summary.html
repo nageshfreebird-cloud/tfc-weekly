@@ -60,6 +60,10 @@
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
+  window.doLogout = function() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  };
 
   let _weekStart = "";
   let _summaryData = {}; // { memberName: { lastWeekReview, thisWeekTasks, supportNeeded } }
@@ -349,6 +353,7 @@
 </script>
 </body>
 </html>
+
 
 
 

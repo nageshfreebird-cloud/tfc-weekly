@@ -185,6 +185,10 @@
   import { getMondayOf, getSaturdayOf, getLastWeekMonday, getLastWeekSaturday, toYMD } from "./js/utils.js";
 
   startClock("live-clock");
+  window.doLogout = function() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  };
   window.goBackHome = goBackHome;
 
   const memberName = sessionStorage.getItem("tfc_member_name");
@@ -555,6 +559,7 @@
 </script>
 </body>
 </html>
+
 
 
 

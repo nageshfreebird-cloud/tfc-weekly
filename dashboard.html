@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -117,11 +117,27 @@
       <div class="full-width">
         
         <div class="setup-panel" style="min-height: 80vh;">
-          <h2>🏫 School Info Directory</h2>
-          <p class="text-sm text-muted" style="margin-bottom:1rem;">Select a supervisor's area to view their registered schools.</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+            <h2>🏫 School Info Directory</h2>
+          </div>
           
-          <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-            <div style="flex:1;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+            <div style="background:var(--primary); color:white; padding:1.5rem; border-radius:8px; text-align:center;">
+              <div style="font-size:2rem; font-weight:800;" id="stat-schools">0</div>
+              <div style="font-size:0.9rem; opacity:0.9; text-transform:uppercase; letter-spacing:1px;">Total Schools</div>
+            </div>
+            <div style="background:#10b981; color:white; padding:1.5rem; border-radius:8px; text-align:center;">
+              <div style="font-size:2rem; font-weight:800;" id="stat-students">0</div>
+              <div style="font-size:0.9rem; opacity:0.9; text-transform:uppercase; letter-spacing:1px;">Total Students</div>
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; background:var(--bg-alt); padding:1rem; border-radius:8px; border:1px solid var(--border);">
+            <div style="flex:1; min-width:200px;">
+              <label class="form-label">🔍 Search School</label>
+              <input type="text" id="filter-search" class="form-control" placeholder="Type school name..." />
+            </div>
+            <div style="flex:1; min-width:150px;">
               <label class="form-label">State</label>
               <select id="filter-state" class="form-control">
                 <option value="">All States</option>
@@ -130,13 +146,13 @@
                 <option value="Karnataka">Karnataka</option>
               </select>
             </div>
-            <div style="flex:1;">
+            <div style="flex:1; min-width:150px;">
               <label class="form-label">District</label>
               <select id="filter-district" class="form-control">
                 <option value="">All Districts</option>
               </select>
             </div>
-            <div style="flex:1;">
+            <div style="flex:1; min-width:150px;">
               <label class="form-label">Level</label>
               <select id="filter-level" class="form-control">
                 <option value="">All Levels</option>
@@ -145,11 +161,31 @@
                 <option value="Level-3">Level 3</option>
                 <option value="Level-4">Level 4</option>
               </select>
+            </div>            <div style="flex:1; min-width:150px;">
+              <label class="form-label">Term</label>
+              <select id="filter-term" class="form-control">
+                <option value="baseline">Baseline</option>
+                <option value="midline">Midline</option>
+                <option value="endline">Endline</option>
+              </select>
             </div>
           </div>
 
-          <div id="directory-container" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:300px;max-height:600px;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;">
-            <p class="text-muted" style="margin-top:2rem;">School data will appear here once you select a Supervisor & District.</p>
+          <div style="overflow-x:auto;">
+            <table class="table" style="width:100%; text-align:left; border-collapse:collapse;">
+              <thead>
+                <tr style="background:var(--bg-alt); border-bottom:2px solid var(--border);">
+                  <th style="padding:1rem;">School Name</th>
+                  <th style="padding:1rem;">District</th>
+                  <th style="padding:1rem;">Level</th>
+                  <th style="padding:1rem; text-align:center;">Health</th>
+                  <th style="padding:1rem; text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="directory-container">
+                <tr><td colspan="5" style="text-align:center; padding:2rem;" class="text-muted">Loading...</td></tr>
+              </tbody>
+            </table>
           </div>
           
         </div>
@@ -159,37 +195,67 @@
   </div>
 </div>
 
-<script type="module">
+<!-- Profile Modal -->
+<dialog id="profile-modal" style="border:none; border-radius:8px; padding:2rem; max-width:500px; width:100%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+    <h3 id="modal-school-name" style="margin:0; color:var(--primary); font-size:1.5rem;"></h3>
+    <button onclick="document.getElementById('profile-modal').close()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+  </div>
+  <div id="modal-school-content" style="display:flex; flex-direction:column; gap:1rem; font-size:1rem;"></div>
+</dialog>
+
+<!-- Edit Modal -->
+<dialog id="edit-modal" style="border:none; border-radius:8px; padding:2rem; max-width:400px; width:100%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+  <h3 style="margin-top:0;">Edit School</h3>
+  <div style="margin-bottom:1rem;">
+    <label class="form-label">School Name</label>
+    <input type="text" id="edit-name" class="form-control" />
+  </div>
+  <div style="margin-bottom:1.5rem;">
+    <label class="form-label">Level</label>
+    <select id="edit-level" class="form-control">
+      <option value="Level-1">Level 1</option>
+      <option value="Level-2">Level 2</option>
+      <option value="Level-3">Level 3</option>
+      <option value="Level-4">Level 4</option>
+    </select>
+  </div>
+  <div style="display:flex; gap:1rem; justify-content:flex-end;">
+    <button class="btn btn-outline" onclick="document.getElementById('edit-modal').close()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveSchoolEdit()">Save Changes</button>
+  </div>
+</dialog><script type="module">
   import { requireManagerAuth, clearManagerSession, startClock } from "./js/utils.js";
-  import { getDistricts, saveDistricts, getUsers, saveUsers, getSchools } from "./js/db.js";
+  import { getDistricts, getUsers, getSchools, getAllStudentAssessments, db } from "./js/db.js";
+  import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
   startClock("live-clock");
+  window.doLogout = function() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  };
 
-  window.clearManagerSession = clearManagerSession;
-  window.getDistricts = getDistricts;
-  window.getUsers = getUsers;
-  
   let districts = [];
   let users = [];
-  let editUserIndex = -1;
+  let allSchools = [];
+  let allAssessments = {};
+  let currentEditingSchoolId = null;
 
   async function init() {
     try {
       districts = await getDistricts();
       users = await getUsers();
-      // Auto-load all schools in the directory on load
+      allSchools = await getSchools(null);
+      allAssessments = await getAllStudentAssessments();
       window.renderDirectory();
     } catch (e) {
       console.error(e);
     }
   }
 
-  // Auto-run init
   init();
 
-// --- DIRECTORY LOGIC ---
-  // --- DIRECTORY LOGIC ---
   document.getElementById("filter-state").addEventListener("change", (e) => {
     const sName = e.target.value;
     const dSel = document.getElementById("filter-district");
@@ -205,54 +271,175 @@
     window.renderDirectory();
   });
 
-  window.renderDirectory = async function() {
+  window.renderDirectory = function() {
     const state = document.getElementById("filter-state").value;
     const dist = document.getElementById("filter-district").value;
     const lvl = document.getElementById("filter-level").value;
+    const term = document.getElementById("filter-term").value;
+    const search = document.getElementById("filter-search").value.toLowerCase();
     const container = document.getElementById("directory-container");
 
-    container.innerHTML = `<p class="text-muted" style="margin-top:2rem;">Loading...</p>`;
-    let schools = await getSchools(dist || null);
+    let filtered = allSchools;
     
-    if (!dist && state) {
-       schools = schools.filter(s => districts[state].includes(s.District));
+    if (dist) {
+      filtered = filtered.filter(s => s.District === dist);
+    } else if (state) {
+      filtered = filtered.filter(s => districts[state] && districts[state].includes(s.District));
     }
     
-    if (lvl) schools = schools.filter(s => s.Level === lvl);
+    if (lvl) filtered = filtered.filter(s => s.Level === lvl);
+    if (search) filtered = filtered.filter(s => s["School Name"].toLowerCase().includes(search));
 
-    if (schools.length === 0) {
-      container.innerHTML = `<p class="text-muted" style="margin-top:2rem;">No schools found.</p>`;
+    document.getElementById("stat-schools").innerText = filtered.length;
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:2rem;" class="text-muted">No schools match your filters.</td></tr>`;
+      document.getElementById("stat-students").innerText = "0";
       return;
     }
 
-    container.innerHTML = schools.map(s => {
-      let assignedSupe = users.find(u => u.districts && u.districts.includes(s.District));
-      let supeName = assignedSupe ? assignedSupe.name : 'Unassigned';
+    let totalStudents = 0;
+    
+    container.innerHTML = filtered.map(s => {
+      // Calculate health & students
+      const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
+      const classes = ["3rd class", "4th class", "5th class"];
+      let completedCount = 0;
+      let schoolStudents = 0;
       
+      classes.forEach(c => {
+        const docId = `${s.District}_${cleanSchool}_${c}`;
+        const students = allAssessments[docId];
+        if (students && students.length > 0) {
+          schoolStudents += students.length;
+          // Check if at least one student in this class has data for the term
+          if (students.some(st => st[term] && Object.keys(st[term]).length > 0)) {
+            completedCount++;
+          }
+        }
+      });
+      
+      totalStudents += schoolStudents;
+
+      let healthStr = "🔴";
+      if (completedCount === 3) healthStr = "🟢";
+      else if (completedCount > 0) healthStr = "🟡";
+      
+      healthStr = `<span title="${completedCount}/3 classes completed for ${term}">${healthStr}</span>`;
+
       return `
-      <details style="background:var(--bg);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;padding:0.5rem;width:100%;box-sizing:border-box;">
-        <summary style="cursor:pointer;font-weight:600;display:flex;justify-content:space-between;align-items:center;">
-          <span>${s["School Name"]}</span>
-          <span class="text-sm text-muted">${s.Level}</span>
-        </summary>
-        <div class="text-sm" style="margin-top:0.5rem;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-          <div><strong>Mandal:</strong> ${s["Mandal Name"] || '-'}</div>
-          <div><strong>Location:</strong> ${s["Location"] || '-'}</div>
-          <div><strong>HM:</strong> ${s["HM Name"] || '-'} (${s["HM Phone"] || '-'})</div>
-          <div><strong>Teacher:</strong> ${s["Teacher Name"] || '-'} (${s["Teacher Phone"] || '-'})</div>
-          <div><strong>Supervisor:</strong> ${supeName}</div>
-          <div><strong>TV:</strong> ${s["TV Working"] || '-'}</div>
-          <div><strong>Pendrive:</strong> ${s["Pendrive Working"] || '-'}</div>
-        </div>
-      </details>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:1rem;">
+          <a href="#" onclick="openProfile('${s.id}')" style="font-weight:600; color:var(--primary); text-decoration:none;">
+            ${s["School Name"]}
+          </a>
+        </td>
+        <td style="padding:1rem;">${s.District}</td>
+        <td style="padding:1rem;">
+          <span style="background:var(--bg-alt); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.85rem; border:1px solid var(--border);">
+            ${s.Level}
+          </span>
+        </td>
+        <td style="padding:1rem; text-align:center; white-space:nowrap;">${healthStr}</td>
+        <td style="padding:1rem; text-align:right;">
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${s.id}')">✏️ Edit</button>
+          <button class="btn btn-outline btn-sm" onclick="deleteSchool('${s.id}')" style="color:var(--danger); border-color:var(--danger); margin-left:0.5rem;">🗑️ Delete</button>
+        </td>
+      </tr>
       `;
     }).join("");
+
+    document.getElementById("stat-students").innerText = totalStudents;
+  };
+
+  window.openProfile = function(id) {
+    const s = allSchools.find(x => x.id === id);
+    if (!s) return;
+    
+    let assignedSupe = users.find(u => u.districts && u.districts.includes(s.District));
+    let supeName = assignedSupe ? assignedSupe.name : 'Unassigned';
+
+    const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
+    const classes = ["3rd class", "4th class", "5th class"];
+    let schoolStudents = 0;
+    
+    classes.forEach(c => {
+      const docId = `${s.District}_${cleanSchool}_${c}`;
+      const students = allAssessments[docId];
+      if (students && students.length > 0) schoolStudents += students.length;
+    });
+
+    document.getElementById("modal-school-name").innerText = s["School Name"];
+    document.getElementById("modal-school-content").innerHTML = `
+      <div style="background:var(--bg-alt); padding:1rem; border-radius:8px; border:1px solid var(--border);">
+        <div style="margin-bottom:0.5rem;"><strong>District:</strong> ${s.District}</div>
+        <div style="margin-bottom:0.5rem;"><strong>Mandal:</strong> ${s["Mandal Name"] || '-'}</div>
+        <div style="margin-bottom:0.5rem;"><strong>Supervisor:</strong> <span style="color:var(--primary); font-weight:600;">${supeName}</span></div>
+        <div style="margin-bottom:0.5rem;"><strong>Total Students:</strong> <span style="font-weight:600;">${schoolStudents}</span></div>
+      </div>
+      <div style="margin-top:0.5rem;">
+        <div><strong>HM:</strong> ${s["HM Name"] || '-'} (${s["HM Phone"] || '-'})</div>
+        <div style="margin-top:0.5rem;"><strong>Teacher:</strong> ${s["Teacher Name"] || '-'} (${s["Teacher Phone"] || '-'})</div>
+      </div>
+    `;
+    
+    document.getElementById("profile-modal").showModal();
+  };
+
+  window.openEdit = function(id) {
+    const s = allSchools.find(x => x.id === id);
+    if (!s) return;
+    currentEditingSchoolId = id;
+    document.getElementById("edit-name").value = s["School Name"];
+    document.getElementById("edit-level").value = s.Level;
+    document.getElementById("edit-modal").showModal();
+  };
+
+  window.saveSchoolEdit = async function() {
+    if (!currentEditingSchoolId) return;
+    const newName = document.getElementById("edit-name").value.trim();
+    const newLevel = document.getElementById("edit-level").value;
+    
+    if (!newName) return alert("School name cannot be empty.");
+
+    try {
+      const dRef = doc(db, "schools", currentEditingSchoolId);
+      await updateDoc(dRef, {
+        "School Name": newName,
+        "Level": newLevel
+      });
+      
+      const idx = allSchools.findIndex(x => x.id === currentEditingSchoolId);
+      if (idx > -1) {
+        allSchools[idx]["School Name"] = newName;
+        allSchools[idx].Level = newLevel;
+      }
+      
+      document.getElementById("edit-modal").close();
+      window.renderDirectory();
+    } catch(e) {
+      console.error(e);
+      alert("Error saving edits.");
+    }
+  };
+
+  window.deleteSchool = async function(id) {
+    if (!confirm("Are you sure you want to permanently delete this school?")) return;
+    try {
+      await deleteDoc(doc(db, "schools", id));
+      allSchools = allSchools.filter(x => x.id !== id);
+      window.renderDirectory();
+    } catch(e) {
+      console.error(e);
+      alert("Error deleting school.");
+    }
   };
 
   document.getElementById("filter-district").addEventListener("change", window.renderDirectory);
   document.getElementById("filter-level").addEventListener("change", window.renderDirectory);
+  document.getElementById("filter-search").addEventListener("input", window.renderDirectory);
+  document.getElementById("filter-term").addEventListener("change", window.renderDirectory);
 
-  // init() already called above
 </script>
 <script>
   window.toggleSidebar = function() {
@@ -264,20 +451,6 @@
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

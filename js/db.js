@@ -1,4 +1,4 @@
-// ============================================
+﻿// ============================================
 // TEACH FOR CHANGE — Firebase DB Operations
 // ============================================
 
@@ -12,7 +12,7 @@ import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getSaturdayOf, toYMD } 
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+export const db = getFirestore(app);
 
 // ============================================
 // ADMIN AUTH
@@ -703,3 +703,4 @@ export async function getAllStudentAssessments() {
   snap.forEach(d => { all[d.id] = d.data().data; });
   return all;
 }
+

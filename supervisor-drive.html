@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -176,7 +176,7 @@
         
         <div style="margin-top:1rem;display:flex;justify-content:space-between;">
           <button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>
-          <button class="btn btn-primary" onclick="saveGrid()" id="btn-save">💾 Save Data</button>
+          <span id="save-status" style="color:var(--text-muted); font-size:0.9rem; font-weight:600;">✅ All changes saved</span>
         </div>
       </div>
       
@@ -391,8 +391,8 @@
         currentGridData[rIdx][term][col] = inputEl.value;
       }
     }
+    window.triggerAutoSave();
   };
-
   window.addRow = function() {
     currentGridData.push({ sno: currentGridData.length + 1, name: "", scores: {} });
     drawGrid();
@@ -453,24 +453,42 @@
     drawGrid();
   };
 
-  window.saveGrid = async function() {
+  let autoSaveTimer = null;
+
+  window.triggerAutoSave = function() {
+     const status = document.getElementById("save-status");
+     if(status) {
+       status.style.color = "var(--text-muted)";
+       status.innerHTML = "⏳ Saving changes...";
+     }
+     
+     if (autoSaveTimer) clearTimeout(autoSaveTimer);
+     autoSaveTimer = setTimeout(async () => {
+        await executeSave();
+     }, 1500);
+  };
+
+  window.executeSave = async function() {
     const dist = document.getElementById("sel-dist").value;
     const school = document.getElementById("sel-school").value;
-    const btn = document.getElementById("btn-save");
-    const validData = currentGridData.filter(r => r.name && r.name.trim() !== "");
+    if (!dist || !school || !currentClass) return;
     
-    btn.textContent = "Saving...";
-    btn.disabled = true;
+    const validData = currentGridData.filter(r => r.name && r.name.trim() !== "");
+    const status = document.getElementById("save-status");
+    
     try {
       await saveStudentAssessments(dist, school, currentClass, validData);
-      alert("Saved successfully!");
-      await loadGrid();
+      if(status) {
+         status.style.color = "#10b981"; // success green
+         status.innerHTML = "✅ All changes saved";
+      }
     } catch(err) {
-      alert("Error saving data");
       console.error(err);
+      if(status) {
+         status.style.color = "var(--danger)";
+         status.innerHTML = "❌ Error saving data. Check connection.";
+      }
     }
-    btn.textContent = "💾 Save Data";
-    btn.disabled = false;
   };
 
   window.downloadTemplate = function() {
@@ -554,6 +572,7 @@
 </script>
 </body>
 </html>
+
 
 
 
