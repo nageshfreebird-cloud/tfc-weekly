@@ -5,7 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Data Entry — Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-is@18/umd/react-is.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/recharts/umd/Recharts.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      alert("Error: " + msg + "\nLine: " + lineNo);
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      alert("Promise Error: " + event.reason);
+    });
+  </script>
   <style>
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body * { visibility: hidden; }
+      #print-root, #print-root * { visibility: visible; }
+      #print-root { position: absolute; left: 0; top: 0; }
+      @page { size: A4; margin: 0; }
+    }
+    
     .grid-table {
       width: 100%;
       border-collapse: collapse;
@@ -148,10 +176,20 @@
       </div>
 
       <div id="grid-container" style="display:none;">
-        <div class="class-tabs">
-          <div class="class-tab active" onclick="switchClass('3rd class')">3rd Class</div>
-          <div class="class-tab" onclick="switchClass('4th class')">4th Class</div>
-          <div class="class-tab" onclick="switchClass('5th class')">5th Class</div>
+        <div class="class-tabs" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex;">
+            <div class="class-tab active" onclick="switchClass('3rd class')">3rd Class</div>
+            <div class="class-tab" onclick="switchClass('4th class')">4th Class</div>
+            <div class="class-tab" onclick="switchClass('5th class')">5th Class</div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline" style="border-color:#eab308; color:#ca8a04; display:flex; align-items:center; gap:5px;" onclick="generateHMReport()">
+              <i class="fas fa-file-pdf"></i> Download <span id="report-term-label">Baseline</span> Report
+            </button>
+            <button class="btn btn-primary" style="display:flex; align-items:center; gap:5px;" onclick="downloadDistrictData()">
+              <i class="fas fa-file-excel"></i> Download Excel Data
+            </button>
+          </div>
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
@@ -185,9 +223,248 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script type="module">
+  <script type="text/babel">
+    const expandSchoolName = (rawName) => {
+      const acronyms = {
+        'MPPS': 'Mandal Parishad Primary School',
+        'MPUPS': 'Mandal Parishad Upper Primary School',
+        'GPS': 'Government Primary School',
+        'GGPS': 'Government Girls Primary School',
+        'CPS': 'Primary School run under Central Govt / Cantonment',
+        'MPHS': 'Mandal Parishad High School',
+      };
+      const parts = (rawName || "").trim().split(' ');
+      if (parts.length === 0) return rawName;
+      const firstWord = parts[0].toUpperCase();
+      if (acronyms[firstWord]) {
+        const fullForm = acronyms[firstWord];
+        const villageName = parts.slice(1).join(' ');
+        return villageName ? `${fullForm}, ${villageName}` : fullForm;
+      }
+      return rawName;
+    };
+
+    window.SchoolReportPDF = function({ school, phase, config }) {
+      const { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, LabelList } = window.Recharts;
+      
+      const COLORS = {
+        KNOW: '#4285F4',
+        READ: '#DB4437',
+        SPELL: '#F4B400',
+        CWR: '#0F9D58',
+        CWS: '#FF9900'
+      };
+
+      const extractGradeStats = (grade) => {
+        const classData = school?.classes?.[grade];
+        if (!classData || classData.assessedCount === 0) {
+          return { assessedCount: 0, avgTotal: "0.00", chartData: [], barData: [] };
+        }
+        const { assessedCount, baseline, midline, endline } = classData;
+        const currentPhaseData = phase === 'Baseline' ? baseline : phase === 'Midline' ? midline : endline;
+        
+        const calcAvg = (stats) => ((stats?.KNOW || 0) + (stats?.READ || 0) + (stats?.SPELL || 0) + (stats?.CWR || 0) + (stats?.CWS || 0)) / 5;
+        const baselineTotal = calcAvg(baseline);
+        const avgTotal = currentPhaseData?.Total || calcAvg(currentPhaseData);
+        
+        const chartData = [
+          { name: 'KNOW', value: currentPhaseData?.KNOW || 0, color: COLORS.KNOW },
+          { name: 'READ', value: currentPhaseData?.READ || 0, color: COLORS.READ },
+          { name: 'SPELL', value: currentPhaseData?.SPELL || 0, color: COLORS.SPELL },
+          { name: 'CAMERA WORD READ', value: currentPhaseData?.CWR || 0, color: COLORS.CWR },
+          { name: 'CAMERA WORD SPELL', value: currentPhaseData?.CWS || 0, color: COLORS.CWS }
+        ];
+        
+        const barData = [];
+        if (phase !== 'Baseline') {
+          ['KNOW', 'READ', 'SPELL', 'CWR', 'CWS'].forEach((p) => {
+            const dataPoint = { name: p };
+            if (baselineTotal > 0 || baseline?.KNOW > 0) dataPoint.Baseline = baseline?.[p];
+            if (phase === 'Midline') {
+              dataPoint.Midline = midline?.[p];
+            } else if (phase === 'Endline') {
+              if ((midline?.Total || 0) > 0 || midline?.KNOW > 0) dataPoint.Midline = midline?.[p];
+              dataPoint.Endline = endline?.[p];
+            }
+            barData.push(dataPoint);
+          });
+        }
+        return { assessedCount, avgTotal: avgTotal.toFixed(2), baselineTotal, chartData, barData };
+      };
+      
+      const grade3 = extractGradeStats(3);
+      const grade4 = extractGradeStats(4);
+      const grade5 = extractGradeStats(5);
+      
+      const renderPieChart = (stats, title) => {
+        if (stats.assessedCount === 0) return <div className="h-[220px] bg-slate-50 border mt-4 mx-4 flex items-center justify-center"><p className="text-slate-400 font-bold text-sm">No data</p></div>;
+        const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, name }) => {
+          if (value === 0) return null;
+          const RADIAN = Math.PI / 180;
+          
+          // Shorten the line length from +15 to +8 so the text doesn't hit the edge of the container
+          const radius = innerRadius + (outerRadius - innerRadius) + 8;
+          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+          
+          const totalSum = stats.chartData.reduce((acc, curr) => acc + curr.value, 0);
+          const percent = totalSum > 0 ? (value / totalSum) * 100 : 0;
+          // Smartly split long names like "CAMERA WORD SPELL" into two lines
+          const isLongName = name.includes('CAMERA WORD');
+          const line1 = isLongName ? 'CAMERA WORD' : name;
+          const line2 = isLongName ? name.replace('CAMERA WORD ', '') : '';
+          
+          return (
+            <text x={x} y={y} fill="black" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+              <tspan x={x} dy={isLongName ? "-1em" : "-0.5em"} fontSize="6.5" fontWeight="bold">{line1}</tspan>
+              {isLongName && (
+                <tspan x={x} dy="1em" fontSize="6.5" fontWeight="bold">{line2}</tspan>
+              )}
+              <tspan x={x} dy="1.2em" fontSize="7.5" fill="#666">{percent.toFixed(1)}%</tspan>
+            </text>
+          );
+        };
+        return (
+          <div className="flex flex-col items-center pt-1 pb-2">
+            <h4 className="text-sm font-bold italic mb-2">{title}</h4>
+            <div className="w-[328px] h-[210px] relative mx-auto">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart style={{ overflow: 'visible' }}>
+                  <Pie data={stats.chartData} cx="50%" cy="50%" outerRadius={88} dataKey="value" labelLine={true} label={renderCustomizedLabel} isAnimationActive={false}>
+                    {stats.chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={1.5} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      };
+      
+      const renderBarChart = (stats, title) => {
+        if (stats.assessedCount === 0) return <div className="h-[220px] bg-slate-50 border mt-4 mx-4 flex items-center justify-center"><p className="text-slate-400 font-bold text-sm">No data</p></div>;
+        return (
+          <div className="flex flex-col items-center pt-1 pb-2">
+            <h4 className="text-sm font-bold italic mb-2">{title}</h4>
+            <div className="w-[328px] h-[210px] relative mx-auto pr-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.barData} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fontWeight: 'bold', fill: '#000' }} interval={0} />
+                  <YAxis domain={[0, 15]} ticks={[0, 3, 6, 9, 12, 15]} tick={{ fontSize: 10, fill: '#000' }} />
+                  <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }} />
+                  <Bar dataKey="Baseline" fill="#4285F4" name="BASELINE" isAnimationActive={false}>
+                    <LabelList dataKey="Baseline" position="insideTop" fill="#FFFFFF" style={{ fontSize: '9px', fontWeight: 'bold' }} formatter={(val) => Number(val).toFixed(1)} />
+                  </Bar>
+                  {stats.barData[0]?.Midline !== undefined && (
+                    <Bar dataKey="Midline" fill="#F4B400" name="MIDLINE" isAnimationActive={false}>
+                      <LabelList dataKey="Midline" position="insideTop" fill="#FFFFFF" style={{ fontSize: '9px', fontWeight: 'bold' }} formatter={(val) => Number(val).toFixed(1)} />
+                    </Bar>
+                  )}
+                  {stats.barData[0]?.Endline !== undefined && (
+                    <Bar dataKey="Endline" fill="#34A853" name="ENDLINE" isAnimationActive={false}>
+                      <LabelList dataKey="Endline" position="insideTop" fill="#FFFFFF" style={{ fontSize: '9px', fontWeight: 'bold' }} formatter={(val) => Number(val).toFixed(1)} />
+                    </Bar>
+                  )}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      };
+      
+      const schoolTitleText = expandSchoolName(school.School_Name || "");
+      const districtText = `${school.Mandal ? `${school.Mandal} Mandal, ` : ''}${school.District} District.`;
+      const shortName = (school.School_Name || "").replace(/\s+/g, '_').toUpperCase();
+      const getDynamicTitleSize = (text) => `${Math.min(Math.max(800 / Math.max(text.length, 1), 10), 24)}px`;
+      const getDynamicSubtitleSize = (text) => `${Math.min(Math.max(600 / Math.max(text.length, 1), 9), 18)}px`;
+      
+      return (
+        <div className="bg-white text-black p-6 w-[210mm] h-[297mm] mx-auto box-border relative overflow-hidden" id={`pdf-report-${school.School_Name}`} style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+          <div className="absolute left-[168.6mm] top-[11.6mm] w-[22mm] h-[22mm]">
+            <img src="/logo.png" alt="Teach For Change" className="w-full h-full object-contain" />
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 top-[15.6mm] w-[145mm] text-center">
+            <h1 className="font-bold italic whitespace-nowrap overflow-hidden" style={{ fontSize: getDynamicTitleSize(schoolTitleText) }}>{schoolTitleText}</h1>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 top-[25.6mm] w-[110mm] text-center">
+            <h2 className="font-bold italic whitespace-nowrap overflow-hidden" style={{ fontSize: getDynamicSubtitleSize(districtText) }}>{districtText}</h2>
+          </div>
+          <div className="text-center mb-8 relative mt-[100px]">
+            <h3 className="font-bold mt-4 mb-2" style={{ fontSize: '16px' }}>{phase} Report</h3>
+            <p className="text-right mr-16" style={{ fontSize: '14px' }}>- <span className="font-normal">By</span> <span className="font-bold">Teach For Change Trust</span></p>
+          </div>
+          <div className="mb-4 px-4">
+            <p className="text-[17px] italic leading-relaxed text-justify">
+              <strong className="font-bold">About:</strong> {config?.phases?.[phase]?.aboutText || "The Assessment is conducted to evaluate English Language Literacy."}
+            </p>
+          </div>
+          <div className="mb-5 px-4"><p className="text-[17px] font-bold">Results: The grade wise details:</p></div>
+          <div className="grid grid-cols-2 gap-0 border-t border-slate-300">
+            <div className="border-r border-slate-300">
+              <div className="bg-[#A9D18E] py-1.5 text-center border-b border-white"><h3 className="font-bold text-lg">Grade 3</h3></div>
+              <div id="chart-grade-3">{phase === 'Baseline' ? renderPieChart(grade3, `${shortName}_3rd Class ${phase} Test_Result`) : renderBarChart(grade3, `${shortName}_3rd Class ${phase} Test_Result`)}</div>
+              <div className="px-4 text-center pb-4 text-[13px] italic">
+                {phase === 'Endline' ? (
+                  <React.Fragment>Fig 1: A total of {grade3.assessedCount} students were assessed, the English<br/>Language Literacy level is increased from<br/>baseline to endline {grade3.baselineTotal ? (((Number(grade3.avgTotal) - grade3.baselineTotal) / grade3.baselineTotal) * 100).toFixed(0) : 0}%</React.Fragment>
+                ) : (
+                  <React.Fragment>Fig 1: A total of {grade3.assessedCount} students were assessed, the average<br/>English Language Literacy level is {grade3.avgTotal}</React.Fragment>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="bg-[#A9D18E] py-1.5 text-center border-b border-white border-l"><h3 className="font-bold text-lg">Grade 4</h3></div>
+              <div id="chart-grade-4">{phase === 'Baseline' ? renderPieChart(grade4, `${shortName}_4th Class ${phase} Test_Result`) : renderBarChart(grade4, `${shortName}_4th Class ${phase} Test_Result`)}</div>
+              <div className="px-4 text-center pb-4 text-[13px] italic">
+                {phase === 'Endline' ? (
+                  <React.Fragment>Fig 2: A total of {grade4.assessedCount} students were assessed, the English<br/>Language Literacy level is increased from<br/>baseline to endline {grade4.baselineTotal ? (((Number(grade4.avgTotal) - grade4.baselineTotal) / grade4.baselineTotal) * 100).toFixed(0) : 0}%</React.Fragment>
+                ) : (
+                  <React.Fragment>Fig 2: A total of {grade4.assessedCount} students were assessed, the average<br/>English Language Literacy level is {grade4.avgTotal}</React.Fragment>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-0 border-t border-slate-300 mt-6">
+            <div className="border-r border-slate-300">
+              <div className="bg-[#A9D18E] py-1.5 text-center border-b border-white"><h3 className="font-bold text-lg">Grade 5</h3></div>
+              <div id="chart-grade-5">{phase === 'Baseline' ? renderPieChart(grade5, `${shortName}_5th Class ${phase} Test_Result`) : renderBarChart(grade5, `${shortName}_5th Class ${phase} Test_Result`)}</div>
+              <div className="px-4 text-center pb-2 text-[12px] italic">
+                {phase === 'Endline' ? (
+                  <React.Fragment>Fig 3: A total of {grade5.assessedCount} students were assessed, the English<br/>Language Literacy level is increased from<br/>baseline to endline {grade5.baselineTotal ? (((Number(grade5.avgTotal) - grade5.baselineTotal) / grade5.baselineTotal) * 100).toFixed(0) : 0}%</React.Fragment>
+                ) : (
+                  <React.Fragment>Fig 3: A total of {grade5.assessedCount} students were assessed, the average<br/>English Language Literacy level is {grade5.avgTotal}</React.Fragment>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="bg-[#FFD966] py-1.5 text-center border-b border-white border-l"><h3 className="font-bold text-lg">{config?.phases?.[phase]?.nextStepsTitle || 'Next Steps'}</h3></div>
+              {phase === 'Baseline' ? (
+                <div className="p-8 pt-12 space-y-8">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="flex items-center space-x-3">
+                      <div className="w-2 h-2 rounded-full bg-black shrink-0"></div>
+                      <div className="w-full border-b border-slate-400"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={`p-8 pt-10 space-y-8 ${phase === 'Endline' ? 'text-[16px] leading-relaxed font-bold text-justify' : 'text-[15px]'}`}>
+                  {(config?.phases?.[phase]?.nextStepsBullets || []).map((bullet, idx) => (
+                    <p key={idx}>{bullet}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+  </script>
+
+  <script type="module">
   import { startClock } from "./js/utils.js";
-  import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments } from "./js/db.js";
+  import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments, saveSyncCode } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -261,6 +538,10 @@
   }
 
   window.loadGrid = async function() {
+    const term = document.getElementById("sel-term").value;
+    const termLabel = document.getElementById("report-term-label");
+    if(termLabel) termLabel.innerText = term.charAt(0).toUpperCase() + term.slice(1);
+
     const dist = document.getElementById("sel-dist").value;
     const school = document.getElementById("sel-school").value;
     
@@ -561,8 +842,224 @@
   };
 
   init();
-</script>
-<script>
+
+  async function getSchoolAverages(dist, school) {
+    let schoolData = { District: dist, Mandal: dist, School_Name: school, classes: {} };
+    const classList = ["3rd class", "4th class", "5th class"];
+    const classNum = [3, 4, 5];
+    
+    for(let i=0; i<3; i++) {
+      const data = await getStudentAssessments(dist, school, classList[i]);
+      let counts = { assessedCount: 0 };
+      let phases = { baseline: { KNOW: 0, READ: 0, SPELL: 0, CWR: 0, CWS: 0, Total: 0, count: 0 },
+                     midline: { KNOW: 0, READ: 0, SPELL: 0, CWR: 0, CWS: 0, Total: 0, count: 0 },
+                     endline: { KNOW: 0, READ: 0, SPELL: 0, CWR: 0, CWS: 0, Total: 0, count: 0 } };
+                     
+      if(data) {
+        data.forEach(st => {
+          let assessed = false;
+          Object.keys(phases).forEach(ph => {
+            if(st[ph]) {
+              const sc = st[ph];
+              if(sc['phonics'] !== undefined && sc['phonics'] !== 'A' && sc['phonics'] !== 'a' && sc['phonics'] !== '') {
+                assessed = true;
+                const k = Number(sc['phonics']||0), r = Number(sc['phono_aw']||0), s = Number(sc['vocab']||0), cr = Number(sc['story']||0), cs = Number(sc['sentences']||0);
+                phases[ph].KNOW += k; phases[ph].READ += r; phases[ph].SPELL += s; phases[ph].CWR += cr; phases[ph].CWS += cs;
+                phases[ph].Total += (k+r+s+cr+cs);
+                phases[ph].count++;
+              }
+            }
+          });
+          if(assessed) counts.assessedCount++;
+        });
+      }
+      
+      let res = { assessedCount: counts.assessedCount, baseline: {}, midline: {}, endline: {} };
+      Object.keys(phases).forEach(ph => {
+        let c = phases[ph].count;
+        res[ph] = {
+          KNOW: c > 0 ? Number((phases[ph].KNOW/c).toFixed(2)) : 0,
+          READ: c > 0 ? Number((phases[ph].READ/c).toFixed(2)) : 0,
+          SPELL: c > 0 ? Number((phases[ph].SPELL/c).toFixed(2)) : 0,
+          CWR: c > 0 ? Number((phases[ph].CWR/c).toFixed(2)) : 0,
+          CWS: c > 0 ? Number((phases[ph].CWS/c).toFixed(2)) : 0,
+          Total: c > 0 ? Number((phases[ph].Total/c).toFixed(2)) : 0
+        };
+      });
+      schoolData.classes[classNum[i]] = res;
+    }
+    return schoolData;
+  }
+
+  window.downloadDistrictData = async function() {
+    const dist = document.getElementById("sel-dist").value;
+    const level = document.getElementById("sel-level").value;
+    const term = document.getElementById("sel-term").value;
+    
+    if(!dist || !level) {
+      Swal.fire("Error", "Please select a district and level first.", "error");
+      return;
+    }
+    
+    Swal.fire({ title: 'Compiling Data...', text: 'Fetching all schools in district...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    try {
+      let allSchools = await getSchools(dist);
+      allSchools = allSchools.filter(s => s.Level === level && s['School Name']);
+      
+      let aoa = [];
+      
+      for(let i=0; i<allSchools.length; i++) {
+         const sItem = allSchools[i];
+         const schoolName = sItem['School Name'];
+         const mandal = sItem['Mandal Name'] || sItem.Mandal || "";
+         
+         if (!schoolName) continue;
+         
+         const schoolData = await getSchoolAverages(dist, schoolName);
+         
+         [3, 4, 5].forEach(c => {
+            const d = schoolData.classes[c] || {};
+            const clsName = c === 3 ? "3rd class" : c === 4 ? "4th class" : "5th class";
+            
+            const b = d.baseline || {};
+            const bT = (b.KNOW||0)+(b.READ||0)+(b.SPELL||0)+(b.CWR||0)+(b.CWS||0);
+            const m = d.midline || {};
+            const mT = (m.KNOW||0)+(m.READ||0)+(m.SPELL||0)+(m.CWR||0)+(m.CWS||0);
+            const e = d.endline || {};
+            const eT = (e.KNOW||0)+(e.READ||0)+(e.SPELL||0)+(e.CWR||0)+(e.CWS||0);
+
+            let row = [];
+            if (c === 3) row.push(dist, mandal, schoolName);
+            else row.push("", "", "");
+            
+            row.push(clsName);
+            row.push(d.assessedCount || 0);
+            
+            // Baseline
+            row.push((b.KNOW||0).toFixed(2), (b.READ||0).toFixed(2), (b.SPELL||0).toFixed(2), (b.CWR||0).toFixed(2), (b.CWS||0).toFixed(2), bT.toFixed(2));
+            row.push("");
+            
+            // Midline
+            if(term === 'midline' || term === 'endline') {
+               row.push((m.KNOW||0).toFixed(2), (m.READ||0).toFixed(2), (m.SPELL||0).toFixed(2), (m.CWR||0).toFixed(2), (m.CWS||0).toFixed(2), mT.toFixed(2));
+            } else {
+               row.push("", "", "", "", "", "");
+            }
+            row.push("");
+            
+            // Endline
+            if(term === 'endline') {
+               row.push((e.KNOW||0).toFixed(2), (e.READ||0).toFixed(2), (e.SPELL||0).toFixed(2), (e.CWR||0).toFixed(2), (e.CWS||0).toFixed(2), eT.toFixed(2));
+            } else {
+               row.push("", "", "", "", "", "");
+            }
+            row.push("", "", "", "");
+            
+            aoa.push(row);
+         });
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "School_Averages");
+      
+      const fileName = `${dist}_${level}_${term}_Export.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      Swal.fire({
+        title: 'Success!',
+        text: `Successfully downloaded ${fileName} containing ${allSchools.length} schools.`,
+        icon: 'success'
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to generate data: " + err.message, "error");
+    }
+  };
+
+  window.generateHMReport = async function() {
+    const dist = document.getElementById("sel-dist").value;
+    const school = document.getElementById("sel-school").value;
+    const term = document.getElementById("sel-term").value;
+    const termLabel = term.charAt(0).toUpperCase() + term.slice(1);
+    
+    if(!dist || !school) {
+      Swal.fire("Error", "Please select a district and school first.", "error");
+      return;
+    }
+    
+    Swal.fire({ title: 'Generating Report...', text: 'Please wait...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    try {
+      const schoolData = await getSchoolAverages(dist, school);
+
+      const container = document.createElement('div');
+      container.id = 'print-root';
+      document.body.appendChild(container);
+      
+      const config = {
+        phases: {
+          Baseline: { 
+            aboutText: "The Baseline Assessment is conducted in the beginning of the smart classroom program of Teach For Change. In this assessment, the students are individually assessed in 5 parameters of English Language Literacy.",
+            nextStepsTitle: "Next Steps",
+            nextStepsBullets: []
+          },
+          Midline: { 
+            aboutText: "The Midline Assessment is conducted in the mid of year of the smart classroom program of Teach For Change. In this assessment, the students are individually assessed in 5 parameters of English Language Literacy.",
+            nextStepsTitle: "Next Steps",
+            nextStepsBullets: [
+              "Focus on phonics and small group help.",
+              "Make classrooms rich with reading books.",
+              "Train teachers on effective ESL methods."
+            ]
+          },
+          Endline: { 
+            aboutText: "The Endline Assessment is conducted at the end of the year of the smart classroom program of Teach For Change. In this assessment, the students are individually assessed in 5 parameters of English Language Literacy.",
+            nextStepsTitle: "Next Steps",
+            nextStepsBullets: [
+              "Focus on phonics and small group help.",
+              "Make classrooms rich with reading books.",
+              "Train teachers on effective ESL methods."
+            ]
+          }
+        }
+      };
+
+      const root = ReactDOM.createRoot(container);
+      root.render(React.createElement(window.SchoolReportPDF, {
+         school: schoolData,
+         phase: termLabel,
+         config: config
+      }));
+
+      setTimeout(() => {
+        const reportElement = document.getElementById(`pdf-report-${schoolData.School_Name}`);
+        if(!reportElement) {
+          Swal.fire("Error", "Could not render report. Check console for details.", "error");
+          root.unmount();
+          document.body.removeChild(container);
+          return;
+        }
+        
+        // Use native window.print()
+        Swal.close();
+        window.print();
+        
+        // Cleanup after print dialog is closed
+        setTimeout(() => {
+          root.unmount();
+          document.body.removeChild(container);
+        }, 500);
+
+      }, 1500); // 1.5 seconds to let Recharts animations finish
+
+    } catch(err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to generate report: " + err.message, "error");
+    }
+  };
+
   window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');

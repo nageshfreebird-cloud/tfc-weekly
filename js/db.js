@@ -1,4 +1,4 @@
-﻿// ============================================
+// ============================================
 // TEACH FOR CHANGE — Firebase DB Operations
 // ============================================
 
@@ -681,6 +681,17 @@ export const SCHEMA_L3_L4 = [
 export function getSchemaForLevel(level) {
   if (level === "Level-3" || level === "Level-4") return SCHEMA_L3_L4;
   return SCHEMA_L1_L2;
+}
+
+export async function saveSyncCode(code, payload) {
+  try {
+    const docRef = doc(db, "sync_codes", code);
+    await setDoc(docRef, payload);
+    console.log("Saved sync code to primary database.");
+  } catch (err) {
+    console.error("Error saving sync code: ", err);
+    throw err;
+  }
 }
 
 export async function saveStudentAssessments(district, school, className, data) {
