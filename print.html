@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -189,7 +189,7 @@
 
       const hdr = document.createElement("div");
       hdr.className = "print-member-name";
-      hdr.textContent = `${idx + 1}. ${name.toUpperCase()}`;
+      hdr.innerHTML = `<strong style="font-size:1.1rem; font-weight:900;">${idx + 1}. ${name.toUpperCase()}</strong>`;
       div.appendChild(hdr);
 
       const body = document.createElement("div");
@@ -242,7 +242,7 @@
 
       const hdr = document.createElement("div");
       hdr.className = "print-member-name";
-      hdr.textContent = `${idx + 1}. ${name.toUpperCase()}`;
+      hdr.innerHTML = `<strong style="font-size:1.1rem; font-weight:900;">${idx + 1}. ${name.toUpperCase()}</strong>`;
       div.appendChild(hdr);
 
       const body = document.createElement("div");

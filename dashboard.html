@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Setup ⚙️ Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     .dashboard-grid {
       display: grid;
@@ -119,6 +120,9 @@
         <div class="setup-panel" style="min-height: 80vh;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
             <h2>🏫 School Info Directory</h2>
+            <button class="btn btn-outline" onclick="exportFilteredSchools()" style="color:var(--primary); border-color:var(--primary);">
+              📊 Export to Excel
+            </button>
           </div>
           
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
@@ -241,12 +245,41 @@
   let allSchools = [];
   let allAssessments = {};
   let currentEditingSchoolId = null;
+  window.currentFilteredSchools = [];
+
+  window.exportFilteredSchools = function() {
+    if (window.currentFilteredSchools.length === 0) return alert("No schools to export!");
+    const data = window.currentFilteredSchools.map(s => {
+      let stateName = "Unknown";
+      Object.keys(districts).forEach(state => {
+        if (districts[state] && districts[state].includes(s.District)) stateName = state;
+      });
+      return {
+        "State": stateName,
+        "District": s.District || "-",
+        "Mandal": s["Mandal Name"] || s["Mandal"] || "-",
+        "School Name": s["School Name"] || "-",
+        "HM Name": s["HM Name"] || "-",
+        "HM Number": s["HM Phone"] || s["HM Number"] || "-",
+        "Teacher Name": s["Teacher Name"] || "-",
+        "Teacher Number": s["Teacher Phone"] || "-",
+        "Location": s["Mandal Name"] || s["Mandal"] || "-",
+        "TV Working": s["TV Working"] || "-",
+        "Pendrive Working": s["Pendrive Working"] || s["Pendrive"] || "-"
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Schools");
+    XLSX.writeFile(wb, "Filtered_Schools.xlsx");
+  };
 
   async function init() {
     try {
       districts = await getDistricts();
       users = await getUsers();
       allSchools = await getSchools(null);
+      allSchools.forEach((s, idx) => { s.id = s.id || "school_" + idx; });
       allAssessments = await getAllStudentAssessments();
       window.renderDirectory();
     } catch (e) {
@@ -289,6 +322,8 @@
     
     if (lvl) filtered = filtered.filter(s => s.Level === lvl);
     if (search) filtered = filtered.filter(s => s["School Name"].toLowerCase().includes(search));
+    
+    window.currentFilteredSchools = filtered;
 
     document.getElementById("stat-schools").innerText = filtered.length;
 
@@ -330,7 +365,7 @@
       return `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:1rem;">
-          <a href="#" onclick="openProfile('${s.id}')" style="font-weight:600; color:var(--primary); text-decoration:none;">
+          <a href="#" onclick="event.preventDefault(); openProfile('${s.id}')" style="font-weight:600; color:var(--primary); text-decoration:none;">
             ${s["School Name"]}
           </a>
         </td>
@@ -370,18 +405,20 @@
     });
 
     document.getElementById("modal-school-name").innerText = s["School Name"];
-    document.getElementById("modal-school-content").innerHTML = `
-      <div style="background:var(--bg-alt); padding:1rem; border-radius:8px; border:1px solid var(--border);">
-        <div style="margin-bottom:0.5rem;"><strong>District:</strong> ${s.District}</div>
-        <div style="margin-bottom:0.5rem;"><strong>Mandal:</strong> ${s["Mandal Name"] || '-'}</div>
-        <div style="margin-bottom:0.5rem;"><strong>Supervisor:</strong> <span style="color:var(--primary); font-weight:600;">${supeName}</span></div>
-        <div style="margin-bottom:0.5rem;"><strong>Total Students:</strong> <span style="font-weight:600;">${schoolStudents}</span></div>
-      </div>
-      <div style="margin-top:0.5rem;">
-        <div><strong>HM:</strong> ${s["HM Name"] || '-'} (${s["HM Phone"] || '-'})</div>
-        <div style="margin-top:0.5rem;"><strong>Teacher:</strong> ${s["Teacher Name"] || '-'} (${s["Teacher Phone"] || '-'})</div>
-      </div>
-    `;
+      document.getElementById("modal-school-content").innerHTML = `
+        <div style="background:var(--bg-alt); padding:1rem; border-radius:8px; border:1px solid var(--border);">
+          <div style="margin-bottom:0.5rem;"><strong>District:</strong> ${s.District}</div>
+          <div style="margin-bottom:0.5rem;"><strong>Location (Mandal):</strong> ${s["Mandal Name"] || s["Mandal"] || '-'}</div>
+          <div style="margin-bottom:0.5rem;"><strong>Supervisor:</strong> <span style="color:var(--primary); font-weight:600;">${supeName}</span></div>
+          <div style="margin-bottom:0.5rem;"><strong>Total Students:</strong> <span style="font-weight:600;">${schoolStudents}</span></div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <div><strong>HM:</strong> ${s["HM Name"] || '-'} (${s["HM Phone"] || s["HM Number"] || '-'})</div>
+          <div style="margin-top:0.5rem;"><strong>Teacher:</strong> ${s["Teacher Name"] || '-'} (${s["Teacher Phone"] || '-'})</div>
+          <div style="margin-top:0.5rem;"><strong>Pendrive:</strong> ${s["Pendrive Working"] || s["Pendrive"] || '-'}</div>
+          <div style="margin-top:0.5rem;"><strong>TV Working:</strong> ${s["TV Working"] || '-'}</div>
+        </div>
+      `;
     
     document.getElementById("profile-modal").showModal();
   };

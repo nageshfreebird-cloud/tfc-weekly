@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Assessments Received — Teach for Change</title>
+  <title>Assessments Received � Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
 
@@ -48,7 +48,7 @@
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
-    <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
     <div>
       <span class="time-icon">🕒</span>
       <span id="live-clock">Loading...</span>
@@ -70,7 +70,7 @@
       </div>
       <div class="sidebar-nav">
 
-      <a href="supervisor.html">⚙️ Dashboard</a>
+      <a href="supervisor.html">🏠 Dashboard</a>
       <a href="team.html">📋 Weekly Tasks</a>
       <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
       <a href="supervisor-assessments.html" class="active">📝 Assessments Received</a>
@@ -196,11 +196,11 @@
           <div class="compact-col-input" style="display:flex;gap:0.5rem;align-items:center;">
             <button id="btn-rec-${idx}" class="compact-btn ${isReceived ? 'active green' : ''}" 
                     onclick="setStatus('${sName}', 'received', ${idx})" ${disabledAttr}>
-              ✅ Received
+              ? Received
             </button>
             <button id="btn-not-${idx}" class="compact-btn ${isNotReceived ? 'active red' : ''}" 
                     onclick="setStatus('${sName}', 'not_received', ${idx})" ${disabledAttr}>
-              ❌ Not Received
+              ? Not Received
             </button>
           </div>
           
@@ -210,7 +210,7 @@
           </div>
           
           <input type="hidden" class="status-val" id="status-${idx}" value="${status}" />
-          ${frozen ? `<button class="btn btn-ghost btn-sm" onclick="resetSchoolStatus('${sName}')" style="padding:0;color:var(--danger);min-width:auto;margin-left:auto;">Reset ↺</button>` : ''}
+          ${frozen ? `<button class="btn btn-ghost btn-sm" onclick="resetSchoolStatus('${sName}')" style="padding:0;color:var(--danger);min-width:auto;margin-left:auto;">Reset ?</button>` : ''}
         </div>
       `;
     });

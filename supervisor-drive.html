@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -112,7 +112,7 @@
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
-    <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
     <div>
       <span class="time-icon">🕒</span>
       <span id="live-clock">Loading...</span>
@@ -212,9 +212,12 @@
           </table>
         </div>
         
-        <div style="margin-top:1rem;display:flex;justify-content:space-between;">
-          <button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>
-          <span id="save-status" style="color:var(--text-muted); font-size:0.9rem; font-weight:600;">✅ All changes saved</span>
+        <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>
+            <button class="btn btn-primary btn-sm" onclick="downloadAverages()" style="background:#059669; border-color:#059669;"><i class="fas fa-file-excel"></i> Download Report_Averages</button>
+          </div>
+          <span id="save-status" style="color:var(--text-muted); font-size:0.9rem; font-weight:600;">✓ All changes saved</span>
         </div>
       </div>
       
@@ -894,6 +897,90 @@
   window.downloadDistrictData = async function() {
     const dist = document.getElementById("sel-dist").value;
     const level = document.getElementById("sel-level").value;
+    
+    if(!dist || !level) {
+      Swal.fire("Error", "Please select a district and level first.", "error");
+      return;
+    }
+    
+    Swal.fire({ title: 'Compiling Data...', text: 'Fetching all schools and students...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    try {
+      let allSchools = await getSchools(dist);
+      allSchools = allSchools.filter(s => s.Level === level && s['School Name']);
+      
+      const wb = XLSX.utils.book_new();
+      const schema = getSchemaForLevel(level);
+      
+      let headerRow = ["District", "Mandal", "Student Name", "Class"];
+      schema.forEach(p => headerRow.push(`Baseline - ${p.label}`));
+      schema.forEach(p => headerRow.push(`Midline - ${p.label}`));
+      schema.forEach(p => headerRow.push(`Endline - ${p.label}`));
+      
+      for(let i=0; i<allSchools.length; i++) {
+         const sItem = allSchools[i];
+         const schoolName = sItem['School Name'];
+         const mandal = sItem['Mandal Name'] || sItem.Mandal || "";
+         
+         let aoa = [headerRow];
+         const classList = ["3rd class", "4th class", "5th class"];
+         
+         for(let cIdx=0; cIdx<classList.length; cIdx++) {
+            const cls = classList[cIdx];
+            const students = await getStudentAssessments(dist, schoolName, cls);
+            
+            if(students && students.length > 0) {
+               students.forEach(st => {
+                  if(!st.name) return;
+                  let row = [dist, mandal, st.name, cls];
+                  
+                  // Baseline
+                  schema.forEach(p => row.push(st.baseline && st.baseline[p.id] !== undefined && st.baseline[p.id] !== "" ? st.baseline[p.id] : "-"));
+                  // Midline
+                  schema.forEach(p => row.push(st.midline && st.midline[p.id] !== undefined && st.midline[p.id] !== "" ? st.midline[p.id] : "-"));
+                  // Endline
+                  schema.forEach(p => row.push(st.endline && st.endline[p.id] !== undefined && st.endline[p.id] !== "" ? st.endline[p.id] : "-"));
+                  
+                  aoa.push(row);
+               });
+            }
+         }
+         
+         if(aoa.length > 1) { // Has students
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            let sheetName = schoolName.substring(0, 31);
+            let suffix = 1;
+            let origName = sheetName;
+            while(wb.SheetNames.includes(sheetName)) {
+               sheetName = origName.substring(0, 28) + "_" + suffix;
+               suffix++;
+            }
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+         }
+      }
+      
+      if(wb.SheetNames.length === 0) {
+         Swal.fire("Info", "No student data found for the selected district and level.", "info");
+         return;
+      }
+      
+      const fileName = `${dist}_${level}_Student_Assessments.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      Swal.fire({
+        title: 'Success!',
+        text: `Successfully downloaded ${fileName} containing ${wb.SheetNames.length} schools.`,
+        icon: 'success'
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to generate data: " + err.message, "error");
+    }
+  };
+
+  window.downloadAverages = async function() {
+    const dist = document.getElementById("sel-dist").value;
+    const level = document.getElementById("sel-level").value;
     const term = document.getElementById("sel-term").value;
     
     if(!dist || !level) {
@@ -901,7 +988,7 @@
       return;
     }
     
-    Swal.fire({ title: 'Compiling Data...', text: 'Fetching all schools in district...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: 'Compiling Averages...', text: 'Fetching all schools in district...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     
     try {
       let allSchools = await getSchools(dist);
@@ -936,11 +1023,9 @@
             row.push(clsName);
             row.push(d.assessedCount || 0);
             
-            // Baseline
             row.push((b.KNOW||0).toFixed(2), (b.READ||0).toFixed(2), (b.SPELL||0).toFixed(2), (b.CWR||0).toFixed(2), (b.CWS||0).toFixed(2), bT.toFixed(2));
             row.push("");
             
-            // Midline
             if(term === 'midline' || term === 'endline') {
                row.push((m.KNOW||0).toFixed(2), (m.READ||0).toFixed(2), (m.SPELL||0).toFixed(2), (m.CWR||0).toFixed(2), (m.CWS||0).toFixed(2), mT.toFixed(2));
             } else {
@@ -948,7 +1033,6 @@
             }
             row.push("");
             
-            // Endline
             if(term === 'endline') {
                row.push((e.KNOW||0).toFixed(2), (e.READ||0).toFixed(2), (e.SPELL||0).toFixed(2), (e.CWR||0).toFixed(2), (e.CWS||0).toFixed(2), eT.toFixed(2));
             } else {
@@ -962,14 +1046,14 @@
 
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "School_Averages");
+      XLSX.utils.book_append_sheet(wb, ws, "Report_Averages");
       
-      const fileName = `${dist}_${level}_${term}_Export.xlsx`;
+      const fileName = `${dist}_${level}_${term}_Report_Averages.xlsx`;
       XLSX.writeFile(wb, fileName);
       
       Swal.fire({
         title: 'Success!',
-        text: `Successfully downloaded ${fileName} containing ${allSchools.length} schools.`,
+        text: `Successfully downloaded ${fileName} containing averages for ${allSchools.length} schools.`,
         icon: 'success'
       });
     } catch (err) {

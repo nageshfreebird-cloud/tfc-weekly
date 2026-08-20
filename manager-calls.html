@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -82,7 +82,7 @@
       <!-- LEVEL 1: Overview -->
       <div id="level-1">
         <div class="drilldown-header">
-          <h2>📞 15-Days Teacher Calls (Overview)</h2>
+          <h2>📍 15-Days Teacher Calls (Overview)</h2>
           <div style="display:flex; gap:0.5rem; align-items:center;">
             <select id="view-year-select" onchange="changeViewingYear(this.value)" class="form-control" style="width:120px; font-weight:600; color:var(--primary);">
               <option value="2025-26">2025-26</option>
@@ -93,6 +93,7 @@
             <select id="period-select" class="form-control" style="width:180px;" onchange="loadDataForPeriod(this.value)">
               <option value="">Loading periods...</option>
             </select>
+            <button class="btn btn-primary btn-sm" onclick="downloadMasterPDF()" style="background:#ef4444; border-color:#ef4444; padding:0.4rem 0.8rem;"><i class="fas fa-file-pdf"></i> Download Master PDF</button>
           </div>
         </div>
         <p class="text-muted mb-3">Click on a Supervisor to see their District & Level breakdown.</p>
@@ -104,8 +105,8 @@
       <!-- LEVEL 2: District & Level -->
       <div id="level-2" class="hidden">
         <div class="drilldown-header">
-          <h2 id="l2-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">← Back to Overview</button>
+          <h2 id="l2-title" style="margin:0;"></h2>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">Back to Overview</button>
         </div>
         <p class="text-muted mb-3">Click on a District_Level to see the raw data for schools.</p>
         <div id="l2-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;"></div>
@@ -254,6 +255,103 @@
     });
 
     renderLevel1();
+  };
+
+  window.downloadMasterPDF = function() {
+    const periodLabel = document.getElementById("period-select").value;
+    
+    const printWindow = window.open('', '_blank');
+    let html = `
+      <html>
+      <head>
+        <title>Master Call Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { text-align: center; color: #0f172a; margin-bottom: 5px; }
+          .period { text-align: center; color: #64748b; font-size: 1.1em; margin-bottom: 30px; }
+          .supe-header { color: #1e293b; background: #e2e8f0; padding: 10px; margin-top: 40px; font-size: 1.5em; text-transform: uppercase; font-weight: bold; border-left: 5px solid #0f172a; }
+          h2 { color: #334155; margin-top: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; font-size: 1.2em; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+          th { background: #f1f5f9; font-weight: bold; }
+          ul { margin: 0; padding-left: 20px; }
+          .unanswered { color: #dc2626; font-weight: bold; }
+          .syllabus { background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-weight: 600; display: inline-block; margin-bottom: 2px; }
+          @media print {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Master Teacher Calls Report</h1>
+        <div class="period"><strong>Period:</strong> ${periodLabel}</div>
+    `;
+    
+    Object.keys(globalData).forEach(supeName => {
+      const supeData = globalData[supeName];
+      if (Object.keys(supeData).length === 0) return;
+      
+      html += `<div class="supe-header">${supeName}</div>`;
+      
+      Object.keys(supeData).forEach(dl => {
+         const data = supeData[dl];
+         html += `<h2>${dl.replace('_', ' ')} (Completed: ${data.done}/${data.total})</h2>`;
+         html += `<table>
+           <thead>
+             <tr>
+               <th style="width:35%;">School Info</th>
+               <th>Call Logs</th>
+             </tr>
+           </thead>
+           <tbody>`;
+           
+         data.schools.forEach(s => {
+           let logsHtml = `<span style="color:#94a3b8; font-style:italic; font-size:0.9em;">No calls logged this period.</span>`;
+           if (s.logs && s.logs.length > 0) {
+             logsHtml = `<ul>`;
+             s.logs.forEach(log => {
+               logsHtml += `<li style="margin-bottom: 6px;">
+                 <strong style="color:#0f172a;">${log.date}:</strong> 
+                 ${log.syllabus ? `<span class="syllabus">${log.syllabus}</span>` : ''}
+                 ${log.remarks ? `<span style="color:#334155;">${log.remarks}</span>` : ''}
+                 ${log.notAnswered ? `<span class="unanswered">Phone Unanswered</span>` : ''}
+               </li>`;
+             });
+             logsHtml += `</ul>`;
+           }
+           
+           html += `<tr>
+             <td style="vertical-align: top;">
+               <strong style="color:#0f172a; font-size:1.05em;">${s.name}</strong><br/>
+               <div style="margin-top:4px; color:#475569; font-size:0.95em;">
+                 <span style="font-weight:600;">Teacher:</span> ${s.teacher || 'Unknown'} <br/>
+                 <span style="font-weight:600;">Phone:</span> ${s.phone || 'N/A'}
+               </div>
+             </td>
+             <td style="vertical-align: top;">
+               ${logsHtml}
+             </td>
+           </tr>`;
+         });
+         html += `</tbody></table>`;
+      });
+    });
+    
+    html += `
+      <script>
+        window.onload = function() {
+          window.print();
+        }
+      <\/script>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   function destroyCharts() {
