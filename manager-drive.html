@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Analytics - Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     .split-layout { display: flex; gap: 2rem; align-items: flex-start; }
     .split-left { flex: 0 0 35%; min-width: 0; background: white; padding: 1.5rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
@@ -38,8 +38,8 @@
 
 <nav class="navbar">
   <div class="navbar-brand">
-    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
@@ -52,7 +52,7 @@
   </div>
 </nav>
 
-<div class="page">
+<main class="page">
   <div class="container-wide">
     
     <!-- Sidebar Navigation -->
@@ -153,7 +153,7 @@
        <p class="text-muted text-center">Loading...</p>
     </div>
   </div>
-</div>
+</main>
 
 <script type="module">
   import { getUsers, getSchools, getDistricts, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4, getSchemaForLevel } from "./js/db.js";
@@ -270,7 +270,7 @@
         const supDiv = document.createElement("div");
         supDiv.className = "tree-item";
         
-        let supHtml = `<div class="tree-header" onclick="this.nextElementSibling.classList.toggle('open')">
+        let supHtml = `<div class="tree-header" role="button" tabindex="0" onclick="this.nextElementSibling.classList.toggle('open')">
           <span>🧑‍💼 ${sup.name}</span>
           <span style="font-size:0.8rem;">${sup.districts ? sup.districts.length : 0} Districts ▼</span>
         </div>`;
@@ -280,7 +280,7 @@
           sup.districts.forEach(distName => {
             const distSchools = allSchools.filter(s => s && s.District === distName);
             distsHtml += `<div class="tree-item">
-              <div class="tree-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="tree-header" role="button" tabindex="0" style="display:flex; justify-content:space-between; align-items:center;">
                 <div onclick="this.parentElement.nextElementSibling.classList.toggle('open')" style="flex:1;">
                   <span>📍 ${distName}</span>
                   <span style="font-size:0.8rem; margin-left:0.5rem;">${distSchools.length} Schools -</span>
@@ -314,7 +314,7 @@
               
               const safeSchool = sch['School Name'].replace(/'/g, "\\'").replace(/"/g, "&quot;");
               const safeSup = sup.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-              distsHtml += `<div class="tree-school" onclick="openSchoolModal('${distName}', '${safeSchool}', '${sch.Level}', '${safeSup}')">
+              distsHtml += `<div class="tree-school" role="button" tabindex="0" onclick="openSchoolModal('${distName}', '${safeSchool}', '${sch.Level}', '${safeSup}')">
                 <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:200px;">${sch['School Name']}</span>
                 <span>${completedCount}/3 ${icon}</span>
               </div>`;

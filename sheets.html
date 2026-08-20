@@ -35,8 +35,8 @@
 
 <nav class="navbar">
   <div class="navbar-brand">
-    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
@@ -49,7 +49,7 @@
   </div>
 </nav>
 
-<div class="page">
+<main class="page">
   <div class="container-wide" style="max-width:1000px;">
 
         <!-- Sidebar Navigation -->
@@ -103,7 +103,7 @@
     </div>
 
   </div>
-</div>
+</main>
 
 <script type="module">
   import { requireManagerAuth, clearManagerSession, startClock } from "./js/utils.js";
@@ -137,7 +137,7 @@
       const linkCount = links.length;
       
       container.innerHTML += `
-        <div class="supe-card" onclick="renderLevel2('${u.name}')">
+        <div class="supe-card" role="button" tabindex="0" onclick="renderLevel2('${u.name}')">
           <h3 style="margin:0 0 0.5rem 0;font-size:1.1rem;color:var(--primary);">👤 ${u.name}</h3>
           <p class="text-muted text-sm" style="margin:0;">
             ${linkCount === 0 ? 'No sheets linked' : `🔗 ${linkCount} sheet(s) linked`}

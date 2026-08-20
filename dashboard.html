@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Setup ⚙️ Teach for Change</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     .dashboard-grid {
       display: grid;
@@ -73,8 +73,8 @@
 
 <nav class="navbar">
   <div class="navbar-brand">
-    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
@@ -87,7 +87,7 @@
   </div>
 </nav>
 
-<div class="page">
+<main class="page">
   <div class="container-wide" style="max-width: 1400px;">
 
         <!-- Sidebar Navigation -->
@@ -337,7 +337,7 @@
     
     container.innerHTML = filtered.map(s => {
       // Calculate health & students
-      const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
+      const cleanSchool = (s["School Name"] || "").replace(/[^a-zA-Z0-9]/g, "_");
       const classes = ["3rd class", "4th class", "5th class"];
       let completedCount = 0;
       let schoolStudents = 0;
@@ -394,7 +394,7 @@
     let assignedSupe = users.find(u => u.districts && u.districts.includes(s.District));
     let supeName = assignedSupe ? assignedSupe.name : 'Unassigned';
 
-    const cleanSchool = s["School Name"].replace(/[^a-zA-Z0-9]/g, "_");
+    const cleanSchool = (s["School Name"] || "").replace(/[^a-zA-Z0-9]/g, "_");
     const classes = ["3rd class", "4th class", "5th class"];
     let schoolStudents = 0;
     

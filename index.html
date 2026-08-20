@@ -12,7 +12,7 @@
 <!-- Navbar -->
 <nav class="navbar">
   <div class="navbar-brand">
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime">
@@ -22,7 +22,7 @@
 </nav>
 
 <!-- Home Page -->
-<div class="page">
+<main class="page">
   <div class="container-wide" style="max-width: 1000px; margin: 0 auto; padding: 0 1rem;">
 
     <!-- Hero Section: Logo + Lakshmi Manchu Bio -->
@@ -47,7 +47,7 @@
     <div class="hero-wrap">
       
       <!-- Left: Lakshmi Photo -->
-      <img src="lakshmi.png" alt="Lakshmi Manchu" class="hero-img" onerror="this.src='https://via.placeholder.com/130?text=Photo'" />
+      <img src="lakshmi.png" alt="Lakshmi Manchu" class="hero-img" width="180" height="180" loading="lazy" onerror="this.src='https://via.placeholder.com/130?text=Photo'" />
 
       <!-- Middle: Bio -->
       <div class="hero-content">
@@ -60,7 +60,7 @@
       </div>
       
       <!-- Right: Logo -->
-      <img src="logo.png" alt="Teach for Change Logo" class="hero-logo" />
+      <img src="logo.png" alt="Teach for Change Logo" class="hero-logo" width="180" height="180" loading="lazy" />
 
     </div>
 
@@ -74,12 +74,12 @@
 
     <!-- Role Selection -->
     <div class="choice-grid">
-      <div class="choice-card" id="manager-card" onclick="goManager()">
+      <div class="choice-card" role="button" tabindex="0" id="manager-card" onclick="goManager()">
         <div class="choice-icon">👤</div>
         <div class="choice-title">Manager</div>
         <div class="choice-sub">Login to dashboard</div>
       </div>
-      <div class="choice-card" id="team-card" onclick="showTeamDrop()">
+      <div class="choice-card" role="button" tabindex="0" id="team-card" onclick="showTeamDrop()">
         <div class="choice-icon">👥</div>
         <div class="choice-title">Team Member</div>
         <div class="choice-sub">Login to dashboard</div>
@@ -130,7 +130,7 @@
     </div>
 
   </div>
-</div>
+</main>
 
 <script type="module">
   import { startClock, formatWeekRange, formatFullDate } from "./js/utils.js";

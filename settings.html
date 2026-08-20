@@ -28,8 +28,8 @@
   </div>
 <nav class="navbar">
   <div class="navbar-brand">
-    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
@@ -42,7 +42,7 @@
   </div>
 </nav>
 
-<div class="page">
+<main class="page">
   <div class="container">
 
     <div class="flex-between" style="margin-bottom:1.5rem;">
@@ -156,7 +156,7 @@
     </div>
 
   </div>
-</div>
+</main>
 
 <script type="module">
   import { startClock, requireManagerAuth, getMondayOf, getSaturdayOf,

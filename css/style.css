@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    TEACH FOR CHANGE — Weekly Review System
    Design System & Global Styles
    ============================================ */
@@ -21,7 +21,7 @@
   --bg:             #f1f5f9;
   --card:           #ffffff;
   --text:           #1e293b;
-  --text-muted:     #64748b;
+  --text-muted:     #475569;
   --border:         #e2e8f0;
   --border-focus:   #2563eb;
   --shadow-sm:      0 1px 3px rgba(0,0,0,0.08);
@@ -96,6 +96,8 @@ a { text-decoration: none; color: inherit; }
 
 /* ---- Cards ---- */
 .card {
+  will-change: transform;
+  transform: translateZ(0);
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -656,7 +658,9 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
   .no-print { display: none !important; }
   .navbar { display: none; }
   body { background: white; }
-  .card { box-shadow: none; border: 1px solid #ddd; }
+  .card {
+  will-change: transform;
+  transform: translateZ(0); box-shadow: none; border: 1px solid #ddd; }
   .print-report { padding: 0; }
 }
 .print-report { max-width: 720px; margin: 0 auto; }
@@ -795,7 +799,9 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 @media (max-width: 480px) {
   .page { padding: 1.25rem 0.75rem; }
-  .card { padding: 1.1rem; }
+  .card {
+  will-change: transform;
+  transform: translateZ(0); padding: 1.1rem; }
   .navbar-brand span { font-size: 0.85rem; }
   .choice-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
   .choice-card { padding: 1.5rem 0.75rem; }
@@ -819,6 +825,8 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 
 .sidebar {
+  will-change: transform;
+  transform: translateZ(0);
   position: fixed;
   top: 0;
   left: -280px;

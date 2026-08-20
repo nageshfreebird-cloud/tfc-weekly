@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Analytics - Assessments</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .chart-card {
       background: var(--bg);
@@ -38,8 +38,8 @@
 
 <nav class="navbar">
   <div class="navbar-brand">
-    <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
@@ -52,7 +52,7 @@
   </div>
 </nav>
 
-<div class="page">
+<main class="page">
   <div class="container-wide" style="max-width: 1400px;">
 
         <!-- Sidebar Navigation -->
@@ -126,7 +126,7 @@
     </div>
 
   </div>
-</div>
+</main>
 
 <script type="module">
   import { requireManagerAuth, clearManagerSession , startClock } from "./js/utils.js";
@@ -294,7 +294,7 @@
       const cId = `chart-l1-${idx}`;
       
       container.innerHTML += `
-        <div class="chart-card" onclick="renderLevel2('${supeName}')">
+        <div class="chart-card" role="button" tabindex="0" onclick="renderLevel2('${supeName}')">
           <div class="chart-container"><canvas id="${cId}"></canvas></div>
           <h3 style="margin:0;font-size:1.1rem;color:var(--primary);">${supeName}</h3>
           <p class="text-muted text-sm" style="margin-top:0.25rem;">${totalDone} / ${totalSchools} Schools Received</p>
@@ -331,7 +331,7 @@
       const cId = `chart-l2-${idx}`;
       
       container.innerHTML += `
-        <div class="chart-card" onclick="renderLevel3('${dl}')">
+        <div class="chart-card" role="button" tabindex="0" onclick="renderLevel3('${dl}')">
           <div class="chart-container"><canvas id="${cId}"></canvas></div>
           <h3 style="margin:0;font-size:1rem;color:var(--text);">${dl}</h3>
           <p class="text-muted text-sm" style="margin-top:0.25rem;">${data.done} / ${data.total} Schools</p>
