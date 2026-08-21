@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -200,11 +200,11 @@
           <div class="compact-col-input" style="display:flex;gap:0.5rem;align-items:center;">
             <button id="btn-rec-${idx}" class="compact-btn ${isReceived ? 'active green' : ''}" 
                     onclick="setStatus('${sName}', 'received', ${idx})" ${disabledAttr}>
-              ? Received
+              ✅ Received
             </button>
             <button id="btn-not-${idx}" class="compact-btn ${isNotReceived ? 'active red' : ''}" 
                     onclick="setStatus('${sName}', 'not_received', ${idx})" ${disabledAttr}>
-              ? Not Received
+              ❌ Not Received
             </button>
           </div>
           
@@ -214,7 +214,7 @@
           </div>
           
           <input type="hidden" class="status-val" id="status-${idx}" value="${status}" />
-          ${frozen ? `<button class="btn btn-ghost btn-sm" onclick="resetSchoolStatus('${sName}')" style="padding:0;color:var(--danger);min-width:auto;margin-left:auto;">Reset ?</button>` : ''}
+          ${frozen ? `<button class="btn btn-ghost btn-sm" onclick="resetSchoolStatus('${sName}')" style="padding:0;color:var(--danger);min-width:auto;margin-left:auto;">Reset 🔄</button>` : ''}
         </div>
       `;
     });
@@ -240,22 +240,34 @@
     }
   };
 
-  window.resetSchoolStatus = function(schoolName, idx) {
-    if (idx === undefined) {
-      // Re-render entirely if it was loaded frozen
-      loadSchools();
-      return;
-    }
-    const row = document.querySelector(`.compact-row[data-school="${schoolName}"]`);
-    const recvBtn = document.getElementById(`btn-recv-${idx}`);
-    const notRecvBtn = document.getElementById(`btn-notrecv-${idx}`);
-    const statusInput = row.querySelector(".status-val");
+  window.resetSchoolStatus = function(schoolName) {
+    const rows = document.querySelectorAll(".compact-row");
+    let targetRow = null;
+    let targetIdx = -1;
     
-    recvBtn.classList.remove("received");
-    notRecvBtn.classList.remove("not-received");
-    recvBtn.disabled = false;
-    notRecvBtn.disabled = false;
-    statusInput.value = "";
+    // Find the row and its index
+    rows.forEach((row, i) => {
+        if(row.getAttribute("data-school") === schoolName) {
+            targetRow = row;
+            targetIdx = i; // Because our IDs btn-rec- rely on loop index
+        }
+    });
+    
+    if (!targetRow) return;
+
+    const recvBtn = document.getElementById("btn-rec-" + targetIdx);
+    const notRecvBtn = document.getElementById("btn-not-" + targetIdx);
+    const statusInput = document.getElementById("status-" + targetIdx);
+    
+    if (recvBtn) { recvBtn.classList.remove("active", "green"); recvBtn.disabled = false; }
+    if (notRecvBtn) { notRecvBtn.classList.remove("active", "red"); notRecvBtn.disabled = false; }
+    if (statusInput) statusInput.value = "";
+    
+    const remarks = targetRow.querySelector(".remarks-input");
+    if (remarks) remarks.disabled = false;
+    
+    const resetBtn = targetRow.querySelector('.btn-ghost');
+    if (resetBtn) resetBtn.remove();
   };
 
   window.saveAssessmentsData = async function() {
