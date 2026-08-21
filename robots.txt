@@ -1,0 +1,3 @@
+﻿User-agent: *
+Allow: /
+Sitemap: https://teachforchange.pages.dev/sitemap.xml

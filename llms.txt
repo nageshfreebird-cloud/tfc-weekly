@@ -1,0 +1,6 @@
+﻿# Teach for Change
+
+Teach For Change is a non-profit organisation working to improve the quality of education in government schools in India.
+
+## Pages
+- [Home](https://teachforchange.pages.dev/)

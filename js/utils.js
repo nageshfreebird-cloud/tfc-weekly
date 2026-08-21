@@ -1,4 +1,4 @@
-// ============================================
+﻿// ============================================
 // TEACH FOR CHANGE — Shared Utilities
 // ============================================
 
@@ -173,4 +173,222 @@ export function goBackHome() {
   } else {
     window.location.href = "index.html";
   }
+}
+
+export function buildStyledWorksheet(XLSX, schema, classDataList) {
+  // classDataList = [ { className: "3rd class", students: [...] }, ... ]
+  let aoa = [];
+  
+  // Header 1: Merged Blocks
+  let row1 = ["S.NO", "NAME", "CLASS"];
+  row1.push("BASELINE");
+  for(let i=1; i<schema.length+1; i++) row1.push(""); // +1 for TOTAL column
+  row1.push("MIDLINE");
+  for(let i=1; i<schema.length+1; i++) row1.push("");
+  row1.push("ENDLINE");
+  for(let i=1; i<schema.length+1; i++) row1.push("");
+  aoa.push(row1);
+
+  // Header 2: Metrics
+  let row2 = ["", "", ""];
+  const addMetrics = () => {
+    schema.forEach(p => row2.push(p.label + (p.maxMarks ? " ("+p.maxMarks+")" : "")));
+    row2.push("TOTAL (50)");
+  };
+  addMetrics(); // Baseline
+  addMetrics(); // Midline
+  addMetrics(); // Endline
+  aoa.push(row2);
+  
+  let merges = [];
+  const slen = schema.length + 1; // including Total
+  merges.push({s:{r:0,c:3}, e:{r:0,c:3+slen-1}});
+  merges.push({s:{r:0,c:3+slen}, e:{r:0,c:3+(slen*2)-1}});
+  merges.push({s:{r:0,c:3+(slen*2)}, e:{r:0,c:3+(slen*3)-1}});
+
+  let currentRow = 2; // zero-indexed, row 0 and 1 are headers
+  
+  let redRows = [];
+  let orangeRows = [];
+  
+  classDataList.forEach(cd => {
+    if(!cd.students || cd.students.length === 0) return;
+    
+    // Class Header (Red Row)
+    let classRow = [cd.className];
+    for(let i=1; i<3+(slen*3); i++) classRow.push("");
+    aoa.push(classRow);
+    merges.push({s:{r:currentRow, c:0}, e:{r:currentRow, c:2+(slen*3)}});
+    redRows.push(currentRow);
+    currentRow++;
+    
+    // Students
+    cd.students.forEach((st, idx) => {
+      let r = [idx+1, st.name || "Unknown", cd.className.replace(" class", "").toUpperCase()];
+      
+      const calcTotal = (term) => {
+         let tot = 0; let hasNumeric = false; let hasString = false; let strVal = "";
+         schema.forEach(p => { 
+            let val = st[term] ? st[term][p.id] : null; 
+            if(val !== null && val !== undefined && val !== "" && val !== "-") { 
+                let num = Number(val);
+                if(!isNaN(num)) { tot += num; hasNumeric = true; }
+                else { hasString = true; strVal = val; }
+            }
+         });
+         if (hasNumeric) return tot;
+         if (hasString) return strVal;
+         return "-";
+      };
+      
+      const addTerm = (term) => {
+         schema.forEach(p => {
+            let val = st[term] ? st[term][p.id] : "-";
+            r.push(val !== undefined && val !== "" ? val : "-");
+         });
+         r.push(calcTotal(term));
+      };
+      
+      addTerm("baseline");
+      addTerm("midline");
+      addTerm("endline");
+      
+      aoa.push(r);
+      currentRow++;
+    });
+    
+    // Averages (Orange Row)
+    let avgRow = ["Averages", "", ""];
+    const calcAvg = (term, pId) => {
+       let sum = 0; let cnt = 0;
+       cd.students.forEach(st => {
+          let val = st[term] ? st[term][pId] : null;
+          if(val !== null && val !== undefined && val !== "" && val !== "-") { 
+             let num = Number(val);
+             if(!isNaN(num)) { sum += num; cnt++; }
+          }
+       });
+       return cnt > 0 ? (sum/cnt).toFixed(2) : "-";
+    };
+    
+    const addAvgTerm = (term) => {
+       schema.forEach(p => avgRow.push(calcAvg(term, p.id)));
+       
+       // Avg Total
+       let totSum = 0; let totCnt = 0;
+       cd.students.forEach(st => {
+          let t = 0; let hasNumeric = false;
+          schema.forEach(p => { 
+             let val = st[term] ? st[term][p.id] : null; 
+             if(val !== null && val !== undefined && val !== "" && val !== "-") { 
+                let num = Number(val);
+                if(!isNaN(num)) { t += num; hasNumeric = true; }
+             }
+          });
+          if(hasNumeric) { totSum += t; totCnt++; }
+       });
+       avgRow.push(totCnt > 0 ? (totSum/totCnt).toFixed(2) : "-");
+    };
+    
+    addAvgTerm("baseline");
+    addAvgTerm("midline");
+    addAvgTerm("endline");
+    
+    aoa.push(avgRow);
+    orangeRows.push(currentRow);
+    currentRow++;
+  });
+  
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges'] = merges;
+  
+  // Style definitions
+  const borderAll = {
+     top: {style:'thin', color:{auto:1}},
+     bottom: {style:'thin', color:{auto:1}},
+     left: {style:'thin', color:{auto:1}},
+     right: {style:'thin', color:{auto:1}}
+  };
+  
+  const styleHeader1 = (color) => ({
+      fill: {fgColor: {rgb: color}},
+      font: {bold: true, color: {rgb: (color === "FFC000" || color === "FEF08A") ? "000000" : "FFFFFF"}, sz: 11},
+      alignment: {horizontal: "center", vertical: "center"},
+      border: borderAll
+  });
+  
+  const styleHeader2 = {
+      fill: {fgColor: {rgb: "E2E8F0"}},
+      font: {bold: true, sz: 10},
+      alignment: {horizontal: "center", vertical: "center", wrapText: true},
+      border: borderAll
+  };
+  
+  const styleRedRow = {
+      fill: {fgColor: {rgb: "FF0000"}},
+      font: {bold: true, color: {rgb: "FFFFFF"}, sz: 11},
+      alignment: {horizontal: "center", vertical: "center"},
+      border: borderAll
+  };
+  
+  const styleOrangeRow = {
+      fill: {fgColor: {rgb: "F59E0B"}},
+      font: {bold: true, sz: 10},
+      alignment: {horizontal: "center", vertical: "center"},
+      border: borderAll
+  };
+  
+  const styleNormal = {
+      alignment: {horizontal: "center", vertical: "center"},
+      border: borderAll
+  };
+  
+  const styleTotal = {
+      fill: {fgColor: {rgb: "FEF08A"}},
+      font: {bold: true},
+      alignment: {horizontal: "center", vertical: "center"},
+      border: borderAll
+  };
+  
+  // Apply styles
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for(let R = range.s.r; R <= range.e.r; ++R) {
+      for(let C = range.s.c; C <= range.e.c; ++C) {
+          const cell_ref = XLSX.utils.encode_cell({c:C, r:R});
+          if(!ws[cell_ref]) ws[cell_ref] = {t:'s', v:''};
+          
+          let s = {};
+          
+          if(R === 0) { // Row 1
+             if(C >= 3 && C < 3+slen) s = styleHeader1("0000FF"); // Blue
+             else if(C >= 3+slen && C < 3+(slen*2)) s = styleHeader1("F4B084"); // Peach
+             else if(C >= 3+(slen*2)) s = styleHeader1("FFC000"); // Yellow (wait, they wanted yellow for endline text or background?) They used orange for midline, yellow for endline. I'll use exact hex.
+             else s = styleHeader2;
+          } 
+          else if(R === 1) { // Row 2
+             s = styleHeader2;
+          }
+          else if(redRows.includes(R)) { // Class Row
+             s = styleRedRow;
+          }
+          else if(orangeRows.includes(R)) { // Averages Row
+             s = styleOrangeRow;
+          }
+          else { // Student rows
+             s = Object.assign({}, styleNormal);
+             // Highlight total columns
+             if((C - 2) % slen === 0 && C >= 3) {
+                s = styleTotal;
+             }
+          }
+          ws[cell_ref].s = s;
+      }
+  }
+  
+  // Column widths
+  let wscols = [{wch:5}, {wch:25}, {wch:8}];
+  for(let i=0; i<slen*3; i++) wscols.push({wch:12});
+  ws['!cols'] = wscols;
+
+  return ws;
 }

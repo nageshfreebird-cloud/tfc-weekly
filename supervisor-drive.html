@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Data Entry — Teach for Change</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -225,7 +229,7 @@
   </div>
 </main>
 
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script type="text/babel">
     const expandSchoolName = (rawName) => {
       const acronyms = {
@@ -466,7 +470,7 @@
   </script>
 
   <script type="module">
-  import { startClock } from "./js/utils.js";
+  import { startClock, buildStyledWorksheet } from "./js/utils.js";
   import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments, saveSyncCode } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
@@ -912,49 +916,27 @@
       const wb = XLSX.utils.book_new();
       const schema = getSchemaForLevel(level);
       
-      let headerRow = ["District", "Mandal", "Student Name", "Class"];
-      schema.forEach(p => headerRow.push(`Baseline - ${p.label}`));
-      schema.forEach(p => headerRow.push(`Midline - ${p.label}`));
-      schema.forEach(p => headerRow.push(`Endline - ${p.label}`));
-      
       for(let i=0; i<allSchools.length; i++) {
-         const sItem = allSchools[i];
-         const schoolName = sItem['School Name'];
-         const mandal = sItem['Mandal Name'] || sItem.Mandal || "";
+         const sch = allSchools[i];
+         const schoolName = sch['School Name'];
+         const cleanSchool = schoolName.replace(/[^a-zA-Z0-9]/g, "_");
          
-         let aoa = [headerRow];
+         let classDataList = [];
          const classList = ["3rd class", "4th class", "5th class"];
          
          for(let cIdx=0; cIdx<classList.length; cIdx++) {
             const cls = classList[cIdx];
             const students = await getStudentAssessments(dist, schoolName, cls);
-            
             if(students && students.length > 0) {
-               students.forEach(st => {
-                  if(!st.name) return;
-                  let row = [dist, mandal, st.name, cls];
-                  
-                  // Baseline
-                  schema.forEach(p => row.push(st.baseline && st.baseline[p.id] !== undefined && st.baseline[p.id] !== "" ? st.baseline[p.id] : "-"));
-                  // Midline
-                  schema.forEach(p => row.push(st.midline && st.midline[p.id] !== undefined && st.midline[p.id] !== "" ? st.midline[p.id] : "-"));
-                  // Endline
-                  schema.forEach(p => row.push(st.endline && st.endline[p.id] !== undefined && st.endline[p.id] !== "" ? st.endline[p.id] : "-"));
-                  
-                  aoa.push(row);
-               });
+               classDataList.push({ className: cls, students: students });
             }
          }
          
-         if(aoa.length > 1) { // Has students
-            const ws = XLSX.utils.aoa_to_sheet(aoa);
+         if(classDataList.length > 0) {
+            const ws = buildStyledWorksheet(XLSX, schema, classDataList);
             let sheetName = schoolName.substring(0, 31);
-            let suffix = 1;
-            let origName = sheetName;
-            while(wb.SheetNames.includes(sheetName)) {
-               sheetName = origName.substring(0, 28) + "_" + suffix;
-               suffix++;
-            }
+            let suffix = 1; let origName = sheetName;
+            while(wb.SheetNames.includes(sheetName)) { sheetName = origName.substring(0, 28) + "_" + suffix; suffix++; }
             XLSX.utils.book_append_sheet(wb, ws, sheetName);
          }
       }
@@ -966,18 +948,12 @@
       
       const fileName = `${dist}_${level}_Student_Assessments.xlsx`;
       XLSX.writeFile(wb, fileName);
-      
-      Swal.fire({
-        title: 'Success!',
-        text: `Successfully downloaded ${fileName} containing ${wb.SheetNames.length} schools.`,
-        icon: 'success'
-      });
-    } catch (err) {
-      console.error(err);
-      Swal.fire("Error", "Failed to generate data: " + err.message, "error");
+      Swal.close();
+    } catch (e) {
+      console.error(e);
+      Swal.fire("Error", "Failed to compile data.", "error");
     }
   };
-
   window.downloadAverages = async function() {
     const dist = document.getElementById("sel-dist").value;
     const level = document.getElementById("sel-level").value;

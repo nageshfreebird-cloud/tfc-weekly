@@ -1,10 +1,10 @@
-// ============================================
+﻿// ============================================
 // TEACH FOR CHANGE — Firebase DB Operations
 // ============================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, doc, getDoc, setDoc, updateDoc,
+  getFirestore, initializeFirestore, doc, getDoc, setDoc, updateDoc,
   collection, query, where, getDocs, onSnapshot, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import firebaseConfig from "./firebase-config.js";
@@ -12,7 +12,22 @@ import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getSaturdayOf, toYMD } 
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+
+
+// Offline / Sync Tracking
+window.hasUnsyncedData = false;
+
+window.addEventListener('beforeunload', (e) => {
+  if (window.hasUnsyncedData) {
+    e.preventDefault();
+    e.returnValue = 'You have unsaved changes that have not synced to the cloud yet due to slow/lost internet. If you close now, data may be lost!';
+    return e.returnValue;
+  }
+});
+
+export function markPendingWrite() {}
 
 // ============================================
 // ADMIN AUTH
@@ -38,7 +53,7 @@ export async function verifyAdminLogin(userId, password) {
 
 /** Update admin credentials */
 export async function updateAdminCredentials(newUserId, newPassword) {
-  await setDoc(doc(db, "settings", "admin"), {
+  markPendingWrite(); await setDoc(doc(db, "settings", "admin"), {
     userId: newUserId,
     password: newPassword,
     updatedAt: new Date().toISOString()
@@ -88,7 +103,7 @@ export function getWeekDatesArray(mondayStr) {
 
 /** Save week settings (admin action) */
 export async function saveWeekSettings(settings) {
-  await setDoc(doc(db, "settings", "week"), {
+  markPendingWrite(); await setDoc(doc(db, "settings", "week"), {
     ...settings,
     updatedAt: new Date().toISOString()
   });
@@ -97,7 +112,7 @@ export async function saveWeekSettings(settings) {
 /** Toggle submissions open/closed */
 export async function setSubmissionsOpen(isOpen) {
   const cur = await getWeekSettings();
-  await setDoc(doc(db, "settings", "week"), {
+  markPendingWrite(); await setDoc(doc(db, "settings", "week"), {
     ...cur,
     submissionsOpen: isOpen,
     updatedAt: new Date().toISOString()
@@ -151,7 +166,7 @@ export async function getGlobalAcademicYear() {
 }
 
 export async function setGlobalAcademicYear(year) {
-  await setDoc(doc(db, "settings", "academic"), {
+  markPendingWrite(); await setDoc(doc(db, "settings", "academic"), {
     activeYear: year,
     updatedAt: new Date().toISOString()
   });
@@ -185,7 +200,7 @@ export async function submitMemberReport(weekStart, memberName, data) {
   const completed = data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : [];
   
   const docRef = await getScopedDoc("submissions", id);
-  await setDoc(docRef, {
+  markPendingWrite(); await setDoc(docRef, {
     weekStart,
     memberName,
     submittedAt: new Date().toISOString(),
@@ -203,7 +218,7 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex, isDone
     const data = snap.data();
     let completed = data.thisWeekCompleted || (data.thisWeekTasks ? data.thisWeekTasks.map(() => false) : []);
     completed[taskIndex] = isDone;
-    await updateDoc(ref, { thisWeekCompleted: completed });
+    markPendingWrite(); await updateDoc(ref, { thisWeekCompleted: completed });
     
     // Also try to update it in the 'summaries' collection if it exists,
     // so the admin printout syncs up automatically.
@@ -217,7 +232,7 @@ export async function markTaskCompleted(weekStart, memberName, taskIndex, isDone
                              (sumData.members[memberName].thisWeekTasks ? sumData.members[memberName].thisWeekTasks.map(() => false) : []);
           memCompleted[taskIndex] = isDone;
           sumData.members[memberName].thisWeekCompleted = memCompleted;
-          await updateDoc(sumRef, { members: sumData.members });
+          markPendingWrite(); await updateDoc(sumRef, { members: sumData.members });
         }
       }
     } catch(err) { console.error("Error syncing to summary:", err); }
@@ -275,7 +290,7 @@ export async function deleteMemberSubmission(weekStart, memberName) {
   for (const dateStr of datesToCheck) {
     let id = `${dateStr}_${nameSafe}`;
     let docRef = await getScopedDoc("submissions", id);
-    await deleteDoc(docRef);
+    markPendingWrite(); await deleteDoc(docRef);
   }
 }
 
@@ -343,7 +358,7 @@ export async function listenWeekSubmissions(weekStart, callback) {
 /** Save edited summary */
 export async function saveSummary(weekStart, summaryData) {
   const docRef = await getScopedDoc("summaries", weekStart);
-  await setDoc(docRef, {
+  markPendingWrite(); await setDoc(docRef, {
     weekStart,
     members: summaryData,
     finalized: false,
@@ -356,7 +371,7 @@ export async function finalizeSummary(weekStart) {
   const docRef = await getScopedDoc("summaries", weekStart);
   const snap = await getDoc(docRef);
   if (snap.exists()) {
-    await updateDoc(docRef, {
+    markPendingWrite(); await updateDoc(docRef, {
       finalized: true,
       finalizedAt: new Date().toISOString()
     });
@@ -392,7 +407,7 @@ export async function getTeamMembers() {
 
 /** Save team members */
 export async function saveTeamMembers(members) {
-  await setDoc(doc(db, "settings", "team"), {
+  markPendingWrite(); await setDoc(doc(db, "settings", "team"), {
     members,
     updatedAt: new Date().toISOString()
   });
@@ -450,7 +465,7 @@ export async function getUsers() {
 }
 
 export async function saveUsers(users) {
-  await setDoc(doc(db, "settings", "users"), {
+  markPendingWrite(); await setDoc(doc(db, "settings", "users"), {
     users,
     updatedAt: new Date().toISOString()
   });
@@ -500,7 +515,7 @@ export async function getDistricts() {
 }
 
 export async function saveDistricts(districts) {
-  await setDoc(doc(db, "settings", "districts"), {
+  markPendingWrite(); await setDoc(doc(db, "settings", "districts"), {
     districts,
     updatedAt: new Date().toISOString()
   });
@@ -540,7 +555,7 @@ export async function getSchools(districtName) {
 }
 
 export async function saveSchools(districtName, schools) {
-  await setDoc(doc(db, "schools", districtName), {
+  markPendingWrite(); await setDoc(doc(db, "schools", districtName), {
     list: schools,
     updatedAt: new Date().toISOString()
   });
@@ -556,7 +571,7 @@ export async function getSyllabus(level) {
 }
 
 export async function saveSyllabus(level, topics) {
-  await setDoc(doc(db, "syllabus", level), {
+  markPendingWrite(); await setDoc(doc(db, "syllabus", level), {
     topics,
     updatedAt: new Date().toISOString()
   });
@@ -572,7 +587,7 @@ export async function getYearPlan(supervisorName) {
 }
 
 export async function saveYearPlan(supervisorName, plan) {
-  await setDoc(doc(db, "year_plans", supervisorName), {
+  markPendingWrite(); await setDoc(doc(db, "year_plans", supervisorName), {
     plan,
     updatedAt: new Date().toISOString()
   });
@@ -583,7 +598,7 @@ export async function saveYearPlan(supervisorName, plan) {
 // ============================================
 
 export async function saveSheetLinks(userName, linksArray) {
-  await setDoc(doc(db, "google_sheets", userName), { links: linksArray, updatedAt: Date.now() });
+  markPendingWrite(); await setDoc(doc(db, "google_sheets", userName), { links: linksArray, updatedAt: Date.now() });
 }
 
 export async function getSheetLinks(userName) {
@@ -604,7 +619,7 @@ export async function getAllSheetLinks() {
 
 export async function saveTeacherCalls(supervisorName, distLevel, data) {
   const docRef = await getScopedDoc("teacher_calls", `${supervisorName}_${distLevel}`);
-  await setDoc(docRef, { data, updatedAt: Date.now() });
+  markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
 }
 
 export async function getTeacherCalls(supervisorName, distLevel) {
@@ -623,7 +638,7 @@ export async function getAllTeacherCalls() {
 
 export async function saveAssessments(supervisorName, distLevel, data) {
   const docRef = await getScopedDoc("assessments_received", `${supervisorName}_${distLevel}`);
-  await setDoc(docRef, { data, updatedAt: Date.now() });
+  markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
 }
 
 export async function getAssessments(supervisorName, distLevel) {
@@ -642,7 +657,7 @@ export async function getAllAssessments() {
 
 export async function saveDriveRecords(supervisorName, distLevel, data) {
   const docRef = await getScopedDoc("assessments_drive", `${supervisorName}_${distLevel}`);
-  await setDoc(docRef, { data, updatedAt: Date.now() });
+  markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
 }
 
 export async function getDriveRecords(supervisorName, distLevel) {
@@ -686,7 +701,7 @@ export function getSchemaForLevel(level) {
 export async function saveSyncCode(code, payload) {
   try {
     const docRef = doc(db, "sync_codes", code);
-    await setDoc(docRef, payload);
+    markPendingWrite(); await setDoc(docRef, payload);
     console.log("Saved sync code to primary database.");
   } catch (err) {
     console.error("Error saving sync code: ", err);
@@ -697,7 +712,7 @@ export async function saveSyncCode(code, payload) {
 export async function saveStudentAssessments(district, school, className, data) {
   const cleanSchool = school.replace(/[^a-zA-Z0-9]/g, "_");
   const docRef = await getScopedDoc("student_assessments", `${district}_${cleanSchool}_${className}`);
-  await setDoc(docRef, { data, updatedAt: Date.now() });
+  markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
 }
 
 export async function getStudentAssessments(district, school, className) {

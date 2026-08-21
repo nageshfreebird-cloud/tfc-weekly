@@ -4,9 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Analytics - Teach for Change</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
     .split-layout { display: flex; gap: 2rem; align-items: flex-start; }
     .split-left { flex: 0 0 35%; min-width: 0; background: white; padding: 1.5rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
@@ -158,51 +162,37 @@
 <script type="module">
   import { getUsers, getSchools, getDistricts, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4, getSchemaForLevel } from "./js/db.js";
 
-  import { requireManagerAuth , startClock } from "./js/utils.js";
+  import { requireManagerAuth , startClock, buildStyledWorksheet } from "./js/utils.js";
 
   let allUsers = [];
   let allSchools = [];
   let allStatesData = {};
   let allAssessments = {};
 
-  window.downloadDistrictData = function(dist, exactLevel, e) {
+  window.downloadDistrictData = async function(dist, exactLevel, e) {
     if(e) e.stopPropagation();
     
-    // Determine which schema to use
     const schema = (exactLevel === 'Level-1' || exactLevel === 'Level-2') ? SCHEMA_L1_L2 : SCHEMA_L3_L4;
-    
     const distSchools = allSchools.filter(s => s && s.District === dist && s.Level === exactLevel);
     if(distSchools.length === 0) return alert("No schools found for " + dist + " in " + exactLevel);
     
     const wb = XLSX.utils.book_new();
-    let headerRow = ["District", "Mandal", "Student Name", "Class"];
-    schema.forEach(p => headerRow.push(`Baseline - ${p.label}`));
-    schema.forEach(p => headerRow.push(`Midline - ${p.label}`));
-    schema.forEach(p => headerRow.push(`Endline - ${p.label}`));
     
     distSchools.forEach(sch => {
        const schoolName = sch['School Name'];
-       const mandal = sch['Mandal Name'] || sch.Mandal || "";
        const cleanSchool = schoolName.replace(/[^a-zA-Z0-9]/g, "_");
        
-       let aoa = [headerRow];
+       let classDataList = [];
        ["3rd class", "4th class", "5th class"].forEach(cls => {
           const docId = `${dist}_${cleanSchool}_${cls}`;
           const students = allAssessments[docId];
           if(students && students.length > 0) {
-             students.forEach(st => {
-                if(!st.name) return;
-                let row = [dist, mandal, st.name, cls];
-                schema.forEach(p => row.push(st.baseline && st.baseline[p.id] !== undefined && st.baseline[p.id] !== "" ? st.baseline[p.id] : "-"));
-                schema.forEach(p => row.push(st.midline && st.midline[p.id] !== undefined && st.midline[p.id] !== "" ? st.midline[p.id] : "-"));
-                schema.forEach(p => row.push(st.endline && st.endline[p.id] !== undefined && st.endline[p.id] !== "" ? st.endline[p.id] : "-"));
-                aoa.push(row);
-             });
+             classDataList.push({ className: cls, students: students });
           }
        });
        
-       if(aoa.length > 1) {
-          const ws = XLSX.utils.aoa_to_sheet(aoa);
+       if(classDataList.length > 0) {
+          const ws = buildStyledWorksheet(XLSX, schema, classDataList);
           let sheetName = schoolName.substring(0, 31);
           let suffix = 1; let origName = sheetName;
           while(wb.SheetNames.includes(sheetName)) { sheetName = origName.substring(0, 28) + "_" + suffix; suffix++; }
@@ -212,8 +202,7 @@
     
     if(wb.SheetNames.length === 0) return alert("No student data found for the selected schools.");
     XLSX.writeFile(wb, `${dist}_${exactLevel}_Student_Assessments.xlsx`);
-  };
-  let chartInstance = null;
+  };  let chartInstance = null;
   
   let currentModalSchool = null;
 
