@@ -384,8 +384,8 @@
     // Calculate dynamic font sizes so it perfectly scales if a 4K image is uploaded
     const nameFontSize = Math.floor(canvas.height * 0.031); // ~24px on 768p
     const schoolFontSize = Math.floor(canvas.height * 0.029); // ~22px on 768p
-    const paraFontSize = Math.floor(canvas.height * 0.018); // ~14px on 768p
-    const dynamicLineHeight = Math.floor(canvas.height * 0.034); // ~26px on 768p
+    const paraFontSize = Math.floor(canvas.height * 0.021); // ~14px on 768p
+    const dynamicLineHeight = Math.floor(canvas.height * 0.035); // ~26px on 768p
     
     // 2. Draw Person Name (Handwritten)
     const nameY = canvas.height * 0.385; // Moved slightly closer to the gold line
@@ -402,7 +402,7 @@
     
     // 4. Draw The Paragraph
     const paragraphY = canvas.height * 0.49; // Moved very close to school name
-    const maxWidth = canvas.width * 0.65; // Slightly wider to accommodate bigger text
+    const maxWidth = canvas.width * 0.76; // Slightly wider to accommodate bigger text
     
     const paragraphText = `This certificate is awarded in sincere recognition of your outstanding commitment and valuable participation in ${pVal}, conducted ${mode} on ${formattedDate}. Under the Teach for Change Smart Classroom Initiative Academic Year ${globalAcademicYear}, we express our deepest gratitude for your dedication to integrating digital-age pedagogy, fostering interactive classroom learning, and empowering students through innovative technology. Thank you for your unwavering partnership and continuous support.`;
     
