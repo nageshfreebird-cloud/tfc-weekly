@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -49,10 +49,10 @@
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
     <div>
-      <span class="time-icon">🕒</span>
+      <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
   </div>
 </nav>
 
@@ -68,15 +68,16 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-        <a href="dashboard.html">⚙️ Dashboard</a>
-        <a href="tab-a.html">📋 Weekly Tasks</a>
-        <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
-        <a href="manager-assessments.html">📝 Assessments Received</a>
-        <a href="manager-drive.html" class="active">📊 Assessments Analytics</a>
-        <a href="sheets.html">🔗 Google Sheet Links</a>
-        <a href="manager-syllabus.html">📘 Syllabus Registry</a>
-        <a href="settings.html">⚙️ My Settings</a>
-      </div>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html">📝 Weekly Tasks</a>
+      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">📝 Assessments Received</a>
+      <a href="manager-drive.html" class="active">📈 Assessments Analytics</a>
+      <a href="sheets.html">🔗 Google Sheet Links</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
+      <a href="settings.html">⚙️ My Settings</a>
+    </div>
     </div>
 
     <div class="split-layout">
@@ -123,7 +124,7 @@
         <div style="margin-top: 2rem;">
           <canvas id="analyticsChart" style="width:100%;max-height:400px;display:none;"></canvas>
           <div id="analytics-empty" class="text-muted text-center" style="margin-top:2rem; padding: 2rem; background: var(--bg); border-radius: var(--radius-md);">
-            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">📈</div>
+            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">---</div>
             <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">No Data Found</h3>
             <p>No assessment data matched your current filters.</p>
           </div>
@@ -260,8 +261,8 @@
         supDiv.className = "tree-item";
         
         let supHtml = `<div class="tree-header" role="button" tabindex="0" onclick="this.nextElementSibling.classList.toggle('open')">
-          <span>🧑‍💼 ${sup.name}</span>
-          <span style="font-size:0.8rem;">${sup.districts ? sup.districts.length : 0} Districts ▼</span>
+          <span>👨‍🏫 ${sup.name}</span>
+          <span style="font-size:0.8rem;">${sup.districts ? sup.districts.length : 0} Districts ➡️</span>
         </div>`;
         
         let distsHtml = `<div class="tree-children">`;
@@ -299,7 +300,7 @@
               });
               
               const isComplete = (completedCount === 3);
-              const icon = isComplete ? "✅" : "❌";
+              const icon = isComplete ? "?" : "?";
               
               const safeSchool = sch['School Name'].replace(/'/g, "\\'").replace(/"/g, "&quot;");
               const safeSup = sup.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");

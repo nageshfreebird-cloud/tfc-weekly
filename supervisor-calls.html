@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>15-Days Teacher Calls � Teach for Change</title>
+  <title>15-Days Teacher Calls ? Teach for Change</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -72,14 +72,13 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="supervisor.html">🏠 Dashboard</a>
-      <a href="team.html">📋 Weekly Tasks</a>
-      <a href="supervisor-calls.html" class="active">📞 15-Days Teacher Calls</a>
-      <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html">📊 Assessment Entry</a>
-      <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
-    
+        <a href="supervisor.html">🏠 Dashboard</a>
+        <a href="team.html">📋 Weekly Tasks</a>
+        <a href="supervisor-calls.html" class="active">📞 15-Days Teacher Calls</a>
+        <a href="supervisor-assessments.html">📝 Assessments Received</a>
+        <a href="supervisor-drive.html">📊 Assessment Entry</a>
+        <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
+        <a href="supervisor-certificate.html">📜 Certificates</a>
       </div>
     </div>
 
@@ -91,7 +90,13 @@
       <p class="text-muted mb-3" style="margin-bottom:1.5rem;">Select your district and level to log calls for your assigned schools.</p>
 
       <div style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
-        <div style="flex:1;">
+        <div id="state-filter-container" style="display:none; flex:1; min-width:150px; margin-right:1rem;">
+            <label class="form-label">State</label>
+            <select id="state-select" class="form-control" onchange="window.updateViewDistricts()">
+              <option value="">All States</option>
+            </select>
+          </div>
+          <div style="flex:1;">
           <label class="form-label">District</label>
           <select id="dist-select" class="form-control" onchange="loadSchools()">
             <option value="">Select District</option>
@@ -120,14 +125,22 @@
 
 <script type="module">
   import { getCurrent15DayPeriod , startClock } from "./js/utils.js";
-  import { getUsers, getSchools, getSyllabus, getTeacherCalls, saveTeacherCalls } from "./js/db.js";
+  import { getUsers, getSchools, getSyllabus, getTeacherCalls, saveTeacherCalls, getDistricts } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
 
-  if (!userName || userRole !== 'supervisor') {
+  if (!userName || (userRole !== 'supervisor' && userRole !== 'associate-sc')) {
     window.location.href = "index.html";
   }
+
+    // Immediately show state filter for associate-sc to prevent layout pop-in
+    if (sessionStorage.getItem('tfc_member_role') === 'associate-sc') {
+        const stateContainer = document.getElementById('state-filter-container');
+        if (stateContainer) stateContainer.style.display = 'block';
+    }
+
+
   startClock("live-clock");
 
   document.getElementById("welcome-name").textContent = userName;
@@ -137,17 +150,60 @@
   let savedData = {};
   let currentPeriod = null;
 
+  let allStatesData = {};
+  let myUser = null;
   async function init() {
     currentPeriod = getCurrent15DayPeriod();
     document.getElementById("period-badge").textContent = "Current Period: " + currentPeriod.label;
 
     const users = await getUsers();
-    const myUser = users.find(u => u.name === userName);
-    if (!myUser || !myUser.districts) return;
+    myUser = users.find(u => u.name === userName);
+    if (!myUser || (myUser.role !== 'associate-sc' && (!myUser.districts || myUser.districts.length === 0))) return;;
 
-    const distEl = document.getElementById("dist-select");
-    myUser.districts.forEach(d => distEl.innerHTML += `<option value="${d}">${d}</option>`);
+    
+      if (myUser && myUser.role === 'associate-sc') {
+          document.getElementById('state-filter-container').style.display = 'block';
+          allStatesData = await getDistricts();
+          const stateSel = document.getElementById("state-select");
+          if (stateSel) {
+              Object.keys(allStatesData).forEach(s => {
+                  stateSel.innerHTML += `<option value="${s}">${s}</option>`;
+              });
+          }
+      }
+
+      window.updateViewDistricts(false);
   }
+
+  
+    window.updateViewDistricts = function(callLoad = true) {
+      const st = document.getElementById("state-select").value;
+      const distSel = document.getElementById("dist-select");
+      
+      // Preserve the original placeholder
+      const firstOpt = distSel.options[0].text;
+      distSel.innerHTML = `<option value="">${firstOpt}</option>`;
+      
+      let allowedDists = myUser && myUser.districts ? myUser.districts : [];
+      let stateDists = [];
+      
+      if (st && allStatesData[st]) {
+        stateDists = allStatesData[st];
+      } else {
+        Object.values(allStatesData).forEach(arr => stateDists = stateDists.concat(arr));
+      }
+      
+      let distsToShow = stateDists;
+      if (myUser && myUser.role === 'supervisor') {
+         distsToShow = allowedDists;
+      } else if (myUser && myUser.role === 'associate-sc') {
+         distsToShow = stateDists;
+      }
+      
+      distsToShow.filter(d => !d.toLowerCase().includes("select")).forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
+      
+      if(callLoad && window.loadSchools) window.loadSchools();
+    };
 
   window.loadSchools = async function() {
     const dist = document.getElementById("dist-select").value;
@@ -298,10 +354,15 @@
     sessionStorage.removeItem("tfc_member_role");
     window.location.href = "index.html";
   }
-  startClock("live-clock");;
+
+  startClock("live-clock");
 
   init();
 </script>
+
+
+
+
 <script>
   window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');

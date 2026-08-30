@@ -1,4 +1,4 @@
-﻿// ============================================
+// ============================================
 // TEACH FOR CHANGE — Firebase DB Operations
 // ============================================
 
@@ -461,6 +461,18 @@ export async function getUsers() {
     }
   }
   
+  try {
+    const distData = await getDistricts();
+    let allDistricts = [];
+    Object.values(distData).forEach(arr => allDistricts = allDistricts.concat(arr));
+    
+    dbUsers.forEach(u => {
+      if (u.role === 'associate-sc') {
+        u.districts = allDistricts;
+      }
+    });
+  } catch(e) {}
+  
   return dbUsers;
 }
 
@@ -636,6 +648,73 @@ export async function getAllTeacherCalls() {
   return all;
 }
 
+// ============================================
+// VOLUNTEER SYSTEM
+// ============================================
+
+export async function getVolunteers() {
+  const colRef = await getScopedCollection("volunteers");
+  const snap = await getDocs(colRef);
+  let vols = [];
+  snap.forEach(doc => {
+    vols.push({ id: doc.id, ...doc.data() });
+  });
+  return vols;
+}
+
+export async function saveVolunteer(volData) {
+  const colRef = await getScopedCollection("volunteers");
+  // Use a predictable ID or generate one if missing
+  const docId = volData.id || `vol_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+  const finalData = { ...volData, id: docId };
+  const docRef = doc(colRef, docId);
+  await setDoc(docRef, finalData);
+  return docId;
+}
+
+export async function batchSaveVolunteers(volunteersArray) {
+  const colRef = await getScopedCollection("volunteers");
+  for (let vol of volunteersArray) {
+    const docId = vol.id || `vol_${Date.now()}_${Math.floor(Math.random()*10000)}`;
+    const finalData = { ...vol, id: docId };
+    const docRef = doc(colRef, docId);
+    await setDoc(docRef, finalData);
+  }
+}
+
+export async function deleteVolunteer(id) {
+  const colRef = await getScopedCollection("volunteers");
+  const docRef = doc(colRef, id);
+  await deleteDoc(docRef);
+}
+
+export async function getVolunteerAttendance() {
+  const colRef = await getScopedCollection("volunteer_attendance");
+  const snap = await getDocs(colRef);
+  let att = [];
+  snap.forEach(doc => att.push({ id: doc.id, ...doc.data() }));
+  return att;
+}
+
+export async function saveVolunteerAttendance(id, data) {
+  const colRef = await getScopedCollection("volunteer_attendance");
+  const docRef = doc(colRef, id);
+  await setDoc(docRef, data);
+}
+
+export async function getVolunteerCalls() {
+  const colRef = await getScopedCollection("volunteer_calls");
+  const snap = await getDocs(colRef);
+  let calls = [];
+  snap.forEach(doc => calls.push({ id: doc.id, ...doc.data() }));
+  return calls;
+}
+
+export async function saveVolunteerCall(id, data) {
+  const colRef = await getScopedCollection("volunteer_calls");
+  const docRef = doc(colRef, id);
+  await setDoc(docRef, data);
+}
 export async function saveAssessments(supervisorName, distLevel, data) {
   const docRef = await getScopedDoc("assessments_received", `${supervisorName}_${distLevel}`);
   markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });

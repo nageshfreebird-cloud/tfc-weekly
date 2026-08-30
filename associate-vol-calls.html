@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volunteer Calls - Teach for Change</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; }
+    .vol-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .vol-table th, .vol-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .vol-table th { background: var(--bg-alt); font-weight: 600; color: var(--text-muted); }
+    .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg); padding: 2rem; border-radius: var(--radius-md); width: 100%; max-width: 400px; }
+    .modal h2 { margin-top: 0; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+  </div>
+</nav>
+
+<main class="page">
+  <!-- Sidebar Navigation -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Logo" />
+      <h2>Teach for Change</h2>
+    </div>
+    <div class="sidebar-nav">
+      <a href="associate-vol.html">📊 Dashboard</a>
+      <a href="team.html">📝 Weekly Tasks</a>
+      <a href="associate-vol-attendance.html">📍 Attendance</a>
+      <a href="associate-vol-calls.html" class="active">📞 Calls</a>
+      <a href="associate-vol-register.html">📝 Registration</a>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:1200px; margin:0 auto;">
+    <h1 style="margin-bottom:1.5rem; color:var(--primary);">Volunteer Calls Tracking</h1>
+    
+    <div class="panel">
+      <div class="flex-header">
+        <h2>Volunteer Check-in Log</h2>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="vol-table" id="manage-table">
+          <thead>
+            <tr>
+              <th>Volunteer Name</th>
+              <th>Phone No</th>
+              <th>State</th>
+              <th>School Name</th>
+              <th>Last Call Date</th>
+              <th>Call Remarks</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="7" class="text-center">Loading volunteers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Log Call Modal -->
+<div class="modal-overlay" id="call-modal">
+  <div class="modal">
+    <h2 id="modal-title">Log Call</h2>
+    <form id="call-form">
+      <div class="form-group">
+        <label>Date of Call</label>
+        <input type="date" id="call-date" required />
+      </div>
+      <div class="form-group">
+        <label>Call Status</label>
+        <select id="call-status" required>
+          <option value="Answered - Doing Well">Answered - Doing Well</option>
+          <option value="Answered - Having Issues">Answered - Having Issues</option>
+          <option value="Not Reachable">Not Reachable</option>
+          <option value="Will Call Back">Will Call Back</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Remarks</label>
+        <textarea id="call-notes" rows="3" placeholder="What was discussed?" required></textarea>
+      </div>
+      <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+        <button type="button" class="btn btn-outline" style="flex:1;" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="flex:1;">Save Call</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  import { db, getVolunteers, getVolunteerCalls, saveVolunteerCall } from "./js/db.js";
+
+  let allVolunteers = [];
+  let allCalls = [];
+  let currentVolId = null;
+
+  async function init() {
+    const userName = sessionStorage.getItem("tfc_member_name");
+    const userRole = sessionStorage.getItem("tfc_member_role");
+    if (!userName || userRole !== 'associate-vol') { window.location.href = "index.html"; return; }
+
+    startClock("live-clock");
+    document.getElementById("welcome-name").textContent = "Welcome, " + userName;
+    document.getElementById("call-date").valueAsDate = new Date();
+    await loadData();
+
+    document.getElementById("call-form").addEventListener("submit", handleCallSubmit);
+  }
+
+  async function loadData() {
+    allVolunteers = await getVolunteers();
+    allCalls = await getVolunteerCalls();
+    
+    // Sort active first, then by name
+    allVolunteers.sort((a,b) => {
+      if (a.status === 'Active' && b.status !== 'Active') return -1;
+      if (a.status !== 'Active' && b.status === 'Active') return 1;
+      return a.name.localeCompare(b.name);
+    });
+    
+    renderTable();
+  }
+
+  function renderTable() {
+    const tbody = document.querySelector("#manage-table tbody");
+    tbody.innerHTML = "";
+    if (allVolunteers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No volunteers found.</td></tr>`;
+      return;
+    }
+    
+    allVolunteers.forEach(v => {
+      // Find latest call for this volunteer
+      const myCalls = allCalls.filter(c => c.volId === v.id);
+      myCalls.sort((a,b) => new Date(b.date) - new Date(a.date));
+      const lastCall = myCalls.length > 0 ? myCalls[0] : null;
+      
+      const isAct = v.status !== 'Inactive';
+      const tr = document.createElement("tr");
+      if (!isAct) tr.style.opacity = "0.6";
+      
+      let dateDisplay = '-';
+      let remarksDisplay = '<span class="text-muted">No calls logged yet</span>';
+      
+      if (lastCall) {
+        dateDisplay = new Date(lastCall.date).toLocaleDateString('en-GB');
+        remarksDisplay = `<strong>${lastCall.status}</strong><br><span style="font-size:0.85rem">${lastCall.notes}</span>`;
+      }
+      
+      tr.innerHTML = `
+        <td><strong>${v.name}</strong></td>
+        <td>${v.phone || '-'}</td>
+        <td>${v.location || '-'}</td>
+        <td>${v.school || '-'}</td>
+        <td>${dateDisplay}</td>
+        <td>${remarksDisplay}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="openModal('${v.id}', '${v.name}')" ${!isAct ? 'disabled' : ''}>📞 Log Call</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.openModal = function(volId, volName) {
+    currentVolId = volId;
+    document.getElementById("modal-title").textContent = `Log Call for ${volName}`;
+    document.getElementById("call-modal").classList.add("active");
+  };
+
+  window.closeModal = function() {
+    document.getElementById("call-modal").classList.remove("active");
+    document.getElementById("call-form").reset();
+    document.getElementById("call-date").valueAsDate = new Date();
+    currentVolId = null;
+  };
+
+  async function handleCallSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+
+    const recordId = `call_${Date.now()}`;
+    const data = {
+      volId: currentVolId,
+      date: document.getElementById("call-date").value,
+      status: document.getElementById("call-status").value,
+      notes: document.getElementById("call-notes").value,
+      timestamp: Date.now()
+    };
+
+    await saveVolunteerCall(recordId, data);
+    
+    btn.textContent = "Save Call";
+    btn.disabled = false;
+    closeModal();
+    await loadData(); // Reload to show new call
+  }
+
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+  };
+
+  window.doLogout = function() {
+    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  };
+
+  init();
+</script>
+</body>
+</html>

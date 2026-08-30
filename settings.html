@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -20,13 +20,14 @@
       <h2>Teach for Change</h2>
     </div>
     <div class="sidebar-nav">
-      <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html">📋 Weekly Tasks</a>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html">📝 Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
-      <a href="manager-assessments.html">📥 Assessments Received</a>
-      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="manager-assessments.html">📝 Assessments Received</a>
+      <a href="manager-drive.html">📈 Assessments Analytics</a>
       <a href="sheets.html">🔗 Google Sheet Links</a>
       <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
       <a href="settings.html" class="active">⚙️ My Settings</a>
     </div>
   </div>
@@ -39,10 +40,10 @@
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
     <div>
-      <span class="time-icon">🕒</span>
+      <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
   </div>
 </nav>
 
@@ -51,7 +52,7 @@
 
     <div class="flex-between" style="margin-bottom:1.5rem;">
       <h1 style="font-size:1.4rem;font-weight:800;color:var(--primary);">⚙️ Settings</h1>
-      <a href="dashboard.html" class="btn btn-ghost btn-sm">⚙️ Dashboard</a>
+      <a href="dashboard.html">📊 Dashboard</a>
     </div>
 
     <!-- ===== ACADEMIC YEAR SETTINGS ===== -->
@@ -104,7 +105,8 @@
     <input type="text" id="tm-name" class="form-control" placeholder="Member Name" />
     <select id="tm-role" class="form-control">
       <option value="supervisor">Field Supervisor</option>
-      <option value="manager">Manager</option>
+      <option value="associate-sc">Associate - Smart Classroom</option>
+      <option value="associate-vol">Associate - Volunteer</option>
     </select>
     <div id="district-assign-group" style="display:block;">
       <label style="display:block;margin-bottom:.5rem;font-weight:600;">Assign Districts</label>
@@ -331,7 +333,7 @@
               <button class="btn btn-ghost btn-sm" onclick="removeUser(${i})" style="color:var(--danger)">🗑️</button>
             </div>
           </div>
-          <div class="text-sm text-muted">Role: ${u.role === 'supervisor' ? 'Field Supervisor' : 'Other'}</div>
+          <div class="text-sm text-muted">Role: ${u.role === 'supervisor' ? 'Field Supervisor' : (u.role === 'associate-sc' ? 'Associate - Smart Classroom' : (u.role === 'associate-vol' ? 'Associate - Volunteer' : 'Manager'))}</div>
           ${u.role === 'supervisor' && u.districts && u.districts.length > 0 ? `<div class="text-sm" style="color:var(--primary)">📍 ${u.districts.join(", ")}</div>` : ''}
         </div>
       `;

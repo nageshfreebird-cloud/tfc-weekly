@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Associate Volunteer Dashboard - Teach for Change</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; }
+    .stat-card h3 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
+    .stat-card p { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+    @media (max-width: 900px) { .stat-cards { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .stat-cards { grid-template-columns: 1fr; } }
+    .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; }
+    .filter-bar { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .filter-bar select, .filter-bar input { padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; }
+    .vol-table { width: 100%; border-collapse: collapse; }
+    .vol-table th, .vol-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .vol-table th { background: var(--bg-alt); font-weight: 600; color: var(--text-muted); }
+    .badge { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
+    <div>
+      <span class="time-icon">⏰</span>
+      <span id="live-clock">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+  </div>
+</nav>
+
+<main class="page">
+  <!-- Sidebar Navigation -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Logo" />
+      <h2>Teach for Change</h2>
+    </div>
+    <div class="sidebar-nav">
+      <a href="associate-vol.html" class="active">📊 Dashboard</a>
+      <a href="team.html">📝 Weekly Tasks</a>
+      <a href="associate-vol-attendance.html">📍 Attendance</a>
+      <a href="associate-vol-calls.html">📞 Calls</a>
+      <a href="associate-vol-register.html">📝 Registration</a>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:1200px; margin:0 auto;">
+    <h1 style="margin-bottom:1.5rem; color:var(--primary);">Associate Volunteer Dashboard</h1>
+    
+    <div class="stat-cards">
+      <div class="stat-card">
+        <h3 id="stat-schools">0</h3>
+        <p>Total Schools Covered</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-active">0</h3>
+        <p>Active Volunteers</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-hours">0</h3>
+        <p>Total Working Hours</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-all">0</h3>
+        <p>All Volunteers</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Volunteer Directory</h2>
+      <div class="filter-bar">
+        <select id="filter-state" onchange="renderTable()">
+          <option value="">All States</option>
+          <option value="Telangana">Telangana</option>
+          <option value="Andhra Pradesh">Andhra Pradesh</option>
+          <option value="Karnataka">Karnataka</option>
+        </select>
+        <input type="text" id="search-text" placeholder="Search name or phone..." onkeyup="renderTable()" style="flex:1;" />
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="vol-table" id="vol-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone Number</th>
+              <th>State</th>
+              <th>School Name</th>
+              <th>Duration</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6" class="text-center">Loading volunteers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  import { db, getVolunteers, getVolunteerAttendance } from "./js/db.js";
+
+  let allVolunteers = [];
+  let totalHours = 0;
+
+  async function init() {
+    const userName = sessionStorage.getItem("tfc_member_name");
+    const userRole = sessionStorage.getItem("tfc_member_role");
+    if (!userName || userRole !== 'associate-vol') { window.location.href = "index.html"; return; }
+
+    startClock("live-clock");
+    document.getElementById("welcome-name").textContent = "Welcome, " + userName;
+
+    await loadData();
+  }
+
+  async function loadData() {
+    allVolunteers = await getVolunteers();
+    const attendance = await getVolunteerAttendance();
+    
+    // Calculate total hours
+    totalHours = attendance.reduce((sum, record) => sum + (Number(record.hours) || 0), 0);
+    
+    // Calculate stats
+    const activeVols = allVolunteers.filter(v => v.status === 'Active');
+    const schools = new Set(allVolunteers.map(v => v.school).filter(s => s));
+
+    document.getElementById("stat-schools").textContent = schools.size;
+    document.getElementById("stat-active").textContent = activeVols.length;
+    document.getElementById("stat-hours").textContent = totalHours;
+    document.getElementById("stat-all").textContent = allVolunteers.length;
+
+    renderTable();
+  }
+
+  window.renderTable = function() {
+    const filterState = document.getElementById("filter-state").value;
+    const search = document.getElementById("search-text").value.toLowerCase();
+    
+    const tbody = document.querySelector("#vol-table tbody");
+    tbody.innerHTML = "";
+
+    let filtered = allVolunteers.filter(v => {
+      if (filterState && v.location !== filterState) return false;
+      if (search && !v.name.toLowerCase().includes(search) && !(v.phone||"").includes(search)) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No volunteers found.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach(v => {
+      const badgeClass = v.status === 'Active' ? 'badge-active' : 'badge-inactive';
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${v.name}</strong></td>
+        <td>${v.phone || '-'}</td>
+        <td>${v.location || '-'}</td>
+        <td>${v.school || '-'}</td>
+        <td>${v.duration ? v.duration + ' Months' : '-'}</td>
+        <td><span class="badge ${badgeClass}">${v.status || 'Active'}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+  };
+
+  window.doLogout = function() {
+    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  };
+
+  init();
+</script>
+</body>
+</html>

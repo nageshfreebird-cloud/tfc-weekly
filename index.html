@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -10,6 +10,16 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
+  <script>
+    window.togglePassword = function(id) {
+      const input = document.getElementById(id);
+      if (input.type === "password") {
+        input.type = "text";
+      } else {
+        input.type = "password";
+      }
+    };
+  </script>
 </head>
 <body>
 
@@ -124,7 +134,10 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="member-pwd">Password</label>
-          <input type="password" class="form-control" id="member-pwd" placeholder="Enter password" />
+          <div style="position:relative;">
+            <input type="password" id="member-pwd" class="form-control" placeholder="Enter password" />
+            <button type="button" onclick="togglePassword('member-pwd')" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; opacity:0.6;">👁️</button>
+          </div>
           <div id="pwd-error" class="text-sm hidden" style="color:var(--danger);margin-top:0.3rem;">Invalid password. Please ask manager if you forgot.</div>
         </div>
         <button class="btn btn-primary btn-block btn-lg" id="team-login-btn" onclick="goTeamForm()">
@@ -260,8 +273,10 @@
     sessionStorage.setItem("tfc_member_role", user.role);
     
     // Redirect based on role
-    if (user.role === 'supervisor') {
+    if (user.role === 'supervisor' || user.role === 'associate-sc') {
       window.location.href = "supervisor.html";
+    } else if (user.role === 'associate-vol') {
+      window.location.href = "associate-vol.html";
     } else {
       window.location.href = "team.html";
     }
@@ -269,4 +284,3 @@
 </script>
 </body>
 </html>
-

@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Data Entry — Teach for Change</title>
+  <title>Student Data Entry � Teach for Change</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -137,14 +137,13 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="supervisor.html">⚙️ Dashboard</a>
-      <a href="team.html">📋 Weekly Tasks</a>
-      <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
-      <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html" class="active">📊 Assessment Entry</a>
-      <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
-    
+        <a href="supervisor.html">🏠 Dashboard</a>
+        <a href="team.html">📋 Weekly Tasks</a>
+        <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
+        <a href="supervisor-assessments.html">📝 Assessments Received</a>
+        <a href="supervisor-drive.html" class="active">📊 Assessment Entry</a>
+        <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
+        <a href="supervisor-certificate.html">📜 Certificates</a>
       </div>
     </div>
 
@@ -152,7 +151,13 @@
       <h2>📊 Student Assessment Data Entry</h2>
       
       <div class="filter-bar">
-        <div>
+        <div id="state-filter-container" style="display:none; flex:1; min-width:150px; margin-right:1rem; margin-bottom:1rem;">
+            <label class="form-label" style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">State</label>
+            <select id="state-select" class="form-control" onchange="window.updateViewDistricts()">
+              <option value="">All States</option>
+            </select>
+          </div>
+<div>
           <label class="form-label">District</label>
           <select id="sel-dist" class="form-control" onchange="loadSchools()"><option value="">Select District</option></select>
         </div>
@@ -199,8 +204,8 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
           <p class="text-sm text-muted">Enter student names and marks. You can paste data directly from Excel.</p>
           <div style="display:flex;gap:0.5rem;">
-            <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">⬇️ Download Template</button>
-            <button class="btn btn-outline btn-sm" onclick="document.getElementById('upload-excel').click()">⬆️ Upload Excel</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">📥 Download Template</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('upload-excel').click()">📤 Upload Excel</button>
             <input type="file" id="upload-excel" accept=".xlsx" style="display:none;" onchange="handleExcelUpload(event)" />
           </div>
         </div>
@@ -471,17 +476,25 @@
 
   <script type="module">
   import { startClock, buildStyledWorksheet } from "./js/utils.js";
-  import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments, saveSyncCode } from "./js/db.js";
+  import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments, saveSyncCode, getDistricts } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
 
-  if (!userName || userRole !== 'supervisor') {
+  if (!userName || (userRole !== 'supervisor' && userRole !== 'associate-sc')) {
     window.location.href = "index.html";
   }
+
+    // Immediately show state filter for associate-sc to prevent layout pop-in
+    if (sessionStorage.getItem('tfc_member_role') === 'associate-sc') {
+        const stateContainer = document.getElementById('state-filter-container');
+        if (stateContainer) stateContainer.style.display = 'block';
+    }
+
+
   startClock("live-clock");
 
-  document.getElementById("welcome-name").textContent = "👋 " + userName;
+  document.getElementById("welcome-name").textContent = "👤 " + userName;
 
   let myUser = null;
   let currentClass = "3rd class";
@@ -492,16 +505,59 @@
     sessionStorage.clear();
     window.location.href = "index.html";
   }
-  startClock("live-clock");;
 
+  startClock("live-clock");
+
+  let allStatesData = {};
   async function init() {
     const users = await getUsers();
     myUser = users.find(u => u.name === userName);
-    if (!myUser || !myUser.districts) return alert("No districts assigned.");
+    if (!myUser || (myUser.role !== 'associate-sc' && (!myUser.districts || myUser.districts.length === 0))) return;
 
-    const distSel = document.getElementById("sel-dist");
-    myUser.districts.forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
+    
+      if (myUser && myUser.role === 'associate-sc') {
+          document.getElementById('state-filter-container').style.display = 'block';
+          allStatesData = await getDistricts();
+          const stateSel = document.getElementById("state-select");
+          if (stateSel) {
+              Object.keys(allStatesData).forEach(s => {
+                  stateSel.innerHTML += `<option value="${s}">${s}</option>`;
+              });
+          }
+      }
+
+      window.updateViewDistricts(false);
   }
+
+  
+    window.updateViewDistricts = function(callLoad = true) {
+      const st = document.getElementById("state-select").value;
+      const distSel = document.getElementById("sel-dist");
+      
+      // Preserve the original placeholder
+      const firstOpt = distSel.options[0].text;
+      distSel.innerHTML = `<option value="">${firstOpt}</option>`;
+      
+      let allowedDists = myUser && myUser.districts ? myUser.districts : [];
+      let stateDists = [];
+      
+      if (st && allStatesData[st]) {
+        stateDists = allStatesData[st];
+      } else {
+        Object.values(allStatesData).forEach(arr => stateDists = stateDists.concat(arr));
+      }
+      
+      let distsToShow = stateDists;
+      if (myUser && myUser.role === 'supervisor') {
+         distsToShow = allowedDists;
+      } else if (myUser && myUser.role === 'associate-sc') {
+         distsToShow = stateDists;
+      }
+      
+      distsToShow.filter(d => !d.toLowerCase().includes("select")).forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
+      
+      if(callLoad && window.loadSchools) window.loadSchools();
+    };
 
   window.loadSchools = async function() {
     const dist = document.getElementById("sel-dist").value;
@@ -572,16 +628,18 @@
     drawGrid();
   };
 
-  function drawGrid() {
+      function drawGrid() {
     const tbody = document.getElementById("grid-body");
     const term = document.getElementById("sel-term").value;
     tbody.innerHTML = "";
     
+    let allRowsHtml = "";
+    
     currentGridData.forEach((row, rIdx) => {
-      let tr = document.createElement("tr");
+      let trHtml = "<tr>";
       
-      tr.innerHTML += `<td><input type="text" data-row="${rIdx}" data-col="sno" value="${row.sno || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
-      tr.innerHTML += `<td><input type="text" class="col-name" data-row="${rIdx}" data-col="name" value="${row.name || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+      trHtml += `<td><input type="text" data-row="${rIdx}" data-col="sno" value="${row.sno || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+      trHtml += `<td><input type="text" class="col-name" data-row="${rIdx}" data-col="name" value="${row.name || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
       
       let total = 0;
       let isAbsent = false;
@@ -593,18 +651,19 @@
           else if (!isAbsent) total += Number(val) || 0;
         }
         let roAttr = (isAbsent && cIdx > 0) ? "readonly" : "";
-        tr.innerHTML += `<td><input type="text" data-max="${param.maxMarks}" data-row="${rIdx}" data-col="${param.id}" value="${val}" ${roAttr} onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+        trHtml += `<td><input type="text" data-max="${param.maxMarks}" data-row="${rIdx}" data-col="${param.id}" value="${val}" ${roAttr} onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
       });
       
-      tr.innerHTML += `<td><input type="text" class="col-total" readonly value="${isAbsent ? 'Absent' : (total || '')}"/></td>`;
+      trHtml += `<td><input type="text" class="col-total" readonly value="${isAbsent ? 'Absent' : (total || '')}"/></td>`;
       
-      // Remarks
       let remark = "";
       if (row[term] && row[term].remarks !== undefined) remark = row[term].remarks;
-      tr.innerHTML += `<td><input type="text" class="col-remarks" data-row="${rIdx}" data-col="remarks" value="${remark}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+      trHtml += `<td><input type="text" class="col-remarks" data-row="${rIdx}" data-col="remarks" value="${remark}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
       
-      tbody.appendChild(tr);
+      trHtml += "</tr>";
+      allRowsHtml += trHtml;
     });
+    tbody.innerHTML = allRowsHtml;
   }
 
   window.updateData = function(inputEl) {
@@ -768,7 +827,7 @@
       await saveStudentAssessments(dist, school, currentClass, validData);
       if(status) {
          status.style.color = "#10b981"; // success green
-         status.innerHTML = "✅ All changes saved";
+         status.innerHTML = "✓ All changes saved";
       }
     } catch(err) {
       console.error(err);
@@ -843,7 +902,8 @@
       }
       drawGrid();
       e.target.value = "";
-      alert("Excel data mapped successfully! Click Save Data when ready.");
+      alert("Excel data mapped successfully!");
+      window.triggerAutoSave();
     };
     reader.readAsBinaryString(file);
   };
@@ -970,7 +1030,30 @@
       let allSchools = await getSchools(dist);
       allSchools = allSchools.filter(s => s.Level === level && s['School Name']);
       
-      let aoa = [];
+      
+        const bAll = { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+        const hdrBase = { fill: {fgColor:{rgb:"FFFF00"}}, font: {bold:true}, alignment: {horizontal:"center"}, border: bAll };
+        const hdrMid = { fill: {fgColor:{rgb:"FF0000"}}, font: {bold:true, color:{rgb:"FFFFFF"}}, alignment: {horizontal:"center"}, border: bAll };
+        const hdrEnd = { fill: {fgColor:{rgb:"00B050"}}, font: {bold:true, color:{rgb:"FFFFFF"}}, alignment: {horizontal:"center"}, border: bAll };
+        const hdrSub = { fill: {fgColor:{rgb:"F2F2F2"}}, font: {bold:true}, alignment: {horizontal:"center"}, border: bAll };
+        
+        const row1 = [
+           {v:"District", s:hdrSub}, {v:"Mandal", s:hdrSub}, {v:"Name of the School", s:hdrSub}, {v:"Class", s:hdrSub}, {v:"Total students access", s:hdrSub},
+           {v:"BASE LINE", s:hdrBase}, "","","","","", "",
+           {v:"MID LINE", s:hdrMid}, "","","","","", "",
+           {v:"END LINE", s:hdrEnd}, "","","","",""
+        ];
+        
+        const subH = ["KNOW", "READ", "SPELL", "C.W.R", "C.W.S", "Total"];
+        const row2 = ["","","","",""]; // First 5 empty
+        subH.forEach(h => row2.push({v:h, s:hdrSub}));
+        row2.push(""); // empty between base and mid
+        subH.forEach(h => row2.push({v:h, s:hdrSub}));
+        row2.push(""); // empty between mid and end
+        subH.forEach(h => row2.push({v:h, s:hdrSub}));
+        
+        let aoa = [row1, row2];
+
       
       for(let i=0; i<allSchools.length; i++) {
          const sItem = allSchools[i];
@@ -1016,7 +1099,13 @@
             }
             row.push("", "", "", "");
             
-            aoa.push(row);
+            
+              // Style the data row
+              const bAll = { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+              const cellStyle = { border: bAll, alignment: {horizontal:"center"} };
+              const styledRow = row.map(cell => (cell === "" ? "" : {v: cell, s: cellStyle}));
+              aoa.push(styledRow);
+
          });
       }
 
@@ -1119,7 +1208,11 @@
       Swal.fire("Error", "Failed to generate report: " + err.message, "error");
     }
   };
+</script>
 
+
+
+<script>
   window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');

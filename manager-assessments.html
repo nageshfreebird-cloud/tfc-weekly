@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -49,10 +49,10 @@
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
     <div>
-      <span class="time-icon">🕒</span>
+      <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
   </div>
 </nav>
 
@@ -68,17 +68,16 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html">📋 Weekly Tasks</a>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html">📝 Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
       <a href="manager-assessments.html" class="active">📝 Assessments Received</a>
-      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="manager-drive.html">📈 Assessments Analytics</a>
       <a href="sheets.html">🔗 Google Sheet Links</a>
-      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
       <a href="settings.html">⚙️ My Settings</a>
-    
-      </div>
+    </div>
     </div>
 
     <div class="setup-panel">
@@ -112,7 +111,7 @@
       <div id="level-2" class="hidden">
         <div class="drilldown-header">
           <h2 id="l2-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">← Back to Overview</button>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">? Back to Overview</button>
         </div>
         <p class="text-muted mb-3">Click on a District_Level to see the raw data for schools.</p>
         <div id="l2-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;"></div>
@@ -122,7 +121,7 @@
       <div id="level-3" class="hidden">
         <div class="drilldown-header">
           <h2 id="l3-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">← Back to Supervisor</button>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">? Back to Supervisor</button>
         </div>
         <div id="l3-content" style="overflow-x:auto;"></div>
       </div>
@@ -371,8 +370,8 @@
     
     schools.forEach(s => {
       let statusBadge = `<span class="text-muted">-</span>`;
-      if (s.status === "received") statusBadge = `<span style="background:#dcfce7;color:#166534;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">✅ Received</span>`;
-      if (s.status === "not_received") statusBadge = `<span style="background:#fee2e2;color:#991b1b;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">❌ Not Received</span>`;
+      if (s.status === "received") statusBadge = `<span style="background:#dcfce7;color:#166534;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">? Received</span>`;
+      if (s.status === "not_received") statusBadge = `<span style="background:#fee2e2;color:#991b1b;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">? Not Received</span>`;
 
       html += `
         <tr style="border-bottom:1px solid var(--border);">

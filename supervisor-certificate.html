@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Certificates - Teach for Change</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <style>
+    #cert-canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
+    <div>
+      <span class="time-icon">🕒</span>
+      <span id="live-clock">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+  </div>
+</nav>
+
+<main class="page">
+  <div class="container-wide" style="max-width: 1200px;">
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+      <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+      <div class="sidebar-header">
+        <img src="logo.png" alt="Logo" />
+        <h2>Teach for Change</h2>
+      </div>
+      <div class="sidebar-nav">
+        <a href="supervisor.html">🏠 Dashboard</a>
+        <a href="team.html">📋 Weekly Tasks</a>
+        <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
+        <a href="supervisor-assessments.html">📝 Assessments Received</a>
+        <a href="supervisor-drive.html">📊 Assessment Entry</a>
+        <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
+        <a href="supervisor-certificate.html" class="active">📜 Certificates</a>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="setup-panel">
+      
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div>
+          <h1 class="page-title">Generate Certificates</h1>
+          <p style="color:var(--text-muted); font-size:0.9rem;">Automatically stamp and download certificates for teachers and HMs.</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="panel" style="margin-bottom:1.5rem; padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+          <div style="display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
+            <div id="state-filter-container" style="display:none; flex:1; min-width:150px; margin-right:1rem; margin-bottom:1rem;">
+            <label class="form-label" style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">State</label>
+            <select id="state-select" class="form-control" onchange="window.updateViewDistricts()">
+              <option value="">All States</option>
+            </select>
+          </div>
+<div class="form-group" style="flex:1; min-width:200px; margin-bottom:0;">
+              <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">Select District</label>
+              <select id="sel-dist" class="form-control" onchange="loadSchools()">
+                <option value="">-- Choose District --</option>
+              </select>
+            </div>
+            
+            <div class="form-group" style="flex:1; min-width:250px; margin-bottom:0;">
+              <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">Purpose of Certificate</label>
+              <select id="sel-purpose" class="form-control" onchange="toggleCustomPurpose()">
+                <option value="the Smart Classroom Teacher Orientation & Training Workshop">Teacher Training (Orientation)</option>
+                <option value="the Quarterly Smart Classroom Implementation Review">Quarterly Review</option>
+                <option value="the Smart Classroom Review & Midline Assessment Training Workshop">Midline Assessment Training</option>
+                <option value="the Smart Classroom Review & Endline Assessment Training Workshop">Endline Assessment Training</option>
+                <option value="the Smart Classroom Programme Enhancement Workshop">Programme Enhancement</option>
+                <option value="the Smart Classroom Infrastructure Handover & Activation Ceremony">Classroom Handover</option>
+                <option value="the Digital Pedagogy & Smart Classroom Teaching Initiative">General Appreciation / Teaching</option>
+                <option value="custom">-- Custom Text (Type your own) --</option>
+              </select>
+            </div>
+            
+            <div class="form-group hidden" id="custom-purpose-container" style="flex:1; min-width:250px; margin-bottom:0;">
+              <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">Custom Purpose</label>
+              <input type="text" id="txt-custom-purpose" class="form-control" placeholder="Enter custom purpose..." />
+            </div>
+
+            <div class="form-group" style="flex:0 0 150px; margin-bottom:0;">
+              <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">Mode</label>
+              <select id="sel-mode" class="form-control">
+                <option value="offline">Offline</option>
+                <option value="online">Online</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="flex:0 0 150px; margin-bottom:0;">
+              <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">Event Date</label>
+              <input type="date" id="sel-date" class="form-control" />
+            </div>
+          </div>
+      </div>
+
+      <!-- Schools List -->
+      <div class="panel hidden" id="schools-card" style="padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+        <h3 style="margin-top:0; margin-bottom:1rem;">Schools in <span id="lbl-dist-name" style="color:var(--primary);"></span></h3>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; text-align:left;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border);">
+                <th style="padding:0.75rem 0.5rem; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">School Name</th>
+                <th style="padding:0.75rem 0.5rem; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Mandal</th>
+                <th style="padding:0.75rem 0.5rem; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Generate for HM</th>
+                <th style="padding:0.75rem 0.5rem; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Generate for Teacher</th>
+              </tr>
+            </thead>
+            <tbody id="schools-tbody">
+              <!-- Rows will be injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</main>
+
+<!-- Hidden Canvas for Certificate Generation -->
+<canvas id="cert-canvas"></canvas>
+
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  import { getUsers, getSchools, getDistricts, getGlobalAcademicYear } from "./js/db.js";
+
+  startClock("live-clock");
+
+  let myUser = null;
+  let currentSchools = [];
+  let certImage = null;
+
+  // Load the blank template image once
+  const img = new Image();
+  img.src = "certificate-template.jpg";
+  img.onload = () => { certImage = img; };
+
+  // Force load the handwritten font immediately so it's ready for canvas
+  document.fonts.load('10pt "Dancing Script"').then(() => {
+     console.log("Dancing Script font loaded for Canvas");
+  });
+  document.fonts.load('10pt "Noto Serif"').then(() => {
+     console.log("Noto Serif font loaded for Canvas");
+  });
+
+
+
+  window.toggleCustomPurpose = function() {
+    const val = document.getElementById("sel-purpose").value;
+    const c = document.getElementById("custom-purpose-container");
+    if (val === "custom") {
+      c.classList.remove("hidden");
+    } else {
+      c.classList.add("hidden");
+    }
+  };
+
+  let allStatesData = {};
+  let globalAcademicYear = "2026-27";
+  async function init() {
+      globalAcademicYear = await getGlobalAcademicYear();
+    const userName = sessionStorage.getItem("tfc_member_name");
+    const userRole = sessionStorage.getItem("tfc_member_role");
+    
+    if (!userName || (userRole !== 'supervisor' && userRole !== 'associate-sc')) {
+      window.location.href = "index.html";
+      return;
+    }
+    
+    document.getElementById("welcome-name").textContent = "Hi, " + userName;
+
+    // Populate Districts based on user's assignment
+    const users = await getUsers();
+    myUser = users.find(u => u.name === userName);
+    
+    
+      if (myUser && myUser.role === 'associate-sc') {
+          document.getElementById('state-filter-container').style.display = 'block';
+          allStatesData = await getDistricts();
+        globalAcademicYear = await getGlobalAcademicYear();
+          const stateSel = document.getElementById("state-select");
+          if (stateSel) {
+              Object.keys(allStatesData).forEach(s => {
+                  stateSel.innerHTML += `<option value="${s}">${s}</option>`;
+              });
+          }
+      }
+
+      const selDist = document.getElementById("sel-dist");
+    if (myUser && myUser.districts) {
+      myUser.districts.forEach(d => {
+        let opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = d;
+        selDist.appendChild(opt);
+      });
+    }
+    
+    // Default date to today
+    document.getElementById("sel-date").valueAsDate = new Date();
+  }
+  
+  init();
+
+  
+    window.updateViewDistricts = function(callLoad = true) {
+      const st = document.getElementById("state-select").value;
+      const distSel = document.getElementById("sel-dist");
+      
+      // Preserve the original placeholder
+      const firstOpt = distSel.options[0].text;
+      distSel.innerHTML = `<option value="">${firstOpt}</option>`;
+      
+      let allowedDists = myUser && myUser.districts ? myUser.districts : [];
+      let stateDists = [];
+      
+      if (st && allStatesData[st]) {
+        stateDists = allStatesData[st];
+      } else {
+        Object.values(allStatesData).forEach(arr => stateDists = stateDists.concat(arr));
+      }
+      
+      let distsToShow = stateDists;
+      if (myUser && myUser.role === 'supervisor') {
+         distsToShow = allowedDists;
+      } else if (myUser && myUser.role === 'associate-sc') {
+         distsToShow = stateDists;
+      }
+      
+      distsToShow.filter(d => !d.toLowerCase().includes("select")).forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
+      
+      if(callLoad && window.loadSchools) window.loadSchools();
+    };
+
+  window.loadSchools = async function() {
+    const dist = document.getElementById("sel-dist").value;
+    const card = document.getElementById("schools-card");
+    const tbody = document.getElementById("schools-tbody");
+    
+    if (!dist) {
+      card.classList.add("hidden");
+      return;
+    }
+    
+    document.getElementById("lbl-dist-name").textContent = dist;
+    
+    Swal.fire({ title: 'Loading Schools...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    currentSchools = await getSchools(dist);
+    tbody.innerHTML = "";
+    
+    currentSchools.forEach((s, idx) => {
+      let hmName = s["HM Name"] || s["HM"] || "";
+      let tName = s["Teacher Name"] || s["Teacher"] || "";
+      
+      let tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid var(--border)";
+      
+      let html = `<td style="padding:1rem 0.5rem;"><strong>${s["School Name"]}</strong></td>`;
+      html += `<td style="padding:1rem 0.5rem;">${s.Mandal || s["Mandal Name"] || "-"}</td>`;
+      
+      // HM Generate Button
+      html += `<td style="padding:1rem 0.5rem;">`;
+      if (hmName) {
+         html += `<button class="btn btn-sm" onclick="generateCert(${idx}, 'HM')" style="background:#059669; color:white; border:none; padding:0.4rem 0.75rem; border-radius:0.3rem; cursor:pointer;">🏅 HM: ${hmName}</button>`;
+      } else {
+         html += `<span style="color:#999; font-size:0.8rem;">No HM Name</span>`;
+      }
+      html += `</td>`;
+      
+      // Teacher Generate Button
+      html += `<td style="padding:1rem 0.5rem;">`;
+      if (tName) {
+         html += `<button class="btn btn-sm" onclick="generateCert(${idx}, 'Teacher')" style="background:#2563eb; color:white; border:none; padding:0.4rem 0.75rem; border-radius:0.3rem; cursor:pointer;">🏅 Teacher: ${tName}</button>`;
+      } else {
+         html += `<span style="color:#999; font-size:0.8rem;">No Teacher Name</span>`;
+      }
+      html += `</td>`;
+      
+      tr.innerHTML = html;
+      tbody.appendChild(tr);
+    });
+    
+    card.classList.remove("hidden");
+    Swal.close();
+  };
+
+  // Word Wrap Helper for Canvas
+  function wrapText(context, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+    
+    for(let n = 0; n < words.length; n++) {
+      let testLine = line + words[n] + ' ';
+      let metrics = context.measureText(testLine);
+      let testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        context.fillText(line.trim(), x, currentY);
+        line = words[n] + ' ';
+        currentY += lineHeight;
+      }
+      else {
+        line = testLine;
+      }
+    }
+    context.fillText(line.trim(), x, currentY);
+    return currentY;
+  }
+  
+  // Format Date for Display (e.g. "August 29, 2026")
+  function formatDateString(dateStr) {
+     if (!dateStr) return "";
+     const d = new Date(dateStr);
+     return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  window.generateCert = function(schoolIdx, type) {
+    if (!certImage) {
+       Swal.fire("Error", "Certificate template is still loading. Please try again in a second.", "error");
+       return;
+    }
+    
+    let pVal = document.getElementById("sel-purpose").value;
+    if (pVal === "custom") {
+       pVal = document.getElementById("txt-custom-purpose").value;
+    }
+    
+    const mode = document.getElementById("sel-mode").value;
+    const rawDate = document.getElementById("sel-date").value;
+    
+    if (!pVal || !rawDate) {
+       Swal.fire("Missing Info", "Please ensure Purpose and Event Date are filled out.", "warning");
+       return;
+    }
+    
+    const s = currentSchools[schoolIdx];
+    let personNameRaw = (type === 'HM') ? (s.HM || s["HM Name"] || "") : (s.Teacher || s["Teacher Name"] || "");
+    const personName = `Dear ${personNameRaw}, ${type}`;
+    const schoolName = s["School Name"] || "";
+    
+    const formattedDate = formatDateString(rawDate);
+    const todayStr = formatDateString(new Date().toISOString());
+    
+    const canvas = document.getElementById("cert-canvas");
+    const ctx = canvas.getContext("2d");
+    
+    // Match canvas size to image original size (assumes high-res landscape like 2000x1414)
+    canvas.width = certImage.width;
+    canvas.height = certImage.height;
+    
+    // 1. Draw Background
+    ctx.drawImage(certImage, 0, 0);
+    
+    // Coordinates
+    const centerX = canvas.width / 2;
+    
+    // Calculate dynamic font sizes so it perfectly scales if a 4K image is uploaded
+    const nameFontSize = Math.floor(canvas.height * 0.031); // ~24px on 768p
+    const schoolFontSize = Math.floor(canvas.height * 0.029); // ~22px on 768p
+    const paraFontSize = Math.floor(canvas.height * 0.018); // ~14px on 768p
+    const dynamicLineHeight = Math.floor(canvas.height * 0.034); // ~26px on 768p
+    
+    // 2. Draw Person Name (Handwritten)
+    const nameY = canvas.height * 0.385; // Moved slightly closer to the gold line
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#333333";
+    ctx.font = `bold ${nameFontSize}px "Dancing Script", cursive`;
+    ctx.fillText(personName, centerX, nameY);
+    
+    // 3. Draw School Name (Handwritten)
+    const schoolY = canvas.height * 0.45; // Moved up significantly to close the gap with the gold line
+    ctx.font = `bold ${schoolFontSize}px "Dancing Script", cursive`;
+    ctx.fillText(schoolName, centerX, schoolY);
+    
+    // 4. Draw The Paragraph
+    const paragraphY = canvas.height * 0.49; // Moved very close to school name
+    const maxWidth = canvas.width * 0.65; // Slightly wider to accommodate bigger text
+    
+    const paragraphText = `This certificate is awarded in sincere recognition of your outstanding commitment and valuable participation in ${pVal}, conducted ${mode} on ${formattedDate}. Under the Teach for Change Smart Classroom Initiative Academic Year ${globalAcademicYear}, we express our deepest gratitude for your dedication to integrating digital-age pedagogy, fostering interactive classroom learning, and empowering students through innovative technology. Thank you for your unwavering partnership and continuous support.`;
+    
+    ctx.font = `400 ${paraFontSize}px "Noto Serif", serif`;
+    ctx.fillStyle = "#4a4a4a";
+    ctx.textBaseline = "top";
+    
+    wrapText(ctx, paragraphText, centerX, paragraphY, maxWidth, dynamicLineHeight);
+    
+    // 6. Download High-Quality PNG
+    const dataURL = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    const safeName = personName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    link.download = `Certificate_${safeName}.png`;
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+</script>
+<script>
+  window.doLogout = function() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  }
+
+    // Immediately show state filter for associate-sc to prevent layout pop-in
+    if (sessionStorage.getItem('tfc_member_role') === 'associate-sc') {
+        const stateContainer = document.getElementById('state-filter-container');
+        if (stateContainer) stateContainer.style.display = 'block';
+    }
+
+
+  ;
+</script>
+
+
+
+<script>
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+</script>
+</body>
+</html>

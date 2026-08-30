@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -53,10 +53,10 @@
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
     <div>
-      <span class="time-icon">🕒</span>
+      <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
   </div>
 </nav>
 
@@ -72,17 +72,16 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html" class="active">📋 Weekly Tasks</a>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html" class="active">📝 Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
       <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="manager-drive.html">📈 Assessments Analytics</a>
       <a href="sheets.html">🔗 Google Sheet Links</a>
-      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
       <a href="settings.html">⚙️ My Settings</a>
-    
-      </div>
+    </div>
     </div>
 
     <!-- Top bar -->
@@ -100,10 +99,11 @@
         </p>
       </div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
-        <a href="settings.html" class="btn btn-ghost btn-sm">⚙️ Settings</a>
+        <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
+      <a href="settings.html" class="btn btn-ghost btn-sm">⚙️ Settings</a>
         <a href="summary.html" class="btn btn-outline btn-sm">✏️ Edit Summary</a>
         <a href="print.html" class="btn btn-warning btn-sm">🖨️ Print Report</a>
-        <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
       </div>
     </div>
 
@@ -128,6 +128,7 @@
             <div class="stat-label">Pending</div>
           </div>
         </div>
+
 
         <!-- Member List -->
         <div class="card" style="padding:1rem;">

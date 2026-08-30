@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -86,14 +86,13 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="supervisor.html" class="active">🏠 Dashboard</a>
-      <a href="team.html">📋 Weekly Tasks</a>
-      <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
-      <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html">📊 Assessment Entry</a>
-      <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
-    
+        <a href="supervisor.html" class="active">🏠 Dashboard</a>
+        <a href="team.html">📋 Weekly Tasks</a>
+        <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
+        <a href="supervisor-assessments.html">📝 Assessments Received</a>
+        <a href="supervisor-drive.html">📊 Assessment Entry</a>
+        <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
+        <a href="supervisor-certificate.html">📜 Certificates</a>
       </div>
     </div>
 
@@ -113,7 +112,8 @@
 
         <div id="school-view" style="display:block;">
           <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-            <select id="view-school-dist" class="form-control" onchange="renderSchoolView()"><option value="">Select District</option></select>
+            <select id="view-school-state" class="form-control" onchange="window.updateViewDistricts()" style="display:none;"><option value="">All States</option></select>
+            <select id="view-school-dist" class="form-control" onchange="renderSchoolView()"><option value="">All Districts</option></select>
             <select id="view-school-level" class="form-control" onchange="renderSchoolView()">
               <option value="">All Levels</option>
               <option value="Level-1">Level-1</option>
@@ -123,7 +123,7 @@
             </select>
           </div>
           <div id="school-view-list" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:200px;max-height:400px;overflow-y:auto;padding:0.5rem;">
-            <div class="text-muted text-center" style="margin-top:2rem;">Select District to view schools.</div>
+            <div class="text-muted text-center" style="margin-top:2rem;">Loading schools...</div>
           </div>
         </div>
 
@@ -217,15 +217,22 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
   import { startClock } from "./js/utils.js";
-  import { getUsers, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js";
+  import { getUsers, getDistricts, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
 
-  if (!userName || userRole !== 'supervisor') {
+  if (!userName || (userRole !== 'supervisor' && userRole !== 'associate-sc')) {
     alert("Unauthorized access.");
     window.location.href = "index.html";
   }
+
+    // Immediately show state filter for associate-sc to prevent layout pop-in
+    if (sessionStorage.getItem('tfc_member_role') === 'associate-sc') {
+        const stateSel = document.getElementById('view-school-state');
+        if (stateSel) stateSel.style.display = 'block';
+    }
+
   startClock("live-clock");
 
   document.getElementById("welcome-name").textContent = "👋 " + userName;
@@ -243,7 +250,19 @@
     document.getElementById(`${panel}-upload`).style.display = (mode === 'upload') ? 'block' : 'none';
   };
 
+  
+  let allStatesData = {};
+  
   async function init() {
+    allStatesData = await getDistricts();
+    
+    const stateSel = document.getElementById("view-school-state");
+    if (stateSel) {
+        Object.keys(allStatesData).forEach(s => {
+            stateSel.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+    }
+
     _globalYear = await getGlobalAcademicYear();
     
     const users = await getUsers();
@@ -287,19 +306,26 @@
         </a>
       `).join("");
     }
+    
+    renderSchoolView();
   }
 
   async function checkForYearAudit() {
-    _schoolsToAudit = [];
-    for (const dist of myUser.districts) {
-      let schools = await getSchools(dist);
-      for (let i = 0; i < schools.length; i++) {
-        let s = schools[i];
-        if (s.lastUpgradedYear !== _globalYear) {
-          _schoolsToAudit.push({ dist, index: i, school: s, array: schools });
-        }
-      }
-    }
+      _schoolsToAudit = [];
+      const promises = myUser.districts.map(async dist => {
+          let schools = await getSchools(dist);
+          return { dist, schools };
+      });
+      const results = await Promise.all(promises);
+      results.forEach(res => {
+          let schools = res.schools;
+          for (let i = 0; i < schools.length; i++) {
+              let s = schools[i];
+              if (s.lastUpgradedYear !== _globalYear) {
+                  _schoolsToAudit.push({ dist: res.dist, index: i, school: s, array: schools });
+              }
+          }
+      });
 
     if (_schoolsToAudit.length > 0) {
       document.getElementById("main-dashboard-container").style.display = "none";
@@ -393,14 +419,73 @@
   };
 
   // --- SCHOOLS LOGIC ---
+  
+  window.updateViewDistricts = function() {
+    const st = document.getElementById("view-school-state").value;
+    const distSel = document.getElementById("view-school-dist");
+    distSel.innerHTML = '<option value="">All Districts</option>';
+    
+    let allowedDists = myUser && myUser.districts ? myUser.districts : [];
+    let stateDists = [];
+    
+    if (st && allStatesData[st]) {
+      stateDists = allStatesData[st];
+    } else {
+      Object.values(allStatesData).forEach(arr => stateDists = stateDists.concat(arr));
+    }
+    
+    // Only show districts they have access to, OR if they are associate-sc maybe show all state dists?
+    // Let's just show the intersection of stateDists and allowedDists (if allowedDists is not empty).
+    // Actually, associate-sc usually has all districts assigned to them, or we can just show stateDists if allowedDists includes them.
+    let distsToShow = stateDists;
+    if (myUser && myUser.role === 'supervisor') {
+       distsToShow = allowedDists;
+    } else if (myUser && myUser.role === 'associate-sc') {
+       distsToShow = stateDists;
+    }
+    
+    distsToShow.forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
+    window.renderSchoolView();
+  };
+
   window.renderSchoolView = async function() {
     const dist = document.getElementById("view-school-dist").value;
     const lvl = document.getElementById("view-school-level").value;
     const listEl = document.getElementById("school-view-list");
-    if (!dist) { listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Select District to view schools.</div>`; return; }
     
     listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Loading...</div>`;
-    let schools = await getSchools(dist);
+    
+
+    let schools = [];
+    if (dist) {
+      schools = await getSchools(dist);
+      schools.forEach(s => { if(!s.District) s.District = dist; });
+    } else {
+      const st = document.getElementById("view-school-state") ? document.getElementById("view-school-state").value : "";
+      
+      let targetDists = [];
+      if (st && allStatesData[st]) {
+          targetDists = allStatesData[st];
+      } else if (myUser && myUser.districts) {
+          targetDists = myUser.districts;
+      }
+      
+      if (myUser && myUser.role === 'supervisor') {
+          targetDists = targetDists.filter(d => (myUser.districts || []).includes(d));
+      }
+      
+      if (targetDists.length > 0) {
+        const promises = targetDists.map(async d => {
+          const dSchools = await getSchools(d);
+          dSchools.forEach(s => { if(!s.District) s.District = d; });
+          return dSchools;
+        });
+        const results = await Promise.all(promises);
+        results.forEach(res => schools = schools.concat(res));
+      }
+    }
+
+    
     if (lvl) schools = schools.filter(s => s.Level === lvl);
 
     if (schools.length === 0) {
@@ -411,7 +496,7 @@
     listEl.innerHTML = schools.map((s, index) => `
       <details style="background:var(--bg);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;padding:0.5rem;">
         <summary style="cursor:pointer;font-weight:600;display:flex;justify-content:space-between;align-items:center;">
-          <span>${s["School Name"]}</span>
+          <span>${s["School Name"]} <span class="text-xs text-muted" style="margin-left:5px;">(${s.District})</span></span>
           <span class="text-sm text-muted">${s.Level}</span>
         </summary>
         <div class="text-sm" style="margin-top:0.5rem;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
@@ -419,12 +504,12 @@
           <div><strong>Location:</strong> ${s["Location"] || '-'}</div>
           <div><strong>HM:</strong> ${s["HM Name"] || '-'} (${s["HM Phone"] || '-'})</div>
           <div><strong>Teacher:</strong> ${s["Teacher Name"] || '-'} (${s["Teacher Phone"] || '-'})</div>
-          <div><strong>TV:</strong> ${s["TV Working"] || '-'}</div>
-          <div><strong>Pendrive:</strong> ${s["Pendrive Working"] || '-'}</div>
+          <div><strong>TV:</strong> ${s["TV Working"] ? '✅ Yes' : '❌ No'}</div>
+          <div><strong>Pendrive:</strong> ${s["Pendrive Working"] ? '✅ Yes' : '❌ No'}</div>
         </div>
         <div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;border-top:1px solid var(--border);padding-top:0.5rem;">
-          <button class="btn btn-outline btn-sm" onclick="editSchool('${dist}', ${index})">Edit</button>
-          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSchool('${dist}', ${index})">Delete</button>
+          <button class="btn btn-outline btn-sm" onclick="editSchool('${s.District}', ${index})">Edit</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSchool('${s.District}', ${index})">Delete</button>
         </div>
       </details>
     `).join("");
@@ -452,12 +537,26 @@
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
-        data.forEach(s => s.lastUpgradedYear = _globalYear);
+        const data = XLSX.utils.sheet_to_json(ws, {header: 1});
+        
+        let newSchools = [];
+        for (let i = 1; i < data.length; i++) {
+          const row = data[i];
+          if (!row || row.length === 0 || !row[0]) continue;
+          newSchools.push({
+            name: String(row[0] || "").trim(),
+            hmName: String(row[1] || "").trim(),
+            hmPhone: String(row[2] || "").trim(),
+            enrollment: String(row[3] || "").trim(),
+            mandal: String(row[4] || "").trim(),
+            lastUpgradedYear: _globalYear
+          });
+        }
+        
         let existing = await getSchools(selectedDist);
-        existing = existing.concat(data); // Append new
+        existing = existing.concat(newSchools); // Append new
         await saveSchools(selectedDist, existing);
-        alert(`Successfully imported ${data.length} schools into ${selectedDist}!`);
+        alert(`Successfully imported ${newSchools.length} schools into ${selectedDist}!`);
         setMode('school', 'view');
       };
       reader.readAsBinaryString(file);
@@ -548,14 +647,20 @@
   window.populateAnalyticsSchools = async function() {
     allMySchoolsList = [];
     const sel = document.getElementById("analytics-school");
-    for (const dist of myUser.districts) {
-      let schools = await getSchools(dist);
-      schools.forEach(s => {
-        s.district = dist;
-        allMySchoolsList.push(s);
-        sel.innerHTML += `<option value="${s['School Name']}">${s['School Name']}</option>`;
-      });
-    }
+    const promises = myUser.districts.map(async dist => {
+        let schools = await getSchools(dist);
+        schools.forEach(s => s.district = dist);
+        return schools;
+    });
+    const results = await Promise.all(promises);
+    let html = `<option value="">Select School</option>`;
+    results.forEach(schools => {
+        schools.forEach(s => {
+            allMySchoolsList.push(s);
+            html += `<option value="${s['School Name']}">${s['School Name']}</option>`;
+        });
+    });
+    sel.innerHTML = html;
   };
 
   window.loadAnalytics = async function() {
@@ -707,6 +812,10 @@
 
   init();
 </script>
+
+
+
+
 <script>
   window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');

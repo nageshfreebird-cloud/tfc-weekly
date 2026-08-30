@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Volunteers - Teach for Change</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- SheetJS for Excel Parsing -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <style>
+    .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .vol-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .vol-table th, .vol-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .vol-table th { background: var(--bg-alt); font-weight: 600; color: var(--text-muted); }
+    .toggle-btn { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
+    .toggle-active { background: #dcfce7; color: #166534; }
+    .toggle-inactive { background: #fee2e2; color: #991b1b; }
+    .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+  </div>
+</nav>
+
+<main class="page">
+  <!-- Sidebar Navigation -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Logo" />
+      <h2>Teach for Change</h2>
+    </div>
+    <div class="sidebar-nav">
+      <a href="associate-vol.html">📊 Dashboard</a>
+      <a href="team.html">📝 Weekly Tasks</a>
+      <a href="associate-vol-attendance.html">📍 Attendance</a>
+      <a href="associate-vol-calls.html">📞 Calls</a>
+      <a href="associate-vol-register.html" class="active">📝 Registration</a>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:1200px; margin:0 auto;">
+    <h1 style="margin-bottom:1.5rem; color:var(--primary);">Register Volunteers</h1>
+    
+    <div class="grid-2">
+      <!-- Manual Entry -->
+      <div class="panel">
+        <h2>Manual Registration</h2>
+        <form id="reg-form">
+          <div class="form-group">
+            <label>Volunteer Name</label>
+            <input type="text" id="reg-name" required />
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="reg-phone" required />
+          </div>
+          <div class="form-group">
+            <label>Assigned School</label>
+            <input type="text" id="reg-school" required />
+          </div>
+          <div class="form-group">
+            <label>State / Location</label>
+            <select id="reg-location" required>
+              <option value="">Select State</option>
+              <option value="Telangana">Telangana</option>
+              <option value="Andhra Pradesh">Andhra Pradesh</option>
+              <option value="Karnataka">Karnataka</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Engaging Duration</label>
+            <select id="reg-duration" required>
+              <option value="3">3 Months</option>
+              <option value="6">6 Months</option>
+              <option value="9">9 Months</option>
+              <option value="12">12 Months</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Save Volunteer</button>
+        </form>
+      </div>
+
+      <!-- Bulk Upload -->
+      <div class="panel">
+        <h2>Excel Bulk Upload</h2>
+        <p class="text-muted" style="margin-bottom:1rem;">Upload a filled Excel file to register multiple volunteers at once.</p>
+        <button class="btn btn-outline" onclick="downloadTemplate()" style="margin-bottom:1rem; width:100%;">📥 Download Excel Template</button>
+        
+        <div class="form-group">
+          <label>Upload Filled Template</label>
+          <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" />
+        </div>
+        <button class="btn btn-primary" onclick="handleFileUpload()" style="width:100%;">Upload & Import</button>
+        <div id="upload-status" style="margin-top:1rem; font-weight:600; color:var(--success);"></div>
+      </div>
+    </div>
+
+    <!-- Registered Volunteers -->
+    <div class="panel">
+      <div class="flex-header">
+        <h2>Manage Registered Volunteers</h2>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="vol-table" id="manage-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>State</th>
+              <th>School Name</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="7" class="text-center">Loading volunteers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  import { db, getVolunteers, saveVolunteer } from "./js/db.js";
+
+  let allVolunteers = [];
+
+  async function init() {
+    const userName = sessionStorage.getItem("tfc_member_name");
+    const userRole = sessionStorage.getItem("tfc_member_role");
+    if (!userName || userRole !== 'associate-vol') { window.location.href = "index.html"; return; }
+
+    startClock("live-clock");
+    document.getElementById("welcome-name").textContent = "Welcome, " + userName;
+    await loadData();
+
+    document.getElementById("reg-form").addEventListener("submit", handleManualSubmit);
+  }
+
+  async function loadData() {
+    allVolunteers = await getVolunteers();
+    // Sort by name
+    allVolunteers.sort((a,b) => a.name.localeCompare(b.name));
+    renderTable();
+  }
+
+  function renderTable() {
+    const tbody = document.querySelector("#manage-table tbody");
+    tbody.innerHTML = "";
+    if (allVolunteers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No volunteers found.</td></tr>`;
+      return;
+    }
+    allVolunteers.forEach(v => {
+      const isAct = v.status !== 'Inactive'; // Default to active
+      const statusText = isAct ? 'Active' : 'Inactive';
+      const btnClass = isAct ? 'toggle-active' : 'toggle-inactive';
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${v.name}</strong></td>
+        <td>${v.phone || '-'}</td>
+        <td>${v.location || '-'}</td>
+        <td>${v.school || '-'}</td>
+        <td>${v.duration ? v.duration + ' Months' : '-'}</td>
+        <td><button class="toggle-btn ${btnClass}" onclick="toggleStatus('${v.id}')">${statusText}</button></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="alert('Edit feature coming soon')">✏️ Edit</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.toggleStatus = async function(id) {
+    const vol = allVolunteers.find(v => v.id === id);
+    if (!vol) return;
+    vol.status = vol.status === 'Inactive' ? 'Active' : 'Inactive';
+    await saveVolunteer(vol);
+    renderTable();
+  };
+
+  async function handleManualSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector("button");
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+
+    const newVol = {
+      name: document.getElementById("reg-name").value,
+      phone: document.getElementById("reg-phone").value,
+      school: document.getElementById("reg-school").value,
+      location: document.getElementById("reg-location").value,
+      duration: document.getElementById("reg-duration").value,
+      status: 'Active',
+      registeredDate: new Date().toISOString()
+    };
+
+    await saveVolunteer(newVol);
+    e.target.reset();
+    btn.textContent = "Save Volunteer";
+    btn.disabled = false;
+    await loadData();
+    alert("Volunteer saved successfully!");
+  }
+
+  window.downloadTemplate = function() {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)"]
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "Volunteer_Template.xlsx");
+  }
+
+  window.handleFileUpload = function() {
+    const fileInput = document.getElementById('excel-file');
+    if (!fileInput.files.length) {
+      alert("Please select a file first.");
+      return;
+    }
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+        
+        let imported = 0;
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length === 0 || !row[0]) continue;
+          await saveVolunteer({
+            name: String(row[0] || "").trim(),
+            phone: String(row[1] || "").trim(),
+            location: String(row[2] || "").trim(),
+            school: String(row[3] || "").trim(),
+            duration: String(row[4] || "3").trim(),
+            status: 'Active',
+            registeredDate: new Date().toISOString()
+          });
+          imported++;
+        }
+        
+        document.getElementById("upload-status").textContent = `Successfully imported ${imported} volunteers!`;
+        fileInput.value = "";
+        await loadData();
+      } catch(err) {
+        alert("Error parsing Excel file. Please use the template.");
+        console.error(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+  };
+
+  window.doLogout = function() {
+    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  };
+
+  init();
+</script>
+</body>
+</html>

@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🔗 Google Sheet Links — Teach for Change</title>
+  <title>🔗 Google Sheet Links � Teach for Change</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -46,10 +46,10 @@
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
     <div>
-      <span class="time-icon">🕒</span>
+      <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
   </div>
 </nav>
 
@@ -65,17 +65,16 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html">📋 Weekly Tasks</a>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html">📝 Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
       <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="manager-drive.html">📈 Assessments Analytics</a>
       <a href="sheets.html" class="active">🔗 Google Sheet Links</a>
-      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
       <a href="settings.html">⚙️ My Settings</a>
-    
-      </div>
+    </div>
     </div>
 
     <div class="setup-panel">
@@ -96,7 +95,7 @@
       <div id="level-2" class="hidden">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
           <h2 id="l2-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">← Back to Supervisors</button>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(1)">? Back to Supervisors</button>
         </div>
         
         <div id="links-container" style="background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius-md);">
@@ -172,7 +171,7 @@
               <a href="${safeUrl}" target="_blank" class="text-muted text-sm" style="text-decoration:none;">${safeUrl}</a>
             </div>
             <div>
-              <a href="${safeUrl}" target="_blank" class="btn btn-primary btn-sm">Open Sheet ↗</a>
+              <a href="${safeUrl}" target="_blank" class="btn btn-primary btn-sm">Open Sheet ?</a>
             </div>
           </div>
         `;

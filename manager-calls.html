@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -49,10 +49,10 @@
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
     <div>
-      <span class="time-icon">🕒</span>
+      <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
   </div>
 </nav>
 
@@ -68,17 +68,16 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html">📋 Weekly Tasks</a>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html">📝 Weekly Tasks</a>
       <a href="manager-calls.html" class="active">📞 15-Days Teacher Calls</a>
       <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="manager-drive.html">📈 Assessments Analytics</a>
       <a href="sheets.html">🔗 Google Sheet Links</a>
-      <a href="manager-syllabus.html">📘 Syllabus Registry</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
       <a href="settings.html">⚙️ My Settings</a>
-    
-      </div>
+    </div>
     </div>
 
     <div class="setup-panel">
@@ -86,7 +85,7 @@
       <!-- LEVEL 1: Overview -->
       <div id="level-1">
         <div class="drilldown-header">
-          <h2>📍 15-Days Teacher Calls (Overview)</h2>
+          <h2>📞 15-Days Teacher Calls (Overview)</h2>
           <div style="display:flex; gap:0.5rem; align-items:center;">
             <select id="view-year-select" onchange="changeViewingYear(this.value)" class="form-control" style="width:120px; font-weight:600; color:var(--primary);">
               <option value="2025-26">2025-26</option>
@@ -120,7 +119,7 @@
       <div id="level-3" class="hidden">
         <div class="drilldown-header">
           <h2 id="l3-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">← Back to Supervisor</button>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">? Back to Supervisor</button>
         </div>
         <div id="l3-content" style="overflow-x:auto;"></div>
       </div>

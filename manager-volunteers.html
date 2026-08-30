@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volunteer Oversight - Teach for Change</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script>
+    window.togglePassword = function(id) {
+      const input = document.getElementById(id);
+      if (input.type === "password") { input.type = "text"; } 
+      else { input.type = "password"; }
+    };
+  </script>
+  <style>
+    .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; }
+    .stat-card h3 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
+    .stat-card p { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+    @media (max-width: 900px) { .stat-cards { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .stat-cards { grid-template-columns: 1fr; } }
+    
+    .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; }
+    .filter-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+    .filter-group { display: flex; gap: 0.5rem; flex: 1; min-width: 300px; }
+    .filter-group select, .filter-group input { padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; flex: 1; }
+    
+    .vol-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .vol-table th, .vol-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .vol-table th { background: var(--bg-alt); font-weight: 600; color: var(--text-muted); }
+    
+    .badge { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg); padding: 2rem; border-radius: var(--radius-md); width: 100%; max-width: 500px; }
+    .modal h2 { margin-top: 0; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+  </div>
+</nav>
+
+<main class="page">
+  <!-- Sidebar Navigation -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Logo" />
+      <h2>Teach for Change</h2>
+    </div>
+    <div class="sidebar-nav">
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html">📝 Weekly Tasks</a>
+      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">📝 Assessments Received</a>
+      <a href="manager-drive.html">📈 Assessments Analytics</a>
+      <a href="sheets.html">🔗 Google Sheet Links</a>
+      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html" class="active">🌍 Volunteer Oversight</a>
+      <a href="settings.html">⚙️ My Settings</a>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:1200px; margin:0 auto;">
+    <h1 style="margin-bottom:1.5rem; color:var(--primary);">Volunteer Oversight</h1>
+    
+    <div class="stat-cards">
+      <div class="stat-card">
+        <h3 id="stat-active">0</h3>
+        <p>Active Volunteers</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-inactive">0</h3>
+        <p>Inactive Volunteers</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-hours">0</h3>
+        <p>Total Hours Logged</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-schools">0</h3>
+        <p>Schools Impacted</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="filter-bar">
+        <h2>Volunteer Master Directory</h2>
+        <button class="btn btn-primary" onclick="exportToExcel()">📥 Export to Excel</button>
+      </div>
+      
+      <div class="filter-bar">
+        <div class="filter-group">
+          <select id="filter-state" onchange="renderTable()">
+            <option value="">All States</option>
+            <option value="Telangana">Telangana</option>
+            <option value="Andhra Pradesh">Andhra Pradesh</option>
+            <option value="Karnataka">Karnataka</option>
+          </select>
+          <select id="filter-status" onchange="renderTable()">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <input type="text" id="search-text" placeholder="Search name or phone..." onkeyup="renderTable()" />
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="vol-table" id="master-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>State</th>
+              <th>School Name</th>
+              <th>Status</th>
+              <th>Total Hrs</th>
+              <th>Latest Call</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="8" class="text-center">Loading volunteers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>Edit Volunteer</h2>
+    <form id="edit-form">
+      <div class="form-group">
+        <label>Volunteer Name</label>
+        <input type="text" id="edit-name" required />
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="text" id="edit-phone" />
+      </div>
+      <div class="form-group">
+        <label>State</label>
+        <select id="edit-location" required>
+          <option value="Telangana">Telangana</option>
+          <option value="Andhra Pradesh">Andhra Pradesh</option>
+          <option value="Karnataka">Karnataka</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>School Name</label>
+        <input type="text" id="edit-school" required />
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="edit-status" required>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+        <button type="button" class="btn btn-outline" style="flex:1;" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="flex:1;">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  import { requireManagerAuth } from "./js/utils.js";
+  import { db, getVolunteers, getVolunteerAttendance, getVolunteerCalls, saveVolunteer, deleteVolunteer } from "./js/db.js";
+
+  let allVolunteers = [];
+  let allAttendance = [];
+  let allCalls = [];
+  let currentEditVol = null;
+
+  async function init() {
+    if (!requireManagerAuth()) return;
+
+    startClock("live-clock");
+    document.getElementById("welcome-name").textContent = "Manager Dashboard";
+    await loadData();
+
+    document.getElementById("edit-form").addEventListener("submit", handleEditSubmit);
+  }
+
+  async function loadData() {
+    allVolunteers = await getVolunteers();
+    allAttendance = await getVolunteerAttendance();
+    allCalls = await getVolunteerCalls();
+    
+    // Calculate stats
+    const active = allVolunteers.filter(v => v.status === 'Active' || !v.status);
+    const inactive = allVolunteers.filter(v => v.status === 'Inactive');
+    const totalHours = allAttendance.reduce((sum, a) => sum + (Number(a.hours)||0), 0);
+    const schools = new Set(allVolunteers.map(v => v.school).filter(s => s));
+
+    document.getElementById("stat-active").textContent = active.length;
+    document.getElementById("stat-inactive").textContent = inactive.length;
+    document.getElementById("stat-hours").textContent = totalHours;
+    document.getElementById("stat-schools").textContent = schools.size;
+
+    renderTable();
+  }
+
+  window.renderTable = function() {
+    const fState = document.getElementById("filter-state").value;
+    const fStatus = document.getElementById("filter-status").value;
+    const fSearch = document.getElementById("search-text").value.toLowerCase();
+    
+    const tbody = document.querySelector("#master-table tbody");
+    tbody.innerHTML = "";
+
+    let filtered = allVolunteers.filter(v => {
+      if (fState && v.location !== fState) return false;
+      const act = v.status === 'Inactive' ? 'Inactive' : 'Active';
+      if (fStatus && act !== fStatus) return false;
+      if (fSearch && !v.name.toLowerCase().includes(fSearch) && !(v.phone||"").includes(fSearch)) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No volunteers found.</td></tr>`;
+      return;
+    }
+
+    // Sort by name
+    filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+    filtered.forEach(v => {
+      // Calculate Hours
+      const myAtt = allAttendance.filter(a => a.volId === v.id);
+      const myHours = myAtt.reduce((sum, a) => sum + (Number(a.hours)||0), 0);
+
+      // Latest Call
+      const myCalls = allCalls.filter(c => c.volId === v.id);
+      myCalls.sort((a,b) => new Date(b.date) - new Date(a.date));
+      const lastCall = myCalls.length > 0 ? myCalls[0] : null;
+      const callDisplay = lastCall ? `<div class="text-sm"><strong>${lastCall.status}</strong><br>${new Date(lastCall.date).toLocaleDateString()}</div>` : '-';
+
+      const isAct = v.status !== 'Inactive';
+      const badgeClass = isAct ? 'badge-active' : 'badge-inactive';
+      
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${v.name}</strong></td>
+        <td>${v.phone || '-'}</td>
+        <td>${v.location || '-'}</td>
+        <td>${v.school || '-'}</td>
+        <td><span class="badge ${badgeClass}">${isAct ? 'Active' : 'Inactive'}</span></td>
+        <td><strong>${myHours}</strong></td>
+        <td>${callDisplay}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${v.id}')">✏️</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--danger);" onclick="deleteVol('${v.id}')">🗑️</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.openEdit = function(id) {
+    const vol = allVolunteers.find(v => v.id === id);
+    if (!vol) return;
+    currentEditVol = vol;
+    
+    document.getElementById("edit-name").value = vol.name || "";
+    document.getElementById("edit-phone").value = vol.phone || "";
+    document.getElementById("edit-location").value = vol.location || "Telangana";
+    document.getElementById("edit-school").value = vol.school || "";
+    document.getElementById("edit-status").value = vol.status === 'Inactive' ? 'Inactive' : 'Active';
+    
+    document.getElementById("edit-modal").classList.add("active");
+  };
+
+  window.closeModal = function() {
+    document.getElementById("edit-modal").classList.remove("active");
+    currentEditVol = null;
+  };
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    if (!currentEditVol) return;
+    
+    currentEditVol.name = document.getElementById("edit-name").value;
+    currentEditVol.phone = document.getElementById("edit-phone").value;
+    currentEditVol.location = document.getElementById("edit-location").value;
+    currentEditVol.school = document.getElementById("edit-school").value;
+    currentEditVol.status = document.getElementById("edit-status").value;
+
+    await saveVolunteer(currentEditVol);
+    closeModal();
+    await loadData();
+  }
+
+  window.deleteVol = async function(id) {
+    if (confirm("Are you sure you want to permanently delete this volunteer and their records?")) {
+      await deleteVolunteer(id);
+      await loadData();
+    }
+  };
+
+  window.exportToExcel = function() {
+    const exportData = allVolunteers.map(v => {
+      const myAtt = allAttendance.filter(a => a.volId === v.id);
+      const myHours = myAtt.reduce((sum, a) => sum + (Number(a.hours)||0), 0);
+      
+      const myCalls = allCalls.filter(c => c.volId === v.id);
+      myCalls.sort((a,b) => new Date(b.date) - new Date(a.date));
+      const lastCall = myCalls.length > 0 ? myCalls[0] : null;
+
+      return {
+        "Name": v.name,
+        "Phone": v.phone || "",
+        "State": v.location || "",
+        "School Name": v.school || "",
+        "Engaging Duration (Months)": v.duration || "",
+        "Status": v.status === 'Inactive' ? 'Inactive' : 'Active',
+        "Total Hours Logged": myHours,
+        "Last Call Date": lastCall ? new Date(lastCall.date).toLocaleDateString() : "",
+        "Last Call Status": lastCall ? lastCall.status : "",
+        "Last Call Remarks": lastCall ? lastCall.notes : ""
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Volunteers");
+    XLSX.writeFile(wb, "Volunteers_Export.xlsx");
+  };
+
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+  };
+
+  window.doLogout = function() {
+    sessionStorage.removeItem("tfc_user");
+    window.location.href = "login.html";
+  };
+
+  init();
+</script>
+</body>
+</html>

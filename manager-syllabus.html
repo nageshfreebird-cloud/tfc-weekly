@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -90,10 +90,10 @@
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:var(--primary);"></span>
     <div>
-      <span class="time-icon">🕒</span>
+      <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
   </div>
 </nav>
 
@@ -109,22 +109,21 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="dashboard.html">⚙️ Dashboard</a>
-      <a href="tab-a.html">📋 Weekly Tasks</a>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="tab-a.html">📝 Weekly Tasks</a>
       <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
       <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html">📊 Assessments Analytics</a>
+      <a href="manager-drive.html">📈 Assessments Analytics</a>
       <a href="sheets.html">🔗 Google Sheet Links</a>
-      <a href="manager-syllabus.html" class="active">📘 Syllabus Registry</a>
+      <a href="manager-syllabus.html" class="active">📚 Syllabus Registry</a>
+      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
       <a href="settings.html">⚙️ My Settings</a>
-    
-      </div>
+    </div>
     </div>
 
     <div class="registry-header">
       <div>
-        <h2>📘 Syllabus Registry</h2>
+        <h2>📚 Syllabus Registry</h2>
         <p>Manage the master curriculum for all levels across the organization.</p>
       </div>
       <div>
@@ -146,7 +145,7 @@
       
       <div class="btn-group" id="action-buttons" style="display:none;">
         <button class="btn btn-outline" onclick="setMode('manual')">➕ Add Topic</button>
-        <button class="btn btn-outline" onclick="setMode('upload')">📤 Bulk Upload Excel</button>
+        <button class="btn btn-outline" onclick="setMode('upload')">📥 Bulk Upload Excel</button>
       </div>
     </div>
 
@@ -164,7 +163,7 @@
     <div id="syllabus-manual" class="panel-box" style="display:none; max-width: 600px; margin: 0 auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
         <h3 id="manual-title" style="margin:0;">Add New Topic</h3>
-        <button class="btn btn-ghost btn-sm" onclick="setMode('view')">✕ Cancel</button>
+        <button class="btn btn-ghost btn-sm" onclick="setMode('view')">❌ Cancel</button>
       </div>
       
       <label class="form-label">Topic Name</label>
@@ -180,7 +179,7 @@
     <div id="syllabus-upload" class="panel-box" style="display:none; max-width: 600px; margin: 0 auto; text-align:center;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
         <h3 style="margin:0;">Bulk Upload via Excel</h3>
-        <button class="btn btn-ghost btn-sm" onclick="setMode('view')">✕ Cancel</button>
+        <button class="btn btn-ghost btn-sm" onclick="setMode('view')">❌ Cancel</button>
       </div>
       
       <div class="alert alert-info text-sm mb-3 text-left">
@@ -193,8 +192,8 @@
       </div>
       
       <div style="display:flex; gap:1rem; justify-content:center; margin-top:2rem;">
-        <button class="btn btn-outline" onclick="downloadSyllabusTemplate()">⬇️ Download Template</button>
-        <button class="btn btn-primary" onclick="uploadSyllabusExcel()">⬆️ Upload File</button>
+        <button class="btn btn-outline" onclick="downloadSyllabusTemplate()">📥 Download Template</button>
+        <button class="btn btn-primary" onclick="uploadSyllabusExcel()">📤 Upload File</button>
       </div>
     </div>
 
@@ -293,12 +292,23 @@
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
+        const data = XLSX.utils.sheet_to_json(ws, {header: 1});
+        
+        let newTopics = [];
+        for (let i = 1; i < data.length; i++) {
+          const row = data[i];
+          if (!row || row.length === 0 || !row[0]) continue;
+          newTopics.push({
+            title: String(row[0] || "").trim(),
+            description: String(row[1] || "").trim(),
+            duration: String(row[2] || "").trim()
+          });
+        }
         
         let existing = await getSyllabus(lvl);
-        existing = existing.concat(data);
+        existing = existing.concat(newTopics);
         await saveSyllabus(lvl, existing);
-        alert(`Successfully imported syllabus topics for ${lvl}!`);
+        alert(`Successfully imported ${newTopics.length} syllabus topics for ${lvl}!`);
         setMode('view');
         renderSyllabusView();
       };

@@ -80,8 +80,8 @@
       <a href="supervisor-assessments.html" class="active">📝 Assessments Received</a>
       <a href="supervisor-drive.html">📊 Assessment Entry</a>
       <a href="supervisor-sheets.html">🔗 Google Sheet Links</a>
-    
-      </div>
+      <a href="supervisor-certificate.html">📜 Certificates</a>
+    </div>
     </div>
 
     <div class="setup-panel">
@@ -89,16 +89,22 @@
       <p class="text-muted mb-3" style="margin-bottom:1.5rem;">Select your district and level to log assessment collection status.</p>
 
       <div style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
-        <div style="flex:1;">
+        <div id="state-filter-container" style="display:none; flex:1; min-width:150px; margin-right:1rem;">
+            <label class="form-label">State</label>
+            <select id="state-select" class="form-control" onchange="window.updateViewDistricts()">
+              <option value="">All States</option>
+            </select>
+          </div>
+          <div style="flex:1;">
           <label class="form-label">District</label>
           <select id="dist-select" class="form-control" onchange="loadSchools()">
-            <option value="">Select District</option>
+            <option value="">All Districts</option>
           </select>
         </div>
         <div style="flex:1;">
           <label class="form-label">Level</label>
           <select id="level-select" class="form-control" onchange="loadSchools()">
-            <option value="">Select Level</option>
+            <option value="">All Levels</option>
             <option value="Level-1">Level-1</option>
             <option value="Level-2">Level-2</option>
             <option value="Level-3">Level-3</option>
@@ -129,29 +135,80 @@
 
 <script type="module">
   import { startClock } from "./js/utils.js";
-  import { getUsers, getSchools, getAssessments, saveAssessments } from "./js/db.js";
+  import { getUsers, getSchools, getAssessments, saveAssessments, getDistricts } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
 
-  if (!userName || userRole !== 'supervisor') {
+  if (!userName || (userRole !== 'supervisor' && userRole !== 'associate-sc')) {
     window.location.href = "index.html";
   }
+
+    // Immediately show state filter for associate-sc to prevent layout pop-in
+    if (sessionStorage.getItem('tfc_member_role') === 'associate-sc') {
+        const stateContainer = document.getElementById('state-filter-container');
+        if (stateContainer) stateContainer.style.display = 'block';
+    }
+
+
   startClock("live-clock");
 
   document.getElementById("welcome-name").textContent = userName;
 
   let currentSchools = [];
   let savedData = {};
+  let myUser = null;
 
+  let allStatesData = {};
   async function init() {
     const users = await getUsers();
-    const myUser = users.find(u => u.name === userName);
-    if (!myUser || !myUser.districts) return;
+    myUser = users.find(u => u.name === userName);
+    if (!myUser || (myUser.role !== 'associate-sc' && (!myUser.districts || myUser.districts.length === 0))) return;;
 
-    const distEl = document.getElementById("dist-select");
-    myUser.districts.forEach(d => distEl.innerHTML += `<option value="${d}">${d}</option>`);
+    
+      if (myUser && myUser.role === 'associate-sc') {
+          document.getElementById('state-filter-container').style.display = 'block';
+          allStatesData = await getDistricts();
+          const stateSel = document.getElementById("state-select");
+          if (stateSel) {
+              Object.keys(allStatesData).forEach(s => {
+                  stateSel.innerHTML += `<option value="${s}">${s}</option>`;
+              });
+          }
+      }
+
+      window.updateViewDistricts(false);
   }
+
+  
+    window.updateViewDistricts = function(callLoad = true) {
+      const st = document.getElementById("state-select").value;
+      const distSel = document.getElementById("dist-select");
+      
+      // Preserve the original placeholder
+      const firstOpt = distSel.options[0].text;
+      distSel.innerHTML = `<option value="">${firstOpt}</option>`;
+      
+      let allowedDists = myUser && myUser.districts ? myUser.districts : [];
+      let stateDists = [];
+      
+      if (st && allStatesData[st]) {
+        stateDists = allStatesData[st];
+      } else {
+        Object.values(allStatesData).forEach(arr => stateDists = stateDists.concat(arr));
+      }
+      
+      let distsToShow = stateDists;
+      if (myUser && myUser.role === 'supervisor') {
+         distsToShow = allowedDists;
+      } else if (myUser && myUser.role === 'associate-sc') {
+         distsToShow = stateDists;
+      }
+      
+      distsToShow.filter(d => !d.toLowerCase().includes("select")).forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
+      
+      if(callLoad && window.loadSchools) window.loadSchools();
+    };
 
   window.loadSchools = async function() {
     const dist = document.getElementById("dist-select").value;
@@ -160,20 +217,42 @@
     const container = document.getElementById("schools-container");
     const saveBtn = document.getElementById("save-btn");
 
-    if (!dist || !level || !assessmentType) {
-      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Please select District, Level, and Assessment above.</div>`;
+    if (!assessmentType) {
+      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Please select an Assessment Type.</div>`;
       saveBtn.classList.add("hidden");
       return;
     }
 
     container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Loading schools...</div>`;
     
-    const allSchools = await getSchools(dist);
-    currentSchools = allSchools.filter(s => s.Level === level);
-    savedData = await getAssessments(userName, `${dist}_${level}_${assessmentType}`);
+    let allSchools = [];
+    if (dist) {
+      allSchools = await getSchools(dist);
+      allSchools.forEach(s => { if(!s.District) s.District = dist; });
+    } else {
+      if (myUser && myUser.districts) {
+        const promises = myUser.districts.map(async d => {
+          const dSchools = await getSchools(d);
+          dSchools.forEach(s => { if(!s.District) s.District = d; });
+          return dSchools;
+        });
+        const results = await Promise.all(promises);
+        results.forEach(res => allSchools = allSchools.concat(res));
+      }
+    }
+    
+    currentSchools = level ? allSchools.filter(s => s.Level === level) : allSchools;
+    
+    let savedDataDict = {};
+    for (const s of currentSchools) {
+       const key = s.District + "_" + s.Level;
+       if (!savedDataDict[key]) {
+          savedDataDict[key] = await getAssessments(userName, key + "_" + assessmentType) || {};
+       }
+    }
 
     if (currentSchools.length === 0) {
-      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found in ${dist} for ${level}.</div>`;
+      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found.</div>`;
       saveBtn.classList.add("hidden");
       return;
     }
@@ -181,20 +260,22 @@
     let html = "";
     currentSchools.forEach((s, idx) => {
       const sName = s["School Name"] || "Unknown School";
+      const sDist = s.District || dist;
+      const sLevel = s.Level;
       
-      const prevData = savedData[sName] || {};
+      const prevData = savedDataDict[sDist + "_" + sLevel] ? savedDataDict[sDist + "_" + sLevel][sName] || {} : {};
       const status = prevData.status || ""; 
       const prevRemarks = prevData.remarks || "";
       
       const isReceived = status === "received";
       const isNotReceived = status === "not_received";
       const frozen = status !== "";
-      const disabledAttr = frozen ? 'disabled' : '';
+      const disabledAttr = frozen ? "disabled" : "";
 
       html += `
-        <div class="compact-row" id="row-${idx}" data-school="${sName}">
+        <div class="compact-row" id="row-${idx}" data-school="${sName}" data-dist="${sDist}" data-level="${sLevel}">
           <div class="compact-col-info">
-            <strong>🏫 ${sName}</strong>
+            <strong>🏫 ${sName} <span class="text-xs text-muted" style="margin-left:5px;">(${sDist})</span></strong>
           </div>
           
           <div class="compact-col-input" style="display:flex;gap:0.5rem;align-items:center;">
@@ -208,9 +289,8 @@
             </button>
           </div>
           
-          <div class="compact-col-input" style="flex:2;">
-            <input type="text" id="rem-${idx}" class="form-control remarks-input" style="padding:0.4rem;" 
-                   placeholder="Enter remarks..." value="${prevRemarks}" ${disabledAttr} />
+          <div class="compact-col-remarks">
+            <input type="text" class="form-control remarks-input" placeholder="Enter remarks..." value="${prevRemarks}" ${disabledAttr} />
           </div>
           
           <input type="hidden" class="status-val" id="status-${idx}" value="${status}" />
@@ -222,7 +302,7 @@
     container.innerHTML = html;
     saveBtn.classList.remove("hidden");
   };
-  
+
   // Temporary state array to handle unsaved UI clicks
   window.setStatus = function(schoolName, status, idx) {
     const recvBtn = document.getElementById(`btn-rec-${idx}`);
@@ -266,44 +346,17 @@
     const remarks = targetRow.querySelector(".remarks-input");
     if (remarks) remarks.disabled = false;
     
-    const resetBtn = targetRow.querySelector('.btn-ghost');
+    const resetBtn = row.querySelector('.btn-ghost');
     if (resetBtn) resetBtn.remove();
-  };
-
-  window.saveAssessmentsData = async function() {
-    const dist = document.getElementById("dist-select").value;
-    const level = document.getElementById("level-select").value;
-    const assessmentType = document.getElementById("assessment-select").value;
-    if (!dist || !level || !assessmentType) return;
-
-    const rows = document.querySelectorAll(".compact-row");
-    let newData = {};
-
-    rows.forEach(row => {
-      const sName = row.getAttribute("data-school");
-      const status = row.querySelector(".status-val").value;
-      const remarks = row.querySelector(".remarks-input").value.trim();
-
-      newData[sName] = {
-        status: status,
-        remarks: remarks
-      };
-    });
-
-    await saveAssessments(userName, `${dist}_${level}_${assessmentType}`, newData);
-    alert("Assessments data saved successfully!");
-    loadSchools(); // refresh UI to freeze everything permanently
-  };
-
-  window.doLogout = function() {
-    sessionStorage.removeItem("tfc_member_name");
-    sessionStorage.removeItem("tfc_member_role");
-    window.location.href = "index.html";
   }
-  startClock("live-clock");;
+  startClock("live-clock");
 
   init();
 </script>
+
+
+
+
 <script>
   window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');

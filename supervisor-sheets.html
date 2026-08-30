@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🔗 Google Sheet Links � Teach for Change</title>
+  <title>🔗 Google Sheet Links ? Teach for Change</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -55,14 +55,13 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-
-      <a href="supervisor.html">🏠 Dashboard</a>
-      <a href="team.html">📋 Weekly Tasks</a>
-      <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
-      <a href="supervisor-assessments.html">📝 Assessments Received</a>
-      <a href="supervisor-drive.html">📊 Assessment Entry</a>
-      <a href="supervisor-sheets.html" class="active">🔗 Google Sheet Links</a>
-    
+        <a href="supervisor.html">🏠 Dashboard</a>
+        <a href="team.html">📋 Weekly Tasks</a>
+        <a href="supervisor-calls.html">📞 15-Days Teacher Calls</a>
+        <a href="supervisor-assessments.html">📝 Assessments Received</a>
+        <a href="supervisor-drive.html">📊 Assessment Entry</a>
+        <a href="supervisor-sheets.html" class="active">🔗 Google Sheet Links</a>
+        <a href="supervisor-certificate.html">📜 Certificates</a>
       </div>
     </div>
 
@@ -91,7 +90,7 @@
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
 
-  if (!userName || userRole !== 'supervisor') {
+  if (!userName || (userRole !== 'supervisor' && userRole !== 'associate-sc')) {
     window.location.href = "index.html";
   }
   startClock("live-clock");
@@ -173,6 +172,10 @@
 
   init();
 </script>
+
+
+
+
 <script>
   window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
