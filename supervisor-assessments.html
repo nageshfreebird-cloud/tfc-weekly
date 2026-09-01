@@ -135,7 +135,7 @@
 
 <script type="module">
   import { startClock } from "./js/utils.js";
-  import { getUsers, getSchools, getAssessments, saveAssessments, getDistricts } from "./js/db.js";
+  import { getUsers, getSchools, getAssessments, saveAssessments, getDistricts } from "./js/db.js?v=3";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -244,12 +244,22 @@
     currentSchools = level ? allSchools.filter(s => s.Level === level) : allSchools;
     
     let savedDataDict = {};
+    const fetchPromises = [];
     for (const s of currentSchools) {
        const key = s.District + "_" + s.Level;
        if (!savedDataDict[key]) {
-          savedDataDict[key] = await getAssessments(userName, key + "_" + assessmentType) || {};
+          savedDataDict[key] = true; // Prevent duplicate promises
+          fetchPromises.push(
+              getAssessments(userName, key + "_" + assessmentType).then(data => {
+                  savedDataDict[key] = data || {};
+              }).catch(e => {
+                  savedDataDict[key] = {};
+                  console.error(e);
+              })
+          );
        }
     }
+    await Promise.all(fetchPromises);
 
     if (currentSchools.length === 0) {
       container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found.</div>`;
@@ -349,6 +359,59 @@
     const resetBtn = row.querySelector('.btn-ghost');
     if (resetBtn) resetBtn.remove();
   }
+
+  window.saveAssessmentsData = async function() {
+      const btn = document.getElementById("save-btn");
+      const assessmentType = document.getElementById("assessment-select").value;
+      if (!assessmentType) {
+          alert("Please select an Assessment Type.");
+          return;
+      }
+      
+      btn.textContent = "Saving...";
+      btn.disabled = true;
+
+      let dataToSave = {};
+      
+      currentSchools.forEach((sch, idx) => {
+          const statusEl = document.getElementById(`status-${idx}`);
+          if (!statusEl) return;
+          const status = statusEl.value;
+          const row = statusEl.closest(".compact-row");
+          const remarks = row.querySelector(".remarks-input").value;
+          
+          if (status) {
+              const key = sch.District + "_" + sch.Level;
+              if (!dataToSave[key]) dataToSave[key] = {};
+              dataToSave[key][sch['School Name']] = { status, remarks };
+          }
+      });
+      
+      try {
+          const promises = Object.keys(dataToSave).map(key => {
+              return saveAssessments(userName, key + "_" + assessmentType, dataToSave[key]);
+          });
+          await Promise.all(promises);
+          btn.textContent = "✅ Saved Successfully!";
+          setTimeout(() => {
+              btn.textContent = "💾 Save All Assessments Data";
+              btn.disabled = false;
+          }, 2000);
+      } catch (err) {
+          console.error(err);
+          alert("Error saving data");
+          btn.textContent = "💾 Save All Assessments Data";
+          btn.disabled = false;
+      }
+  };
+
+
+    window.doLogout = function() {
+      sessionStorage.removeItem("tfc_member_name");
+      sessionStorage.removeItem("tfc_member_role");
+      window.location.href = "index.html";
+    }
+
   startClock("live-clock");
 
   init();

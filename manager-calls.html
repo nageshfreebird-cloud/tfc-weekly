@@ -155,14 +155,17 @@
     
     // Cache schools
     const supervisors = allUsers.filter(u => u.role === 'supervisor');
+    let promises = [];
     for (let u of supervisors) {
       if (!u.districts) continue;
       for (let d of u.districts) {
-        if (!allSchoolsByDistCache[d]) {
-          allSchoolsByDistCache[d] = await getSchools(d);
+        if (allSchoolsByDistCache[d] === undefined) {
+          allSchoolsByDistCache[d] = null; // mark as fetching
+          promises.push(getSchools(d).then(data => { allSchoolsByDistCache[d] = data; }));
         }
       }
     }
+    await Promise.all(promises);
 
     // Populate periods
     const periods = generatePast15DayPeriods(10);

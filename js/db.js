@@ -5,14 +5,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, initializeFirestore, doc, getDoc, setDoc, updateDoc,
-  collection, query, where, getDocs, onSnapshot, deleteDoc
+  collection, query, where, getDocs, onSnapshot, deleteDoc, documentId
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import firebaseConfig from "./firebase-config.js";
 import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getSaturdayOf, toYMD } from "./utils.js";
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
-export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+export const db = getFirestore(app); // WebSockets are MUCH faster than forced long polling
 
 
 
@@ -809,3 +809,24 @@ export async function getAllStudentAssessments() {
   return all;
 }
 
+
+
+export async function getAssessmentsForDistricts(districts) {
+  const colRef = await getScopedCollection("student_assessments");
+  let allData = {};
+  
+  if (!districts || districts.length === 0) return allData;
+  
+  const promises = districts.map(async (dist) => {
+      const q = query(
+          colRef, 
+          where(documentId(), ">=", dist + "_"), 
+          where(documentId(), "<=", dist + "_\uf8ff")
+      );
+      const snap = await getDocs(q);
+      snap.forEach(doc => { allData[doc.id] = doc.data().data || []; });
+  });
+  
+  await Promise.all(promises);
+  return allData;
+}

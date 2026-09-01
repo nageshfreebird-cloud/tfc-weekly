@@ -233,7 +233,7 @@
   </div>
 </dialog><script type="module">
   import { requireManagerAuth, clearManagerSession, startClock } from "./js/utils.js";
-  import { getDistricts, getUsers, getSchools, getAllStudentAssessments, db } from "./js/db.js";
+  import { getDistricts, getUsers, getSchools, getAllStudentAssessments, db , saveSchools} from "./js/db.js";
   import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   if (!requireManagerAuth()) throw new Error("Not auth");
@@ -466,7 +466,19 @@
   window.deleteSchool = async function(id) {
     if (!confirm("Are you sure you want to permanently delete this school?")) return;
     try {
-      await deleteDoc(doc(db, "schools", id));
+      const s = allSchools.find(x => x.id === id);
+      if (!s) return;
+      const dist = s.District;
+      
+      
+      let distSchools = await getSchools(dist);
+      let sIdx = distSchools.findIndex(x => x["School Name"] === s["School Name"]);
+      
+      if (sIdx > -1) {
+          distSchools.splice(sIdx, 1);
+          await saveSchools(dist, distSchools);
+      }
+      
       allSchools = allSchools.filter(x => x.id !== id);
       window.renderDirectory();
     } catch(e) {

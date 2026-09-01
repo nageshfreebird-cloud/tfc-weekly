@@ -159,14 +159,17 @@
     
     const supervisors = usersList.filter(u => u.role === 'supervisor');
     
+    let promises = [];
     for (let u of supervisors) {
       if (!u.districts) continue;
       for (let d of u.districts) {
-        if (!allSchoolsByDist[d]) {
-          allSchoolsByDist[d] = await getSchools(d);
+        if (allSchoolsByDist[d] === undefined) {
+          allSchoolsByDist[d] = null; // mark as fetching
+          promises.push(getSchools(d).then(data => { allSchoolsByDist[d] = data; }));
         }
       }
     }
+    await Promise.all(promises);
     processDataAndRender();
   }
 

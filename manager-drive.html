@@ -94,71 +94,123 @@
       </div>
 
       <!-- RIGHT PANEL: ANALYTICS -->
-      <div class="split-right">
+            <div class="split-right" id="analytics-container" style="display:flex; flex-direction:column; gap:1.5rem;">
         <h2 style="margin-top:0; font-size:1.3rem;">Performance Analytics</h2>
         
-        <div class="filter-group">
+        <!-- FILTERS -->
+        <div class="filter-group" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1rem;">
           <select id="filt-term" class="form-control" onchange="renderAnalytics()">
             <option value="baseline">Baseline</option>
             <option value="midline">Midline</option>
             <option value="endline">Endline</option>
           </select>
-          <select id="filt-schema" class="form-control" onchange="renderAnalytics()">
-            <option value="L1_L2">Level 1 & 2 (Know/Read/Spell/CWR/CWS)</option>
-            <option value="L3_L4">Level 3 & 4 (Phonics/Vocab/Story/Sentences)</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
           <select id="filt-state" class="form-control" onchange="updateDistricts(); renderAnalytics()">
             <option value="">All States</option>
           </select>
-          <select id="filt-dist" class="form-control" onchange="updateSchools(); renderAnalytics()">
+          <select id="filt-dist" class="form-control" onchange="updateMandals(); renderAnalytics()">
             <option value="">All Districts</option>
+          </select>
+          <select id="filt-mandal" class="form-control" onchange="updateSchools(); renderAnalytics()">
+            <option value="">All Mandals</option>
           </select>
           <select id="filt-school" class="form-control" onchange="renderAnalytics()">
             <option value="">All Schools</option>
           </select>
+          <select id="filt-class" class="form-control" onchange="renderAnalytics()">
+            <option value="">All Classes</option>
+            <option value="3rd class">3rd Class</option>
+            <option value="4th class">4th Class</option>
+            <option value="5th class">5th Class</option>
+          </select>
         </div>
 
-        <div style="margin-top: 2rem;">
-          <canvas id="analyticsChart" style="width:100%;max-height:400px;display:none;"></canvas>
-          <div id="analytics-empty" class="text-muted text-center" style="margin-top:2rem; padding: 2rem; background: var(--bg); border-radius: var(--radius-md);">
-            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">---</div>
-            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">No Data Found</h3>
-            <p>No assessment data matched your current filters.</p>
-          </div>
+        <!-- KPI RIBBON -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1rem;">
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1.5rem; text-align:center;">
+              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Total Assessed</div>
+              <div id="kpi-assessed" style="font-size:2rem; font-weight:700; color:var(--primary);">0</div>
+              <div id="kpi-enrollment" style="font-size:0.8rem; color:var(--muted); margin-top:0.25rem;">0 Enrolled</div>
+           </div>
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1.5rem; text-align:center;">
+              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Absenteeism Rate</div>
+              <div id="kpi-absent" style="font-size:2rem; font-weight:700; color:var(--danger);">0%</div>
+           </div>
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1.5rem; text-align:center;">
+              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Overall Average</div>
+              <div id="kpi-avg" style="font-size:2rem; font-weight:700; color:var(--success);">0%</div>
+           </div>
+        </div>
+
+        <!-- CHART GRID -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem;">
+              <h3 style="font-size:1rem; margin:0 0 1rem 0; text-align:center;">Parameter Averages</h3>
+              <div style="position:relative; height:300px; width:100%;"><canvas id="chart-skill"></canvas></div>
+           </div>
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+    <h3 style="font-size:1rem; margin:0;">Term Growth Trajectory</h3>
+    <select id="filt-param-growth" class="form-control" style="width:auto; padding:0.25rem 0.5rem; font-size:0.8rem;" onchange="renderAnalytics()">
+        <option value="">All Parameters</option>
+        <option value="0">P1: KNOW / Phonics</option>
+        <option value="1">P2: READ / Phono. Aw.</option>
+        <option value="2">P3: SPELL / Vocab</option>
+        <option value="3">P4: CWR / Story</option>
+        <option value="4">P5: CWS / Sentences</option>
+    </select>
+</div>
+              <div style="position:relative; height:300px; width:100%;"><canvas id="chart-growth"></canvas></div>
+           </div>
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem;">
+              <h3 style="font-size:1rem; margin:0 0 1rem 0; text-align:center;" id="geo-title">Geographic Ranking</h3>
+              <div style="position:relative; height:300px; width:100%;"><canvas id="chart-geo"></canvas></div>
+           </div>
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+    <h3 style="font-size:1rem; margin:0;">Performance Distribution</h3>
+    <select id="filt-param-dist" class="form-control" style="width:auto; padding:0.25rem 0.5rem; font-size:0.8rem;" onchange="renderAnalytics()">
+        <option value="">All Parameters</option>
+        <option value="0">P1: KNOW / Phonics</option>
+        <option value="1">P2: READ / Phono. Aw.</option>
+        <option value="2">P3: SPELL / Vocab</option>
+        <option value="3">P4: CWR / Story</option>
+        <option value="4">P5: CWS / Sentences</option>
+    </select>
+</div>
+              <div style="position:relative; height:300px; width:100%;"><canvas id="chart-dist"></canvas></div>
+           </div>
+           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; grid-column: span 2;">
+              <h3 style="font-size:1rem; margin:0 0 1rem 0; text-align:center;">Skill Balance Profile</h3>
+              <div style="position:relative; max-width:500px; height:350px; margin:0 auto;"><canvas id="chart-radar"></canvas></div>
+           </div>
+        </div>
+
+        <!-- TABLES -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+            <!-- LEADERBOARD -->
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
+               <h3 style="font-size:1rem; margin:0 0 1rem 0;">Top Performing Students</h3>
+               <div style="overflow-x:auto;">
+                   <table class="table" style="width:100%; font-size:0.85rem;">
+                     <thead><tr><th>Name</th><th>School</th><th>Class</th><th>Score</th></tr></thead>
+                     <tbody id="leaderboard-body"></tbody>
+                   </table>
+               </div>
+            </div>
+            
+            <!-- DATA QUALITY -->
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
+               <h3 style="font-size:1rem; margin:0 0 1rem 0; color:var(--danger);">Data Quality Exceptions</h3>
+               <div style="overflow-x:auto;">
+                   <table class="table" style="width:100%; font-size:0.85rem;">
+                     <thead><tr><th>Student</th><th>School</th><th>Issue</th></tr></thead>
+                     <tbody id="dq-body"></tbody>
+                   </table>
+               </div>
+            </div>
         </div>
       </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- Modal for Mark Sheet -->
-<div id="sheet-modal">
-  <div class="modal-content">
-    <button class="modal-close" onclick="closeModal()">&times;</button>
-    <h2 id="modal-title" style="margin-top:0;">School Mark Sheet</h2>
-    
-    <div style="display:flex; gap:1rem; margin:1rem 0;">
-       <select id="modal-term" class="form-control" style="width:150px;" onchange="renderModalContent()">
-         <option value="baseline">Baseline</option>
-         <option value="midline">Midline</option>
-         <option value="endline">Endline</option>
-       </select>
-       <select id="modal-class" class="form-control" style="width:150px;" onchange="renderModalContent()">
-         <option value="3rd class">3rd Class</option>
-         <option value="4th class">4th Class</option>
-         <option value="5th class">5th Class</option>
-       </select>
-    </div>
-    
-    <div id="modal-body" style="margin-top:1rem; overflow-x:auto;">
-       <p class="text-muted text-center">Loading...</p>
-    </div>
-  </div>
-</main>
+    </main>
 
 <script type="module">
   import { getUsers, getSchools, getDistricts, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4, getSchemaForLevel } from "./js/db.js";
@@ -324,7 +376,7 @@
     }
   }
 
-  window.updateDistricts = function() {
+    window.updateDistricts = function() {
     const st = document.getElementById("filt-state").value;
     const distSel = document.getElementById("filt-dist");
     distSel.innerHTML = '<option value="">All Districts</option>';
@@ -335,115 +387,198 @@
     } else {
       Object.values(allStatesData).forEach(arr => dists = dists.concat(arr));
     }
-    
     dists.forEach(d => distSel.innerHTML += `<option value="${d}">${d}</option>`);
-    updateSchools();
+    updateMandals();
   };
   
+  window.updateMandals = function() {
+    const dist = document.getElementById("filt-dist").value;
+    const manSel = document.getElementById("filt-mandal");
+    manSel.innerHTML = '<option value="">All Mandals</option>';
+    
+    let mandals = new Set();
+    allSchools.forEach(s => {
+      if (!s || !s['School Name'] || !s['Mandal Name']) return;
+      if (!dist || s.District === dist) mandals.add(s['Mandal Name']);
+    });
+    
+    Array.from(mandals).sort().forEach(m => manSel.innerHTML += `<option value="${m}">${m}</option>`);
+    updateSchools();
+  };
+
   window.updateSchools = function() {
     const dist = document.getElementById("filt-dist").value;
+    const mandal = document.getElementById("filt-mandal").value;
     const schSel = document.getElementById("filt-school");
     schSel.innerHTML = '<option value="">All Schools</option>';
     
     allSchools.forEach(s => {
       if (!s || !s['School Name']) return;
-      if (!dist || s.District === dist) {
-        schSel.innerHTML += `<option value="${s['School Name']}">${s['School Name']}</option>`;
-      }
+      if (dist && s.District !== dist) return;
+      if (mandal && s['Mandal Name'] !== mandal) return;
+      schSel.innerHTML += `<option value="${s['School Name']}">${s['School Name']}</option>`;
     });
   };
 
-  window.renderAnalytics = function() {
-    const state = document.getElementById("filt-state").value;
-    const dist = document.getElementById("filt-dist").value;
-    const school = document.getElementById("filt-school").value;
-    const term = document.getElementById("filt-term").value;
-    const schemaType = document.getElementById("filt-schema").value;
+  
+import { AnalyticsEngine } from './js/analytics_engine.js';
+
+let activeCharts = {};
+
+window.renderAnalytics = function() {
+    if (!allSchools || !allAssessments) return;
     
-    const schema = (schemaType === "L3_L4") ? SCHEMA_L3_L4 : SCHEMA_L1_L2;
-    const validLevels = (schemaType === "L3_L4") ? ["Level-3", "Level-4"] : ["Level-1", "Level-2"];
+    const engine = new AnalyticsEngine(allSchools, allAssessments);
     
-    let filteredSchools = allSchools.filter(s => s && s['School Name'] && validLevels.includes(s.Level));
+    const filters = {
+        state: document.getElementById("filt-state").value,
+        district: document.getElementById("filt-dist").value,
+        mandal: document.getElementById("filt-mandal").value,
+        school: document.getElementById("filt-school").value,
+        className: document.getElementById("filt-class").value,
+        term: document.getElementById("filt-term").value,
+        paramGrowth: document.getElementById("filt-param-growth").value,
+        paramDist: document.getElementById("filt-param-dist").value
+    };
     
-    if (state) {
-       const stateDists = allStatesData[state] || [];
-       filteredSchools = filteredSchools.filter(s => stateDists.includes(s.District));
+    
+    console.log("Rendering Analytics...");
+    
+    console.log("Schools array length:", allSchools.length);
+    console.log("Assessments keys:", Object.keys(allAssessments));
+    document.getElementById("geo-title").textContent += ` (Schools: ${allSchools.length}, Docs: ${Object.keys(allAssessments).length})`;
+    if (Object.keys(allAssessments).length > 0) {
+        document.getElementById("geo-title").textContent += ` Example key: ${Object.keys(allAssessments)[0]}`;
     }
-    if (dist) filteredSchools = filteredSchools.filter(s => s.District === dist);
-    if (school) filteredSchools = filteredSchools.filter(s => s['School Name'] === school);
+
+
+    const results = engine.process(filters);
+
     
-    let sums = {};
-    let counts = {};
-    schema.forEach(p => { sums[p.id] = 0; counts[p.id] = 0; });
+
+
     
-    let hasData = false;
+
+
+    const container = document.getElementById("analytics-container");
     
-    filteredSchools.forEach(sch => {
-       const cleanSchool = sch['School Name'].replace(/[^a-zA-Z0-9]/g, "_");
-       const classes = ["3rd class", "4th class", "5th class"];
-       
-       classes.forEach(cls => {
-         const docId = `${sch.District}_${cleanSchool}_${cls}`;
-         const students = allAssessments[docId];
-         if (students) {
-           students.forEach(student => {
-             if (student[term]) {
-                schema.forEach(p => {
-                  const val = student[term][p.id];
-                  if (val !== undefined && val !== "" && val.toString().toLowerCase() !== "a") {
-                    sums[p.id] += Number(val);
-                    counts[p.id]++;
-                    hasData = true;
-                  }
-                });
-             }
-           });
-         }
-       });
-    });
     
-    const canvas = document.getElementById("analyticsChart");
-    const empty = document.getElementById("analytics-empty");
+    // Find the first school that actually exists in allAssessments
+    let matchDocId = null;
+    let matchStudents = null;
+    let totalKeys = Object.keys(allAssessments).length;
     
-    if (!hasData) {
-      canvas.style.display = "none";
-      empty.style.display = "block";
-      return;
-    }
-    
-    canvas.style.display = "block";
-    empty.style.display = "none";
-    
-    const labels = schema.map(p => p.label);
-    const dataAvg = schema.map(p => counts[p.id] > 0 ? (sums[p.id] / counts[p.id]).toFixed(1) : 0);
-    
-    if (chartInstance) chartInstance.destroy();
-    
-    const ctx = canvas.getContext("2d");
-    chartInstance = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: labels,
-        datasets: [{
-          label: `Average Score (${term})`,
-          data: dataAvg,
-          backgroundColor: "#2563eb",
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: { beginAtZero: true }
+    for (let sch of allSchools) {
+        if (!sch['School Name']) continue;
+        const cleanSchool = sch['School Name'].replace(/[^a-zA-Z0-9]/g, "_");
+        for (let cls of ["3rd class", "4th class", "5th class"]) {
+            const docId = `${sch.District}_${cleanSchool}_${cls}`;
+            if (allAssessments[docId]) {
+                matchDocId = docId;
+                matchStudents = allAssessments[docId];
+                break;
+            }
         }
-      }
-    });
-  };
+        if (matchDocId) break;
+    }
+    
+    
 
-  window.renderModalContent = function() {
+
+    
+
+
+    
+    // UPDATE KPIS
+    document.getElementById("kpi-assessed").textContent = results.kpi.assessed;
+    
+    // FORCE DEBUG DUMP TO SCREEN
+    document.getElementById("kpi-enrollment").textContent = `${results.kpi.totalEnrolled} Enrolled`;
+    
+
+    document.getElementById("kpi-absent").textContent = (results.kpi.totalEnrolled > 0) ? Math.round((results.kpi.absent / results.kpi.totalEnrolled) * 100) + '%' : '0%';
+    document.getElementById("kpi-avg").textContent = Math.round(results.kpi.avgScore) + '%';
+    
+    // RENDER CHARTS
+    renderChart('chart-skill', 'bar', results.chartSkillPerf.labels, [{
+        label: 'Average Score (%)',
+        data: results.chartSkillPerf.data,
+        backgroundColor: '#4e73df'
+    }], { scales: { y: { max: 100 } }});
+    
+    renderChart('chart-growth', 'line', ['Baseline', 'Midline', 'Endline'], [{
+        label: 'Growth Trajectory (%)',
+        data: [results.chartTermGrowth.baseline, results.chartTermGrowth.midline, results.chartTermGrowth.endline],
+        borderColor: '#1cc88a',
+        fill: false,
+        tension: 0.1
+    }], { scales: { y: { min: 0, max: 100 } }});
+    
+    // Dynamic Geo Title
+    let geoLabel = 'District Ranking';
+    if(filters.district) geoLabel = 'Mandal Ranking';
+    if(filters.mandal) geoLabel = 'School Ranking';
+    if(filters.school) geoLabel = 'Class Ranking';
+    document.getElementById("geo-title").textContent = geoLabel;
+    
+    renderChart('chart-geo', 'bar', results.chartGeoRanking.map(x => x.label), [{
+        label: 'Average Score (%)',
+        data: results.chartGeoRanking.map(x => x.avg),
+        backgroundColor: '#36b9cc'
+    }], { scales: { y: { max: 100 } }});
+    
+    const pDist = document.getElementById("filt-param-dist").value;
+    let distLabels = ["0-20%", "21-40%", "41-60%", "61-80%", "81-100%"];
+    if (pDist === "") {
+        distLabels = ["0-10 Marks", "11-20 Marks", "21-30 Marks", "31-40 Marks", "41-50 Marks"];
+    } else if (pDist === "0") {
+        distLabels = ["0-2 Marks", "3-4 Marks", "5-6 Marks", "7-8 Marks", "9-10 Marks"];
+    } else if (pDist === "1" || pDist === "2") {
+        distLabels = ["0-1.5 Marks", "1.6-3 Marks", "3.1-5 Marks", "5.1-6.5 Marks", "6.6-8 Marks"];
+    } else if (pDist === "3" || pDist === "4") {
+        distLabels = ["0-2.5 Marks", "2.6-5 Marks", "5.1-7 Marks", "7.1-9.5 Marks", "9.6-12 Marks"];
+    }
+
+    renderChart('chart-dist', 'bar', distLabels, [{
+        label: 'Number of Students',
+        data: Object.values(results.chartDistribution),
+        backgroundColor: '#f6c23e'
+    }]);
+    
+    renderChart('chart-radar', 'radar', results.chartSkillPerf.labels, [{
+        label: 'Skill Profile',
+        data: results.chartSkillPerf.data,
+        backgroundColor: 'rgba(78, 115, 223, 0.2)',
+        borderColor: 'rgba(78, 115, 223, 1)',
+        pointBackgroundColor: 'rgba(78, 115, 223, 1)'
+    }], { scales: { r: { min: 0, max: 100 } }});
+    
+    // UPDATE TABLES
+    const lBody = document.getElementById("leaderboard-body");
+    lBody.innerHTML = results.topStudents.map(s => `<tr><td>${s.name}</td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:var(--success);">${Math.round(s.score)}%</td></tr>`).join('');
+    if(results.topStudents.length === 0) lBody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No students assessed in this term.</td></tr>';
+    
+    const dqBody = document.getElementById("dq-body");
+    dqBody.innerHTML = results.dataQuality.map(d => `<tr><td>${d.student}</td><td>${d.school}</td><td style="color:var(--danger);">${d.issue}</td></tr>`).join('');
+    if(results.dataQuality.length === 0) dqBody.innerHTML = '<tr><td colspan="3" class="text-muted text-center text-success">No data exceptions found!</td></tr>';
+};
+
+function renderChart(canvasId, type, labels, datasets, extraOptions = {}) {
+    if (activeCharts[canvasId]) {
+        activeCharts[canvasId].destroy();
+    }
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    activeCharts[canvasId] = new Chart(ctx, {
+        type: type,
+        data: { labels: labels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            ...extraOptions
+        }
+    });
+}
+window.renderModalContent = function() {
     if (!currentModalSchool) return;
     const term = document.getElementById("modal-term").value;
     const cls = document.getElementById("modal-class").value;
