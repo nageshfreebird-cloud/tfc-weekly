@@ -212,6 +212,29 @@
       </div>
     </main>
 
+  <div id="sheet-modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2 id="modal-title" style="margin-top:0;"></h2>
+      
+      <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+        <select id="modal-term" class="form-control" onchange="renderModalContent()">
+          <option value="baseline">Baseline</option>
+          <option value="midline">Midline</option>
+          <option value="endline">Endline</option>
+        </select>
+        <select id="modal-class" class="form-control" onchange="renderModalContent()">
+          <option value="3rd class">3rd Class</option>
+          <option value="4th class">4th Class</option>
+          <option value="5th class">5th Class</option>
+        </select>
+      </div>
+      
+      <div id="modal-body" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+
+
 <script type="module">
   import { getUsers, getSchools, getDistricts, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4, getSchemaForLevel } from "./js/db.js";
 
@@ -352,7 +375,7 @@
               });
               
               const isComplete = (completedCount === 3);
-              const icon = isComplete ? "?" : "?";
+              const icon = isComplete ? "✅" : "⏳";
               
               const safeSchool = sch['School Name'].replace(/'/g, "\\'").replace(/"/g, "&quot;");
               const safeSup = sup.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");

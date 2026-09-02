@@ -224,6 +224,7 @@
         <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
           <div style="display:flex; gap:10px;">
             <button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>
+              <button class="btn btn-outline btn-sm" onclick="deleteSelected()" style="color:var(--danger); border-color:var(--danger);">🗑️ Delete Selected</button>
             <button class="btn btn-primary btn-sm" onclick="downloadAverages()" style="background:#059669; border-color:#059669;"><i class="fas fa-file-excel"></i> Download Report_Averages</button>
           </div>
           <span id="save-status" style="color:var(--text-muted); font-size:0.9rem; font-weight:600;">✓ All changes saved</span>
@@ -589,14 +590,15 @@
     
     const thead = document.getElementById("grid-head");
     let html = `<tr>
-      <th style="width:50px;">S.No</th>
+        <th style="width:40px;"><input type="checkbox" id="check-all" onclick="toggleAllChecks(this)"></th>
+        <th style="width:50px;">S.No</th>
       <th style="width:200px;">Student Name</th>`;
     
     currentSchema.forEach(param => {
       html += `<th>${param.label}<br/>(${param.maxMarks})</th>`;
     });
     
-    html += `<th>TOTAL (50)</th><th style="width:150px;">Comprehension Level</th></tr>`;
+    html += `<th>TOTAL (50)</th><th style="width:150px;">Remarks</th></tr>`;
     thead.innerHTML = html;
   }
 
@@ -637,8 +639,8 @@
     
     currentGridData.forEach((row, rIdx) => {
       let trHtml = "<tr>";
-      
-      trHtml += `<td><input type="text" data-row="${rIdx}" data-col="sno" value="${row.sno || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
+        trHtml += `<td style="text-align:center;"><input type="checkbox" class="row-checkbox" data-row="${rIdx}"></td>`;
+        trHtml += `<td><input type="text" data-row="${rIdx}" data-col="sno" value="${row.sno || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
       trHtml += `<td><input type="text" class="col-name" data-row="${rIdx}" data-col="name" value="${row.name || ''}" onchange="updateData(this)" onpaste="handlePaste(event, this)"/></td>`;
       
       let total = 0;
@@ -676,9 +678,13 @@
       currentGridData[rIdx][col] = inputEl.value;
     } else {
       if (!currentGridData[rIdx][term]) currentGridData[rIdx][term] = {};
-      
-      let paramObj = currentSchema.find(p => p.id === col);
-      if (paramObj) {
+        if (col === 'remarks') {
+          currentGridData[rIdx][term][col] = inputEl.value;
+          window.triggerAutoSave();
+          return;
+        }
+        let paramObj = currentSchema.find(p => p.id === col);
+        if (paramObj) {
         let val = inputEl.value.trim();
         let isFirstCol = (currentSchema[0].id === col);
         
@@ -798,9 +804,10 @@
     });
 
     drawGrid();
-  };
+      window.triggerAutoSave();
+    };
 
-  let autoSaveTimer = null;
+    let autoSaveTimer = null;
 
   window.triggerAutoSave = function() {
      const status = document.getElementById("save-status");
@@ -842,7 +849,7 @@
     const term = document.getElementById("sel-term").value;
     const headers = ["S.No", "Student Name"];
     currentSchema.forEach(p => headers.push(`${p.label} (${p.maxMarks})`));
-    headers.push("Total (50)", "Comprehension Level");
+    headers.push("Total (50)", "Remarks");
     
     const exportData = [];
     currentGridData.forEach(r => {
@@ -908,6 +915,29 @@
     reader.readAsBinaryString(file);
   };
 
+
+  window.toggleAllChecks = function(cb) {
+    const checks = document.querySelectorAll(".row-checkbox");
+    checks.forEach(c => c.checked = cb.checked);
+  };
+
+  window.deleteSelected = function() {
+    const checks = document.querySelectorAll(".row-checkbox:checked");
+    if (checks.length === 0) {
+       alert("Please select at least one student to delete.");
+       return;
+    }
+    if (!confirm(`Are you sure you want to delete ${checks.length} selected student(s)?`)) return;
+    
+    const indices = Array.from(checks).map(c => parseInt(c.getAttribute("data-row"))).sort((a,b)=>b-a);
+    indices.forEach(idx => {
+        currentGridData.splice(idx, 1);
+    });
+    
+    drawGrid();
+    window.triggerAutoSave();
+  };
+
   init();
 
   async function getSchoolAverages(dist, school) {
@@ -928,10 +958,15 @@
           Object.keys(phases).forEach(ph => {
             if(st[ph]) {
               const sc = st[ph];
-              if(sc['phonics'] !== undefined && sc['phonics'] !== 'A' && sc['phonics'] !== 'a' && sc['phonics'] !== '') {
-                assessed = true;
-                const k = Number(sc['phonics']||0), r = Number(sc['phono_aw']||0), s = Number(sc['vocab']||0), cr = Number(sc['story']||0), cs = Number(sc['sentences']||0);
-                phases[ph].KNOW += k; phases[ph].READ += r; phases[ph].SPELL += s; phases[ph].CWR += cr; phases[ph].CWS += cs;
+              const know_val = sc['know'] !== undefined ? sc['know'] : sc['phonics'];
+                if(know_val !== undefined && know_val !== 'A' && know_val !== 'a' && know_val !== '') {
+                  assessed = true;
+                  const k = Number(sc['know'] || sc['phonics'] || 0);
+                  const r = Number(sc['read'] || sc['phono_aw'] || 0);
+                  const s = Number(sc['spell'] || sc['vocab'] || 0);
+                  const cr = Number(sc['cw_read'] || sc['story'] || 0);
+                  const cs = Number(sc['cw_spell'] || sc['sentences'] || 0);
+                  phases[ph].KNOW += k; phases[ph].READ += r; phases[ph].SPELL += s; phases[ph].CWR += cr; phases[ph].CWS += cs;
                 phases[ph].Total += (k+r+s+cr+cs);
                 phases[ph].count++;
               }
