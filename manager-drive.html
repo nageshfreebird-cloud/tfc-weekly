@@ -189,7 +189,7 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
             <!-- LEADERBOARD -->
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
-               <h3 style="font-size:1rem; margin:0 0 1rem 0;">Top Performing Students</h3>
+               <h3 style="font-size:1rem; margin:0 0 1rem 0;">Top 3 & Bottom 3 Students</h3>
                <div style="overflow-x:auto;">
                    <table class="table" style="width:100%; font-size:0.85rem;">
                      <thead><tr><th>Name</th><th>School</th><th>Class</th><th>Score</th></tr></thead>
@@ -578,7 +578,32 @@ window.renderAnalytics = function() {
     
     // UPDATE TABLES
     const lBody = document.getElementById("leaderboard-body");
-    lBody.innerHTML = results.topStudents.map(s => `<tr><td>${s.name}</td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:var(--success);">${Math.round(s.score)}%</td></tr>`).join('');
+    
+    // Sort array just in case
+    const sortedStudents = [...results.topStudents].sort((a,b) => b.score - a.score);
+    
+    // Get top 3 and bottom 3 (if there are enough students)
+    let displayStudents = [];
+    if (sortedStudents.length <= 6) {
+        displayStudents = sortedStudents;
+    } else {
+        const top3 = sortedStudents.slice(0, 3);
+        const bottom3 = sortedStudents.slice(-3);
+        displayStudents = [...top3, { isDivider: true }, ...bottom3];
+    }
+    
+    lBody.innerHTML = displayStudents.map(s => {
+        if (s.isDivider) {
+            return `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); background:var(--border); padding:2px;">---</td></tr>`;
+        }
+        
+        // Color code based on if they are in top 3 or bottom 3
+        const isTop = sortedStudents.indexOf(s) < 3;
+        const color = isTop ? "var(--success)" : "var(--danger)";
+        
+        return `<tr><td>${s.name}</td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:${color};">${Math.round(s.score)}%</td></tr>`;
+    }).join('');
+    
     if(results.topStudents.length === 0) lBody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No students assessed in this term.</td></tr>';
     
     const dqBody = document.getElementById("dq-body");

@@ -538,9 +538,17 @@ export async function saveDistricts(districts) {
 // ============================================
 
 /** Get all schools for a given district */
+const _schoolsCache = {};
+let _allSchoolsFetched = false;
+
 export async function getSchools(districtName) {
   try {
     if (!districtName) {
+      if (_allSchoolsFetched) {
+         let all = [];
+         Object.values(_schoolsCache).forEach(list => all = all.concat(list));
+         return JSON.parse(JSON.stringify(all));
+      }
       const col = collection(db, "schools");
       const snap = await getDocs(col);
       let all = [];
@@ -550,23 +558,36 @@ export async function getSchools(districtName) {
             if(!s.District) s.District = d.id;
             return s;
           });
+          _schoolsCache[d.id] = list;
           all = all.concat(list);
         }
       });
-      return all;
+      _allSchoolsFetched = true;
+      return JSON.parse(JSON.stringify(all));
     }
+    
+    if (_schoolsCache[districtName]) {
+        return JSON.parse(JSON.stringify(_schoolsCache[districtName]));
+    }
+    
     const snap = await getDoc(doc(db, "schools", districtName));
     if (snap.exists() && snap.data().list) {
-      return snap.data().list.map(s => {
+      const list = snap.data().list.map(s => {
         if(!s.District) s.District = districtName;
         return s;
       });
+      _schoolsCache[districtName] = list;
+      return JSON.parse(JSON.stringify(list));
     }
-  } catch(e) { console.error("Error fetching schools", e); }
+  } catch (e) {
+    console.error("Error fetching schools", e);
+  }
   return [];
 }
 
 export async function saveSchools(districtName, schools) {
+  _schoolsCache[districtName] = JSON.parse(JSON.stringify(schools));
+
   markPendingWrite(); await setDoc(doc(db, "schools", districtName), {
     list: schools,
     updatedAt: new Date().toISOString()

@@ -206,7 +206,12 @@ export class AnalyticsEngine {
     // Sort top students
     results.topStudents.sort((a,b) => b.score - a.score);
     // Just keep top 50 for the table to prevent massive memory usage
-    results.topStudents = results.topStudents.slice(0, 50);
+    // Keep top 10 and bottom 10 for the UI to select from
+      if (results.topStudents.length > 20) {
+          const top = results.topStudents.slice(0, 10);
+          const bottom = results.topStudents.slice(-10);
+          results.topStudents = [...top, ...bottom];
+      }
 
     return results;
   }

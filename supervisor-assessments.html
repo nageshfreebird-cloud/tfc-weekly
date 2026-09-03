@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Assessments Received � Teach for Change</title>
+  <title>Assessments Received | Teach for Change</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -380,7 +380,7 @@
           const row = statusEl.closest(".compact-row");
           const remarks = row.querySelector(".remarks-input").value;
           
-          if (status) {
+          if (status || remarks) {
               const key = sch.District + "_" + sch.Level;
               if (!dataToSave[key]) dataToSave[key] = {};
               dataToSave[key][sch['School Name']] = { status, remarks };
@@ -394,13 +394,14 @@
           await Promise.all(promises);
           btn.textContent = "✅ Saved Successfully!";
           setTimeout(() => {
-              btn.textContent = "💾 Save All Assessments Data";
-              btn.disabled = false;
-          }, 2000);
+                btn.textContent = "💾 Save All Assessments Data";
+                btn.disabled = false;
+                loadSchools();
+            }, 1000);
       } catch (err) {
           console.error(err);
           alert("Error saving data");
-          btn.textContent = "💾 Save All Assessments Data";
+                btn.textContent = "💾 Save All Assessments Data";
           btn.disabled = false;
       }
   };
