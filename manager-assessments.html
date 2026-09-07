@@ -132,13 +132,14 @@
 </main>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession , startClock } from "./js/utils.js";
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
+  import { startClock } from "./js/utils.js";
   import { getUsers, getSchools, getAllAssessments, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  await requireManagerAuth();
   startClock("live-clock");
 
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     clearManagerSession();
     window.location.href = "index.html";
   };
@@ -151,11 +152,14 @@
   let allSchoolsByDist = {};
 
   async function init() {
-    const year = await getGlobalAcademicYear();
+    const [year, uList, cData] = await Promise.all([
+      getGlobalAcademicYear(),
+      getUsers(),
+      getAllAssessments()
+    ]);
     document.getElementById("view-year-select").value = year;
-
-    usersList = await getUsers();
-    callsData = await getAllAssessments(); 
+    usersList = uList;
+    callsData = cData; 
     
     const supervisors = usersList.filter(u => u.role === 'supervisor');
     

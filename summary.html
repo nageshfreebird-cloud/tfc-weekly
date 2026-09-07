@@ -77,14 +77,15 @@
 </main>
 
 <script type="module">
-  import { startClock, requireManagerAuth, initials,
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
+  import { startClock, initials,
            formatWeekRange, formatShortDate } from "./js/utils.js";
   import { getWeekSettings, getWeekSubmissions, getSummary,
            saveSummary, finalizeSummary, getTeamMembers, getYearPlan } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  await requireManagerAuth();
   startClock("live-clock");
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     sessionStorage.clear();
     window.location.href = "index.html";
   };

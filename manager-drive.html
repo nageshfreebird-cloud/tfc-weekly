@@ -236,9 +236,10 @@
 
 
 <script type="module">
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
   import { getUsers, getSchools, getDistricts, getAllStudentAssessments, SCHEMA_L1_L2, SCHEMA_L3_L4, getSchemaForLevel } from "./js/db.js";
 
-  import { requireManagerAuth , startClock, buildStyledWorksheet } from "./js/utils.js";
+  import { startClock, buildStyledWorksheet } from "./js/utils.js";
 
   let allUsers = [];
   let allSchools = [];
@@ -282,7 +283,7 @@
   
   let currentModalSchool = null;
 
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     sessionStorage.clear();
     window.location.href = "login.html";
   };
@@ -306,13 +307,19 @@
   };
 
   async function init() {
-    if (!requireManagerAuth()) return;
+    await requireManagerAuth();
   startClock("live-clock");
 
-    allStatesData = await getDistricts();
-    allUsers = await getUsers();
-    allSchools = await getSchools(null);
-    allAssessments = await getAllStudentAssessments();
+    const [districtsData, usersData, schoolsData, assessmentsData] = await Promise.all([
+        getDistricts(),
+        getUsers(),
+        getSchools(null),
+        getAllStudentAssessments()
+      ]);
+      allStatesData = districtsData;
+      allUsers = usersData;
+      allSchools = schoolsData;
+      allAssessments = assessmentsData;
 
     // Populate Filters
     const stateSel = document.getElementById("filt-state");

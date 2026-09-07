@@ -109,10 +109,11 @@
 </main>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession, startClock } from "./js/utils.js";
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
+  import { startClock } from "./js/utils.js";
   import { getUsers, getAllSheetLinks } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  await requireManagerAuth();
   startClock("live-clock");
 
   let allSupervisors = [];
@@ -187,7 +188,7 @@
     document.getElementById(`level-${level}`).classList.remove("hidden");
   };
 
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     clearManagerSession();
     window.location.href = "index.html";
   };

@@ -174,11 +174,12 @@
 </main>
 
 <script type="module">
-  import { startClock, requireManagerAuth, clearManagerSession,
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
+  import { startClock, 
            initials, formatFullDate, formatWeekRange, formatTime } from "./js/utils.js";
   import { listenWeekSettings, listenWeekSubmissions, setSubmissionsOpen, getTeamMembers, deleteMemberSubmission, getUsers, getYearPlan, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  await requireManagerAuth();
   startClock("live-clock");
 
   let _weekStart = null;
@@ -186,15 +187,14 @@
   let _team = [];
 
   async function init() {
-    const year = await getGlobalAcademicYear();
-    document.getElementById("view-year-select").value = year;
-
-    _team = await getTeamMembers();
-    // Render initially empty
-    renderMemberList({});
-
-    // Load Supervisors for Year Plan Dropdown
-    const users = await getUsers();
+    const [year, teamList, users] = await Promise.all([
+        getGlobalAcademicYear(),
+        getTeamMembers(),
+        getUsers()
+      ]);
+      document.getElementById("view-year-select").value = year;
+      _team = teamList;
+      renderMemberList({});
     const supeSelect = document.getElementById("year-plan-supervisor");
     users.filter(u => u.role === 'supervisor').forEach(u => {
       const opt = document.createElement("option");
@@ -374,7 +374,7 @@
     catch(e) { alert("Error: " + e.message); }
   };
 
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     clearManagerSession();
     window.location.href = "index.html";
   };

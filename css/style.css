@@ -7,13 +7,13 @@
 
 /* ---- CSS Variables ---- */
 :root {
-  --primary:        #1a3c6e;
-  --primary-light:  #2563eb;
-  --primary-dark:   #0f2447;
-  --secondary:      #059669;
-  --secondary-light:#d1fae5;
-  --accent:         #f59e0b;
-  --accent-light:   #fef3c7;
+  --primary:        #4f46e5;
+  --primary-light:  #818cf8;
+  --primary-dark:   #3730a3;
+  --secondary:      #0d9488;
+  --secondary-light:#ccfbf1;
+  --accent:         #f43f5e;
+  --accent-light:   #ffe4e6;
   --danger:         #dc2626;
   --danger-light:   #fee2e2;
   --pending:        #d97706;
@@ -198,7 +198,7 @@ a { text-decoration: none; color: inherit; }
   color: white;
   box-shadow: 0 2px 8px rgba(5,150,105,0.25);
 }
-.btn-success:hover { background: #047857; }
+.btn-success:hover { opacity: 0.9; }
 
 .btn-warning {
   background: var(--accent);
@@ -402,7 +402,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .badge-success { background: var(--secondary-light); color: var(--secondary); }
 .badge-pending { background: var(--pending-light); color: var(--pending); }
 .badge-danger  { background: var(--danger-light);  color: var(--danger);  }
-.badge-info    { background: #eff6ff; color: var(--primary-light); }
+.badge-info    { background: var(--primary-light); color: white; }
 .badge-gray    { background: #f1f5f9; color: var(--text-muted); }
 
 /* ---- Member Row (Dashboard) ---- */
@@ -558,8 +558,8 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
   gap: 0.6rem;
   margin-bottom: 1rem;
 }
-.alert-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-.alert-success { background: var(--secondary-light); border: 1px solid #6ee7b7; color: #065f46; }
+.alert-info    { background: var(--primary-light); border: 1px solid var(--primary); color: white; }
+.alert-success { background: var(--secondary-light); border: 1px solid var(--secondary); color: var(--secondary); }
 .alert-warning { background: var(--pending-light); border: 1px solid #fcd34d; color: #92400e; }
 .alert-danger  { background: var(--danger-light); border: 1px solid #fca5a5; color: #991b1b; }
 

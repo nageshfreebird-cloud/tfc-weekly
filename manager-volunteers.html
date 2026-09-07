@@ -192,9 +192,9 @@
 </div>
 
 <script type="module">
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
   import { startClock } from "./js/utils.js";
-  import { requireManagerAuth } from "./js/utils.js";
-  import { db, getVolunteers, getVolunteerAttendance, getVolunteerCalls, saveVolunteer, deleteVolunteer } from "./js/db.js";
+    import { db, getVolunteers, getVolunteerAttendance, getVolunteerCalls, saveVolunteer, deleteVolunteer } from "./js/db.js";
 
   let allVolunteers = [];
   let allAttendance = [];
@@ -202,7 +202,7 @@
   let currentEditVol = null;
 
   async function init() {
-    if (!requireManagerAuth()) return;
+    await requireManagerAuth();
 
     startClock("live-clock");
     document.getElementById("welcome-name").textContent = "Manager Dashboard";
@@ -361,7 +361,7 @@
     document.getElementById('sidebar-overlay').classList.toggle('active');
   };
 
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     sessionStorage.removeItem("tfc_user");
     window.location.href = "login.html";
   };

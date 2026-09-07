@@ -259,7 +259,13 @@
     btn.textContent = "Saving...";
     btn.disabled = true;
 
-    const success = await updateUserPassword(window._pendingUser.name, newPwd);
+    let success = false;
+    try {
+      success = await updateUserPassword(window._pendingUser.name, newPwd);
+    } catch(e) {
+      console.error(e);
+      alert("Database error: " + e.message);
+    }
     if (success) {
       doLoginRedirect(window._pendingUser);
     } else {

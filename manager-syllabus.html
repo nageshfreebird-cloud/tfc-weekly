@@ -202,13 +202,13 @@
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
   import { getSyllabus, saveSyllabus } from "./js/db.js";
-  import { requireManagerAuth , startClock } from "./js/utils.js";
-
-  requireManagerAuth();
+  import { startClock } from "./js/utils.js";
+  await requireManagerAuth();
   startClock("live-clock");
 
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     sessionStorage.clear();
     window.location.href = "index.html";
   };

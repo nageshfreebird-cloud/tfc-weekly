@@ -1,0 +1,29 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isManager() {
+      return request.auth != null && (
+        request.auth.token.email == 'nagesh@teachforchange.in' ||
+        request.auth.token.email == 'aishwariya@teachforchange.in' ||
+        request.auth.token.email == 'dileep@teachforchange.in' ||
+        request.auth.token.email == 'ayoob@teachforchange.in' ||
+        request.auth.token.email == 'nagesh@teachforchane.in' ||
+        request.auth.token.email == 'dileep@teachforchane.in' ||
+        request.auth.token.email == 'ayoob@teachforchane.in'
+      );
+    }
+
+    match /settings/{docId} {
+      // Allow Team Members (who are currently unauthenticated) to access their login data,
+      // districts, and global configs so they can log in and change their passwords.
+      // This hole should be closed once Team Members migrate to Firebase Auth.
+      allow read, write: if docId in ['users', 'team', 'districts', 'global_config'];
+    }
+
+    match /{collectionId}/{document=**} {
+      allow read, write: if collectionId != 'settings' || isManager();
+    }
+    
+  }
+}

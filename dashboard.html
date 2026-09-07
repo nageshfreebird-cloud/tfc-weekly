@@ -232,13 +232,14 @@
     <button class="btn btn-primary" onclick="saveSchoolEdit()">Save Changes</button>
   </div>
 </dialog><script type="module">
-  import { requireManagerAuth, clearManagerSession, startClock } from "./js/utils.js";
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
+  import { startClock } from "./js/utils.js";
   import { getDistricts, getUsers, getSchools, getAllStudentAssessments, db , saveSchools} from "./js/db.js";
   import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  await requireManagerAuth();
   startClock("live-clock");
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     sessionStorage.clear();
     window.location.href = "index.html";
   };
@@ -279,11 +280,17 @@
 
   async function init() {
     try {
-      districts = await getDistricts();
-      users = await getUsers();
-      allSchools = await getSchools(null);
+      const [districtsData, usersData, schoolsData, assessmentsData] = await Promise.all([
+        getDistricts(),
+        getUsers(),
+        getSchools(null),
+        getAllStudentAssessments()
+      ]);
+      districts = districtsData;
+      users = usersData;
+      allSchools = schoolsData;
       allSchools.forEach((s, idx) => { s.id = s.id || "school_" + idx; });
-      allAssessments = await getAllStudentAssessments();
+      allAssessments = assessmentsData;
       document.getElementById("filter-state").dispatchEvent(new Event("change"));
     } catch (e) {
       console.error(e);

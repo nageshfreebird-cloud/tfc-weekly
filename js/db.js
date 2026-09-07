@@ -11,7 +11,7 @@ import firebaseConfig from "./firebase-config.js";
 import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getSaturdayOf, toYMD } from "./utils.js";
 
 // Init Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app); // WebSockets are MUCH faster than forced long polling
 
 
@@ -416,7 +416,9 @@ export async function saveTeamMembers(members) {
 // ============================================
 // USERS & ROLES
 // ============================================
+let _usersCache = null;
 export async function getUsers() {
+  if (_usersCache) return JSON.parse(JSON.stringify(_usersCache));
   let dbUsers = [];
   try {
     const snap = await getDoc(doc(db, "settings", "users"));
@@ -473,6 +475,7 @@ export async function getUsers() {
     });
   } catch(e) {}
   
+  _usersCache = JSON.parse(JSON.stringify(dbUsers));
   return dbUsers;
 }
 
@@ -507,8 +510,11 @@ export async function updateUserPassword(name, newPassword) {
 // ============================================
 // DISTRICTS
 // ============================================
+let _districtsCache = null;
 export async function getDistricts() {
+  if (_districtsCache) return JSON.parse(JSON.stringify(_districtsCache));
   const defaultStates = { "Telangana": [], "Andhra Pradesh": [], "Karnataka": [] };
+  let result = defaultStates;
   try {
     const snap = await getDoc(doc(db, "settings", "districts"));
     if (snap.exists()) {
@@ -516,14 +522,15 @@ export async function getDistricts() {
       if (data && data.districts) {
         if (Array.isArray(data.districts)) {
           // Migration from old flat list
-          return { ...defaultStates, "Telangana": data.districts };
+          result = { ...defaultStates, "Telangana": data.districts };
         } else if (typeof data.districts === "object") {
-          return { ...defaultStates, ...data.districts };
+          result = { ...defaultStates, ...data.districts };
         }
       }
     }
   } catch(e) {}
-  return defaultStates;
+  _districtsCache = JSON.parse(JSON.stringify(result));
+  return result;
 }
 
 export async function saveDistricts(districts) {

@@ -225,7 +225,7 @@
           <div style="display:flex; gap:10px;">
             <button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>
               <button class="btn btn-outline btn-sm" onclick="deleteSelected()" style="color:var(--danger); border-color:var(--danger);">🗑️ Delete Selected</button>
-            <button class="btn btn-primary btn-sm" onclick="downloadAverages()" style="background:#059669; border-color:#059669;"><i class="fas fa-file-excel"></i> Download Report_Averages</button>
+            <button class="btn btn-primary btn-sm" onclick="downloadAverages()" style="background:var(--secondary); border-color:var(--secondary);"><i class="fas fa-file-excel"></i> Download Report_Averages</button>
           </div>
           <span id="save-status" style="color:var(--text-muted); font-size:0.9rem; font-weight:600;">✓ All changes saved</span>
         </div>
@@ -477,7 +477,7 @@
 
   <script type="module">
   import { startClock, buildStyledWorksheet } from "./js/utils.js";
-  import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments, saveSyncCode, getDistricts } from "./js/db.js";
+  import { getUsers, getSchools, getSchemaForLevel, saveStudentAssessments, getStudentAssessments, getAssessmentsForDistricts, saveSyncCode, getDistricts } from "./js/db.js";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -940,13 +940,20 @@
 
   init();
 
-  async function getSchoolAverages(dist, school) {
+  async function getSchoolAverages(dist, school, prefetchedData = null) {
     let schoolData = { District: dist, Mandal: dist, School_Name: school, classes: {} };
     const classList = ["3rd class", "4th class", "5th class"];
     const classNum = [3, 4, 5];
+    const cleanSchool = school.replace(/[^a-zA-Z0-9]/g, "_");
     
     for(let i=0; i<3; i++) {
-      const data = await getStudentAssessments(dist, school, classList[i]);
+      let data = [];
+      if (prefetchedData) {
+         const docId = `${dist}_${cleanSchool}_${classList[i]}`;
+         data = prefetchedData[docId] || [];
+      } else {
+         data = await getStudentAssessments(dist, school, classList[i]);
+      }
       let counts = { assessedCount: 0 };
       let phases = { baseline: { KNOW: 0, READ: 0, SPELL: 0, CWR: 0, CWS: 0, Total: 0, count: 0 },
                      midline: { KNOW: 0, READ: 0, SPELL: 0, CWR: 0, CWS: 0, Total: 0, count: 0 },
@@ -1004,9 +1011,11 @@
     
     Swal.fire({ title: 'Compiling Data...', text: 'Fetching all schools and students...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     
-    try {
+      try {
       let allSchools = await getSchools(dist);
       allSchools = allSchools.filter(s => s.Level === level && s['School Name']);
+      
+      const allAssData = await getAssessmentsForDistricts([dist]);
       
       const wb = XLSX.utils.book_new();
       const schema = getSchemaForLevel(level);
@@ -1021,7 +1030,8 @@
          
          for(let cIdx=0; cIdx<classList.length; cIdx++) {
             const cls = classList[cIdx];
-            const students = await getStudentAssessments(dist, schoolName, cls);
+            const docId = `${dist}_${cleanSchool}_${cls}`;
+            const students = allAssData[docId] || [];
             if(students && students.length > 0) {
                classDataList.push({ className: cls, students: students });
             }
@@ -1061,9 +1071,11 @@
     
     Swal.fire({ title: 'Compiling Averages...', text: 'Fetching all schools in district...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     
-    try {
+      try {
       let allSchools = await getSchools(dist);
       allSchools = allSchools.filter(s => s.Level === level && s['School Name']);
+      
+      const allAssData = await getAssessmentsForDistricts([dist]);
       
       
         const bAll = { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
@@ -1097,7 +1109,7 @@
          
          if (!schoolName) continue;
          
-         const schoolData = await getSchoolAverages(dist, schoolName);
+         const schoolData = await getSchoolAverages(dist, schoolName, allAssData);
          
          [3, 4, 5].forEach(c => {
             const d = schoolData.classes[c] || {};

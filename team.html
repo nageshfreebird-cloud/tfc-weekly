@@ -230,18 +230,17 @@
       `Plan: ${formatWeekRange(thisStart, thisEnd)}`;
 
     // Fetch the most recent submission they made before the current week
-    let lastSub = await getLatestMemberSubmissionBefore(thisStart, memberName);
-
-    if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
-      lastWeekTasks = lastSub.thisWeekTasks;
-      window.lastWeekCompletedData = lastSub.thisWeekCompleted || [];
-      renderReviewList();
-    } else {
-      document.getElementById("no-prev-tasks").classList.remove("hidden");
-    }
-
-    // Check if already submitted this week
-    const existing = await getMemberSubmission(thisStart, memberName);
+    const [lastSub, existing] = await Promise.all([
+        getLatestMemberSubmissionBefore(thisStart, memberName),
+        getMemberSubmission(thisStart, memberName)
+      ]);
+      if (lastSub && lastSub.thisWeekTasks && lastSub.thisWeekTasks.length > 0) {
+        lastWeekTasks = lastSub.thisWeekTasks;
+        window.lastWeekCompletedData = lastSub.thisWeekCompleted || [];
+        renderReviewList();
+      } else {
+        document.getElementById("no-prev-tasks").classList.remove("hidden");
+      }
     if (existing) {
       window.existingData = existing;
       showSuccess(existing);

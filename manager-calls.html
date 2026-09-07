@@ -130,13 +130,14 @@
 </main>
 
 <script type="module">
-  import { requireManagerAuth, clearManagerSession, generatePast15DayPeriods , startClock } from "./js/utils.js";
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
+  import { generatePast15DayPeriods , startClock } from "./js/utils.js";
   import { getUsers, getSchools, getAllTeacherCalls, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  await requireManagerAuth();
   startClock("live-clock");
 
-  window.doLogout = function() {
+  window.doLogout = async function() { await signOutManager();
     clearManagerSession();
     window.location.href = "index.html";
   };
@@ -148,10 +149,12 @@
   let allSchoolsByDistCache = {};
 
   async function init() {
-    const year = await getGlobalAcademicYear();
-    document.getElementById("view-year-select").value = year;
-
-    allUsers = await getUsers();
+    const [year, uList] = await Promise.all([
+        getGlobalAcademicYear(),
+        getUsers()
+      ]);
+      document.getElementById("view-year-select").value = year;
+      allUsers = uList;
     
     // Cache schools
     const supervisors = allUsers.filter(u => u.role === 'supervisor');

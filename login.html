@@ -48,33 +48,15 @@
         <span>❌</span><span id="error-text">Invalid User ID or Password.</span>
       </div>
 
-      <form id="login-form" onsubmit="doLogin(event)">
-        <div class="form-group">
-          <label class="form-label" for="user-id">User ID</label>
-          <input type="text" class="form-control" id="user-id"
-            placeholder="Enter your User ID" autocomplete="username" required />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <div style="position:relative;">
-            <input type="password" class="form-control" id="password"
-              placeholder="Enter password" autocomplete="current-password" required
-              style="padding-right:3rem;" />
-            <button type="button" onclick="togglePwd()" title="Show/Hide"
-              style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;color:var(--text-muted);cursor:pointer;">
-              👁️
-            </button>
-          </div>
-        </div>
-
-        <div class="alert alert-info" style="margin-bottom:1.5rem;text-align:left;">
-          ℹ️ Enter your manager credentials to access the dashboard.
-        </div>
-
-        <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:1rem;">
-          Login →
+      <button type="button" id="login-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;" onclick="doGoogleLogin()">
+          <svg style="width:20px;height:20px;" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1V11.1Z" />
+          </svg>
+          Sign in with Google
         </button>
-      </form>
+        <div id="error-msg" class="alert alert-danger hidden" style="margin-top:1rem;text-align:left;">
+          ⚠️ <span id="error-text">Unauthorized Email.</span>
+        </div>
 
       <div style="text-align:center;margin-top:1rem;">
         <a href="index.html" style="font-size:0.85rem;color:var(--text-muted);">← Back to Home</a>
@@ -85,46 +67,37 @@
 </main>
 
 <script type="module">
-  import { startClock, setManagerSession } from "./js/utils.js";
-  import { verifyAdminLogin } from "./js/db.js";
+  import { startClock } from "./js/utils.js";
+  import { signInManagerWithGoogle } from "./js/auth.js";
 
   startClock("live-clock");
 
-  window.togglePwd = function() {
-    const inp = document.getElementById("password");
-    inp.type = inp.type === "password" ? "text" : "password";
-  };
+  
 
-  window.doLogin = async function(e) {
-    e.preventDefault();
-    const userId   = document.getElementById("user-id").value.trim();
-    const password = document.getElementById("password").value;
+  window.doGoogleLogin = async function() {
     const btn      = document.getElementById("login-btn");
     const errEl    = document.getElementById("error-msg");
-
+    const errText  = document.getElementById("error-text");
+    
+    const origBtnText = btn.innerHTML;
     btn.textContent = "Verifying...";
     btn.disabled = true;
     errEl.classList.add("hidden");
 
     try {
-      const ok = await verifyAdminLogin(userId, password);
-      if (ok) {
-        setManagerSession();
-        window.location.href = "dashboard.html";
-      } else {
-        document.getElementById("error-text").textContent = "Invalid User ID or Password.";
-        errEl.classList.remove("hidden");
-        btn.textContent = "Login →";
-        btn.disabled = false;
-      }
+      await signInManagerWithGoogle();
+      window.location.href = "dashboard.html";
     } catch(err) {
-      document.getElementById("error-text").textContent = "Connection error. Check Firebase setup.";
+      if (err.message === "UNAUTHORIZED_EMAIL") {
+        errText.textContent = "Your email is not authorized for manager access.";
+      } else {
+        errText.textContent = "Login failed. Please try again.";
+      }
       errEl.classList.remove("hidden");
-      btn.textContent = "Login →";
+      btn.innerHTML = origBtnText;
       btn.disabled = false;
     }
   };
 </script>
 </body>
 </html>
-

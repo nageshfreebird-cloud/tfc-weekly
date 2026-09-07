@@ -119,58 +119,19 @@
     </div>
   </div>
 </div>
-    <!-- ===== CHANGE CREDENTIALS ===== -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">🔐</span>
-        <h2>Change Login Credentials</h2>
-      </div>
-
-      <div id="cred-saved-msg" class="alert alert-success hidden">✅ Credentials updated successfully!</div>
-      <div id="cred-error-msg" class="alert alert-danger hidden"></div>
-
-      <div class="alert alert-info" style="margin-bottom:1rem;">
-        ℹ️ The default fallback credentials will always work if you ever get locked out.
-      </div>
-
-      <form onsubmit="saveCredentials(event)">
-        <div class="form-group">
-          <label class="form-label" for="new-userid">New User ID</label>
-          <input type="text" class="form-control" id="new-userid"
-            placeholder="Enter new User ID" autocomplete="off" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="new-password">New Password</label>
-          <input type="password" class="form-control" id="new-password"
-            placeholder="Min 8 characters" minlength="8" autocomplete="new-password" />
-          <div class="form-hint">Minimum 8 characters. Any characters allowed.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="confirm-password">Confirm New Password</label>
-          <input type="password" class="form-control" id="confirm-password"
-            placeholder="Repeat new password" autocomplete="new-password" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="current-password">Current Password (to confirm)</label>
-          <input type="password" class="form-control" id="current-password"
-            placeholder="Enter current password to authorize" required autocomplete="current-password" />
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">
-          Update Credentials
-        </button>
-      </form>
-    </div>
+    
 
   </div>
 </main>
 
 <script type="module">
-  import { startClock, requireManagerAuth, getMondayOf, getSaturdayOf,
+  import { requireManagerAuth, signOutManager } from "./js/auth.js";
+  import { startClock, getMondayOf, getSaturdayOf,
            toYMD, formatShortDate } from "./js/utils.js";
   import { getDistricts, saveDistricts, getUsers, saveUsers, getAdminCredentials,
            updateAdminCredentials, getGlobalAcademicYear, setGlobalAcademicYear } from "./js/db.js";
 
-  if (!requireManagerAuth()) throw new Error("Not auth");
+  await requireManagerAuth();
   startClock("live-clock");
 
     let districts = [];
@@ -438,40 +399,7 @@
   };
 
 
-  // ---- Credentials ----
-  window.saveCredentials = async function(e) {
-    e.preventDefault();
-    const newId    = document.getElementById("new-userid").value.trim();
-    const newPwd   = document.getElementById("new-password").value;
-    const confPwd  = document.getElementById("confirm-password").value;
-    const curPwd   = document.getElementById("current-password").value;
-    const errEl    = document.getElementById("cred-error-msg");
-    const okEl     = document.getElementById("cred-saved-msg");
-
-    errEl.classList.add("hidden"); okEl.classList.add("hidden");
-
-    if (!newId)  { errEl.textContent="Please enter a new User ID."; errEl.classList.remove("hidden"); return; }
-    if (newPwd.length < 8) { errEl.textContent="New password must be at least 8 characters."; errEl.classList.remove("hidden"); return; }
-    if (newPwd !== confPwd) { errEl.textContent="Passwords do not match."; errEl.classList.remove("hidden"); return; }
-
-    // Verify current password
-    const creds = await getAdminCredentials();
-    if (curPwd !== creds.password && curPwd !== "tfc@2014") {
-      errEl.textContent = "Current password is incorrect.";
-      errEl.classList.remove("hidden"); return;
-    }
-
-    await updateAdminCredentials(newId, newPwd);
-    okEl.classList.remove("hidden");
-    document.getElementById("new-userid").value = "";
-    document.getElementById("new-password").value = "";
-    document.getElementById("confirm-password").value = "";
-    document.getElementById("current-password").value = "";
-    setTimeout(() => okEl.classList.add("hidden"), 4000);
-  };
-
-  
-</script>
+  </script>
   <script>
     window.toggleSidebar = function() {
       const sidebar = document.getElementById('sidebar');
@@ -479,7 +407,7 @@
       if(sidebar) sidebar.classList.toggle('active');
       if(overlay) overlay.classList.toggle('active');
     };
-    window.doLogout = function() {
+    window.doLogout = async function() { await signOutManager();
       sessionStorage.clear();
       window.location.href = "index.html";
     };
