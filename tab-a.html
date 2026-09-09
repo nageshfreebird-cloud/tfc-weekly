@@ -72,15 +72,15 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-      <a href="dashboard.html">📊 Dashboard</a>
-      <a href="tab-a.html" class="active">📝 Weekly Tasks</a>
-      <a href="manager-calls.html">📞 15-Days Teacher Calls</a>
-      <a href="manager-assessments.html">📝 Assessments Received</a>
-      <a href="manager-drive.html">📈 Assessments Analytics</a>
-      <a href="sheets.html">🔗 Google Sheet Links</a>
-      <a href="manager-syllabus.html">📚 Syllabus Registry</a>
-      <a href="manager-volunteers.html">🌍 Volunteer Oversight</a>
-      <a href="settings.html">⚙️ My Settings</a>
+      <a href="dashboard.html">&#128202; Dashboard</a>
+      <a href="tab-a.html" class="active">&#128203; Weekly Tasks</a>
+      <a href="manager-calls.html">&#128222; 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">&#128197; Assessments Received</a>
+      <a href="manager-drive.html">&#128200; Assessments Analytics</a>
+      <a href="sheets.html">&#128279; Google Sheet Links</a>
+      <a href="manager-syllabus.html">&#128214; Syllabus Registry</a>
+      <a href="manager-volunteers.html">&#128101; Volunteer Oversight</a>
+      <a href="settings.html?v=ign">&#9881;&#65039; My Settings</a>
     </div>
     </div>
 
@@ -195,6 +195,35 @@
       document.getElementById("view-year-select").value = year;
       _team = teamList;
       renderMemberList({});
+
+      const resetRequests = users.filter(u => u.resetRequested).map(u => u.name);
+      if (resetRequests.length > 0) {
+        let globalBanner = document.getElementById("global-reset-banner");
+        if (!globalBanner) {
+            globalBanner = document.createElement("div");
+            globalBanner.id = "global-reset-banner";
+            globalBanner.style.position = "fixed";
+            globalBanner.style.top = "0";
+            globalBanner.style.left = "0";
+            globalBanner.style.width = "100%";
+            globalBanner.style.background = "#ef4444";
+            globalBanner.style.color = "white";
+            globalBanner.style.textAlign = "center";
+            globalBanner.style.padding = "0.4rem 1rem";
+            globalBanner.style.zIndex = "9999";
+            globalBanner.style.fontSize = "0.85rem";
+            globalBanner.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+            document.body.appendChild(globalBanner);
+        }
+        globalBanner.innerHTML = `⚠️ <b>Password Reset Requested:</b> ${resetRequests.join(", ")} <span style="margin-left: 1rem;"><a href="settings.html?v=ign" style="color:white; text-decoration:underline;">Review in Settings →</a></span>`;
+      } else {
+        let globalBanner = document.getElementById("global-reset-banner");
+        if (globalBanner) globalBanner.remove();
+      }
+
+
+      
+
     const supeSelect = document.getElementById("year-plan-supervisor");
     users.filter(u => u.role === 'supervisor').forEach(u => {
       const opt = document.createElement("option");

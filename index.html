@@ -12,7 +12,8 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
   <script>
-    window.togglePassword = function(id) {
+    
+  window.togglePassword = function(id) {
       const input = document.getElementById(id);
       if (input.type === "password") {
         input.type = "text";
@@ -119,9 +120,22 @@
       <div id="change-pwd-overlay" class="hidden" style="position:absolute;top:0;left:0;width:100%;height:100%;background:var(--card-bg);z-index:10;border-radius:var(--radius);padding:1.5rem;display:flex;flex-direction:column;justify-content:center;">
         <h3 style="color:var(--primary);margin-bottom:0.5rem;">🔒 Secure Your Account</h3>
         <p class="text-sm text-muted" style="margin-bottom:1rem;">Please create a new personal password to continue. The default password will no longer work.</p>
-        <div class="form-group">
-          <input type="password" id="new-personal-pwd" class="form-control" placeholder="New Password" />
+        
+        <div class="form-group" style="text-align:left; margin-bottom: 1rem;">
+          <label class="form-label">New Password</label>
+          <div style="position:relative;">
+            <input type="password" id="new-personal-pwd" class="form-control" placeholder="Min 8 chars" minlength="8" />
+            <button type="button" onclick="togglePassword('new-personal-pwd')" style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;cursor:pointer;">👁️</button>
+          </div>
         </div>
+        <div class="form-group" style="text-align:left; margin-bottom: 1.5rem;">
+          <label class="form-label">Confirm New Password</label>
+          <div style="position:relative;">
+            <input type="password" id="confirm-personal-pwd" class="form-control" placeholder="Repeat new password" minlength="8" />
+            <button type="button" onclick="togglePassword('confirm-personal-pwd')" style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;cursor:pointer;">👁️</button>
+          </div>
+        </div>
+
         <button class="btn btn-primary btn-block" id="save-new-pwd-btn" onclick="savePersonalPassword()">Save Password & Login</button>
       </div>
 
@@ -141,7 +155,11 @@
           </div>
           <div id="pwd-error" class="text-sm hidden" style="color:var(--danger);margin-top:0.3rem;">Invalid password. Please ask manager if you forgot.</div>
         </div>
-        <button class="btn btn-primary btn-block btn-lg" id="team-login-btn" onclick="goTeamForm()">
+        
+          <div style="text-align:right; margin-bottom:1rem; margin-top:-0.5rem;">
+            <a href="#" onclick="doForgotPassword(event)" style="font-size:0.85rem; color:var(--primary); text-decoration:none; font-weight:600;">Forgot Password?</a>
+          </div>
+<button class="btn btn-primary btn-block btn-lg" id="team-login-btn" onclick="goTeamForm()">
           Login →
         </button>
       </div>
@@ -152,11 +170,14 @@
 
 <script type="module">
   import { startClock, formatWeekRange, formatFullDate } from "./js/utils.js";
-  import { listenWeekSettings, getTeamMembers, verifyUserLogin, updateUserPassword } from "./js/db.js";
+  import { listenWeekSettings, getTeamMembers, verifyUserLogin, updateUserPassword, requestPasswordReset, getUsers } from "./js/db.js";
 
   startClock("live-clock");
 
   async function initTeamDrop() {
+    // Fetch users in the background instantly so login verification takes 0 milliseconds later
+    getUsers(); 
+    
     const team = await getTeamMembers();
     const sel = document.getElementById("member-name");
     team.forEach(name => {
@@ -250,12 +271,25 @@
   };
 
 
+  
   window.savePersonalPassword = async function() {
-    const newPwd = document.getElementById("new-personal-pwd").value.trim();
-    if (!newPwd) { alert("Please enter a new password."); return; }
-    if (newPwd === "tfc@2014") { alert("Please choose a password different from the default."); return; }
-    
+    const newPwd = document.getElementById("new-personal-pwd").value;
+    const confirmPwd = document.getElementById("confirm-personal-pwd").value;
     const btn = document.getElementById("save-new-pwd-btn");
+
+    if (newPwd.length < 8) {
+      alert("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPwd === "tfc@2014") {
+      alert("Please choose a password different from the default.");
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      alert("Passwords do not match.");
+      return;
+    }
+
     btn.textContent = "Saving...";
     btn.disabled = true;
 
@@ -269,9 +303,25 @@
     if (success) {
       doLoginRedirect(window._pendingUser);
     } else {
-      alert("Error saving password.");
+      alert("Failed to update password. Check connection.");
       btn.textContent = "Save Password & Login";
       btn.disabled = false;
+    }
+  };
+
+
+  
+  window.doForgotPassword = async function(e) {
+    e.preventDefault();
+    const sel = document.getElementById("member-name");
+    const name = sel.value;
+    if (!name) {
+      alert("Please select your name first.");
+      return;
+    }
+    if (confirm("Send a password reset request to your manager?")) {
+      await requestPasswordReset(name);
+      alert("Request sent successfully. Please wait for your manager to reset it.");
     }
   };
 
@@ -281,7 +331,7 @@
     
     // Redirect based on role
     if (user.role === 'supervisor' || user.role === 'associate-sc') {
-      window.location.href = "supervisor.html";
+      window.location.href = "gateway.html";
     } else if (user.role === 'associate-vol') {
       window.location.href = "associate-vol.html";
     } else {

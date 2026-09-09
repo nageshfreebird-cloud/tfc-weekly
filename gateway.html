@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gateway - Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .gateway-container { max-width: 700px; margin: 3rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; }
+    .gateway-cards { display: flex; gap: 1.5rem; margin-top: 2rem; }
+    .gateway-card {
+      flex: 1; padding: 2.5rem 1.5rem; border-radius: 12px; border: 2px solid #e2e8f0; cursor: pointer; transition: all 0.2s;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+    }
+    .gateway-card:hover { border-color: #6366f1; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(99,102,241,0.1); }
+    .gateway-card h3 { margin: 0; color: #1e293b; font-size: 1.25rem; }
+    .gateway-icon { font-size: 3rem; }
+    @media (max-width: 600px) { .gateway-cards { flex-direction: column; } }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;" />
+    <span>Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span id="live-clock"></span>
+    <button class="btn btn-outline" style="color:white; border-color:white; margin-left:1rem; padding: 0.3rem 0.8rem; font-size:0.85rem;" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<main class="page">
+  <div class="gateway-container">
+    <h2 style="color: #4f46e5; margin-bottom: 0.5rem;" id="welcome-name">Welcome!</h2>
+    <p class="text-muted">Please select the programme you want to access today.</p>
+
+    <div class="gateway-cards">
+      <div class="gateway-card" onclick="window.location.href='supervisor.html'">
+        <div class="gateway-icon">💡</div>
+        <h3>Smartclassroom Initiative</h3>
+      </div>
+      
+      <div class="gateway-card" onclick="window.location.href='associate-vol.html'">
+        <div class="gateway-icon">🤝</div>
+        <h3>Volunteer Programme</h3>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  
+  const userName = sessionStorage.getItem("tfc_member_name");
+  const userRole = sessionStorage.getItem("tfc_member_role");
+
+  if (!userName || !['supervisor', 'associate-sc'].includes(userRole)) {
+    window.location.href = "index.html";
+  } else {
+    document.getElementById("welcome-name").textContent = "Welcome, " + userName + "!";
+    startClock("live-clock");
+  }
+
+  window.doLogout = function() {
+    sessionStorage.removeItem("tfc_member_name");
+    sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  }
+</script>
+</body>
+</html>

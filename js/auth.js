@@ -1,11 +1,11 @@
-﻿import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+﻿import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { app } from "./db.js";
 
 export const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // Included both spellings to prevent lockouts in case of typos in Google Workspace setup
-const ALLOWED_MANAGERS = [
+export const ALLOWED_MANAGERS = [
     "nagesh@teachforchange.in",
     "aishwariya@teachforchange.in",
     "dileep@teachforchange.in",
@@ -45,6 +45,8 @@ export function requireManagerAuth() {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             unsubscribe(); // Clean up listener once we get the initial state
             if (user && ALLOWED_MANAGERS.includes(user.email.toLowerCase())) {
+                const name = user.email.split('@')[0];
+                window.managerGreetingName = name.charAt(0).toUpperCase() + name.slice(1);
                 resolve(user); // Logged in and authorized
             } else {
                 if (user) signOut(auth); // Sign out unauthorized users

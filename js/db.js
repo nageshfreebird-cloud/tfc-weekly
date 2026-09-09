@@ -396,17 +396,22 @@ const DEFAULT_TEAM = [
 
 /** Get dynamic team members */
 export async function getTeamMembers() {
+  const cached = sessionStorage.getItem("tfc_team");
+  if (cached) return JSON.parse(cached);
+  let members = DEFAULT_TEAM;
   try {
     const snap = await getDoc(doc(db, "settings", "team"));
     if (snap.exists() && Array.isArray(snap.data().members)) {
-      return snap.data().members;
+      members = snap.data().members;
     }
   } catch(e) {}
-  return DEFAULT_TEAM;
+  sessionStorage.setItem("tfc_team", JSON.stringify(members));
+  return members;
 }
 
 /** Save team members */
 export async function saveTeamMembers(members) {
+  sessionStorage.setItem("tfc_team", JSON.stringify(members));
   markPendingWrite(); await setDoc(doc(db, "settings", "team"), {
     members,
     updatedAt: new Date().toISOString()
@@ -660,6 +665,7 @@ export async function getAllSheetLinks() {
 export async function saveTeacherCalls(supervisorName, distLevel, data) {
   const docRef = await getScopedDoc("teacher_calls", `${supervisorName}_${distLevel}`);
   markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
+  sessionStorage.removeItem('tfc_all_assessments_rec'); sessionStorage.removeItem('tfc_all_teacher_calls'); sessionStorage.removeItem('tfc_all_assessments');
 }
 
 export async function getTeacherCalls(supervisorName, distLevel) {
@@ -669,10 +675,13 @@ export async function getTeacherCalls(supervisorName, distLevel) {
 }
 
 export async function getAllTeacherCalls() {
+  const cached = sessionStorage.getItem("tfc_all_teacher_calls");
+  if (cached) return JSON.parse(cached);
   const colRef = await getScopedCollection("teacher_calls");
   const snap = await getDocs(colRef);
   let all = {};
   snap.forEach(d => all[d.id] = d.data().data);
+  sessionStorage.setItem("tfc_all_teacher_calls", JSON.stringify(all));
   return all;
 }
 
@@ -681,12 +690,15 @@ export async function getAllTeacherCalls() {
 // ============================================
 
 export async function getVolunteers() {
+  const cached = sessionStorage.getItem("tfc_volunteers");
+  if (cached) return JSON.parse(cached);
   const colRef = await getScopedCollection("volunteers");
   const snap = await getDocs(colRef);
   let vols = [];
   snap.forEach(doc => {
     vols.push({ id: doc.id, ...doc.data() });
   });
+  sessionStorage.setItem("tfc_volunteers", JSON.stringify(vols));
   return vols;
 }
 
@@ -697,6 +709,8 @@ export async function saveVolunteer(volData) {
   const finalData = { ...volData, id: docId };
   const docRef = doc(colRef, docId);
   await setDoc(docRef, finalData);
+  sessionStorage.removeItem("tfc_volunteers");
+  sessionStorage.removeItem("tfc_volunteers");
   return docId;
 }
 
@@ -707,6 +721,7 @@ export async function batchSaveVolunteers(volunteersArray) {
     const finalData = { ...vol, id: docId };
     const docRef = doc(colRef, docId);
     await setDoc(docRef, finalData);
+  sessionStorage.removeItem("tfc_volunteers");
   }
 }
 
@@ -717,10 +732,13 @@ export async function deleteVolunteer(id) {
 }
 
 export async function getVolunteerAttendance() {
+  const cached = sessionStorage.getItem("tfc_vol_attendance");
+  if (cached) return JSON.parse(cached);
   const colRef = await getScopedCollection("volunteer_attendance");
   const snap = await getDocs(colRef);
   let att = [];
   snap.forEach(doc => att.push({ id: doc.id, ...doc.data() }));
+  sessionStorage.setItem("tfc_vol_attendance", JSON.stringify(att));
   return att;
 }
 
@@ -728,13 +746,18 @@ export async function saveVolunteerAttendance(id, data) {
   const colRef = await getScopedCollection("volunteer_attendance");
   const docRef = doc(colRef, id);
   await setDoc(docRef, data);
+  sessionStorage.removeItem("tfc_vol_attendance");
+  sessionStorage.removeItem("tfc_vol_attendance");
 }
 
 export async function getVolunteerCalls() {
+  const cached = sessionStorage.getItem("tfc_vol_calls");
+  if (cached) return JSON.parse(cached);
   const colRef = await getScopedCollection("volunteer_calls");
   const snap = await getDocs(colRef);
   let calls = [];
   snap.forEach(doc => calls.push({ id: doc.id, ...doc.data() }));
+  sessionStorage.setItem("tfc_vol_calls", JSON.stringify(calls));
   return calls;
 }
 
@@ -742,10 +765,13 @@ export async function saveVolunteerCall(id, data) {
   const colRef = await getScopedCollection("volunteer_calls");
   const docRef = doc(colRef, id);
   await setDoc(docRef, data);
+  sessionStorage.removeItem("tfc_vol_calls");
+  sessionStorage.removeItem("tfc_vol_calls");
 }
 export async function saveAssessments(supervisorName, distLevel, data) {
   const docRef = await getScopedDoc("assessments_received", `${supervisorName}_${distLevel}`);
   markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
+  sessionStorage.removeItem('tfc_all_assessments_rec'); sessionStorage.removeItem('tfc_all_teacher_calls'); sessionStorage.removeItem('tfc_all_assessments');
 }
 
 export async function getAssessments(supervisorName, distLevel) {
@@ -755,16 +781,20 @@ export async function getAssessments(supervisorName, distLevel) {
 }
 
 export async function getAllAssessments() {
+  const cached = sessionStorage.getItem("tfc_all_assessments_rec");
+  if (cached) return JSON.parse(cached);
   const colRef = await getScopedCollection("assessments_received");
   const snap = await getDocs(colRef);
   let all = {};
   snap.forEach(d => all[d.id] = d.data().data);
+  sessionStorage.setItem("tfc_all_assessments_rec", JSON.stringify(all));
   return all;
 }
 
 export async function saveDriveRecords(supervisorName, distLevel, data) {
   const docRef = await getScopedDoc("assessments_drive", `${supervisorName}_${distLevel}`);
   markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
+  sessionStorage.removeItem('tfc_all_assessments_rec'); sessionStorage.removeItem('tfc_all_teacher_calls'); sessionStorage.removeItem('tfc_all_assessments');
 }
 
 export async function getDriveRecords(supervisorName, distLevel) {
@@ -774,10 +804,13 @@ export async function getDriveRecords(supervisorName, distLevel) {
 }
 
 export async function getAllDriveRecords() {
+  const cached = sessionStorage.getItem("tfc_all_drive_records");
+  if (cached) return JSON.parse(cached);
   const colRef = await getScopedCollection("assessments_drive");
   const snap = await getDocs(colRef);
   let all = {};
   snap.forEach(d => all[d.id] = d.data().data);
+  sessionStorage.setItem("tfc_all_drive_records", JSON.stringify(all));
   return all;
 }
 // ============================================
@@ -820,6 +853,7 @@ export async function saveStudentAssessments(district, school, className, data) 
   const cleanSchool = school.replace(/[^a-zA-Z0-9]/g, "_");
   const docRef = await getScopedDoc("student_assessments", `${district}_${cleanSchool}_${className}`);
   markPendingWrite(); await setDoc(docRef, { data, updatedAt: Date.now() });
+  sessionStorage.removeItem('tfc_all_assessments_rec'); sessionStorage.removeItem('tfc_all_teacher_calls'); sessionStorage.removeItem('tfc_all_assessments');
 }
 
 export async function getStudentAssessments(district, school, className) {
@@ -830,10 +864,15 @@ export async function getStudentAssessments(district, school, className) {
 }
 
 export async function getAllStudentAssessments() {
+  const cached = sessionStorage.getItem("tfc_all_assessments");
+  if (cached) return JSON.parse(cached);
+
   const colRef = await getScopedCollection("student_assessments");
   const snap = await getDocs(colRef);
   let all = {};
   snap.forEach(d => { all[d.id] = d.data().data; });
+  
+  sessionStorage.setItem("tfc_all_assessments", JSON.stringify(all));
   return all;
 }
 
@@ -857,4 +896,28 @@ export async function getAssessmentsForDistricts(districts) {
   
   await Promise.all(promises);
   return allData;
+}
+
+
+export async function requestPasswordReset(name) {
+  const users = await getUsers();
+  const idx = users.findIndex(u => u.name === name);
+  if (idx !== -1) {
+    users[idx].resetRequested = true;
+    await saveUsers(users);
+    return true;
+  }
+  return false;
+}
+
+
+export async function ignoreResetRequest(name) {
+  const users = await getUsers();
+  const idx = users.findIndex(u => u.name === name);
+  if (idx !== -1) {
+    users[idx].resetRequested = false;
+    await saveUsers(users);
+    return true;
+  }
+  return false;
 }

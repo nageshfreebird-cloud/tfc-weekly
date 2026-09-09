@@ -50,11 +50,11 @@
       <h2>Teach for Change</h2>
     </div>
     <div class="sidebar-nav">
-      <a href="associate-vol.html">📊 Dashboard</a>
-      <a href="team.html">📝 Weekly Tasks</a>
-      <a href="associate-vol-attendance.html">📍 Attendance</a>
-      <a href="associate-vol-calls.html">📞 Calls</a>
-      <a href="associate-vol-register.html" class="active">📝 Registration</a>
+      <a href="gateway.html" id="nav-gateway" style="display:none; background:#4f46e5; color:white;">&#8592; Back to Gateway</a>
+      <a href="associate-vol.html">&#128202; Dashboard</a>
+      <a href="associate-vol-attendance.html">&#128205; Attendance</a>
+      <a href="associate-vol-calls.html">&#128222; Calls</a>
+      <a href="associate-vol-register.html" class="active">&#128221; Registration</a>
     </div>
   </div>
 
@@ -77,6 +77,18 @@
           <div class="form-group">
             <label>Assigned School</label>
             <input type="text" id="reg-school" required />
+          </div>
+          <div class="form-group">
+            <label>Classes Assigned</label>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem;" id="reg-classes">
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="3rd"> 3rd</label>
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="4th"> 4th</label>
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="5th"> 5th</label>
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="6th"> 6th</label>
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="7th"> 7th</label>
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="8th"> 8th</label>
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="9th"> 9th</label>
+            </div>
           </div>
           <div class="form-group">
             <label>State / Location</label>
@@ -128,13 +140,14 @@
               <th>Phone</th>
               <th>State</th>
               <th>School Name</th>
+              <th>Classes</th>
               <th>Duration</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="7" class="text-center">Loading volunteers...</td></tr>
+            <tr><td colspan="8" class="text-center">Loading volunteers...</td></tr>
           </tbody>
         </table>
       </div>
@@ -151,10 +164,14 @@
   async function init() {
     const userName = sessionStorage.getItem("tfc_member_name");
     const userRole = sessionStorage.getItem("tfc_member_role");
-    if (!userName || userRole !== 'associate-vol') { window.location.href = "index.html"; return; }
+    if (!userName || !['associate-vol', 'supervisor', 'associate-sc'].includes(userRole)) { window.location.href = "index.html"; return; }
 
     startClock("live-clock");
     document.getElementById("welcome-name").textContent = "Welcome, " + userName;
+    if (['supervisor', 'associate-sc'].includes(userRole)) {
+        const nav = document.getElementById("nav-gateway");
+        if (nav) nav.style.display = "block";
+    }
     await loadData();
 
     document.getElementById("reg-form").addEventListener("submit", handleManualSubmit);
@@ -184,6 +201,7 @@
         <td>${v.phone || '-'}</td>
         <td>${v.location || '-'}</td>
         <td>${v.school || '-'}</td>
+        <td>${v.classes || '-'}</td>
         <td>${v.duration ? v.duration + ' Months' : '-'}</td>
         <td><button class="toggle-btn ${btnClass}" onclick="toggleStatus('${v.id}')">${statusText}</button></td>
         <td><button class="btn btn-ghost btn-sm" onclick="alert('Edit feature coming soon')">✏️ Edit</button></td>
@@ -206,10 +224,13 @@
     btn.textContent = "Saving...";
     btn.disabled = true;
 
+    const classInputs = document.querySelectorAll("#reg-classes input:checked");
+    const classesAssigned = Array.from(classInputs).map(cb => cb.value).join(", ");
     const newVol = {
       name: document.getElementById("reg-name").value,
       phone: document.getElementById("reg-phone").value,
       school: document.getElementById("reg-school").value,
+      classes: classesAssigned,
       location: document.getElementById("reg-location").value,
       duration: document.getElementById("reg-duration").value,
       status: 'Active',
@@ -226,7 +247,7 @@
 
   window.downloadTemplate = function() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)"]
+      ["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)", "Classes Assigned (e.g. 3rd, 4th)"]
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
@@ -259,6 +280,7 @@
             location: String(row[2] || "").trim(),
             school: String(row[3] || "").trim(),
             duration: String(row[4] || "3").trim(),
+            classes: String(row[5] || "").trim(),
             status: 'Active',
             registeredDate: new Date().toISOString()
           });

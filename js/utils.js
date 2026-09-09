@@ -144,21 +144,18 @@ export function generatePast15DayPeriods(count = 10, fromDate = new Date()) {
 export function startClock(elementId) {
   const el = document.getElementById(elementId);
   if (!el) return;
-  const tick = () => { el.textContent = formatDateTime(); };
+  const tick = () => { 
+      let prefix = window.managerGreetingName ? '\uD83D\uDC4B ' + window.managerGreetingName + ' | ' : "";
+      el.textContent = prefix + formatDateTime(); 
+    };
   tick();
   setInterval(tick, 1000);
 }
 
 // ---- Session Utilities ----
-export function setManagerSession() {
-  sessionStorage.setItem("tfc_manager_auth", "true");
-}
-export function clearManagerSession() {
-  sessionStorage.removeItem("tfc_manager_auth");
-}
-export function isManagerLoggedIn() {
-  return sessionStorage.getItem("tfc_manager_auth") === "true";
-}
+
+
+
 export function requireManagerAuth() {
   if (!isManagerLoggedIn()) {
     window.location.href = "index.html";
@@ -391,15 +388,4 @@ export function buildStyledWorksheet(XLSX, schema, classDataList) {
   ws['!cols'] = wscols;
 
   return ws;
-}
-
-// ---- XSS Protection ----
-export function escHtml(unsafe) {
-  if (unsafe === null || unsafe === undefined) return '';
-  return String(unsafe)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 }

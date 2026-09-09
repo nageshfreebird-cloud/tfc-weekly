@@ -48,7 +48,7 @@
         <span>❌</span><span id="error-text">Invalid User ID or Password.</span>
       </div>
 
-      <button type="button" id="login-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;" onclick="doGoogleLogin()">
+      <button type="button" id="login-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;" onclick="doGoogleLogin()" disabled>
           <svg style="width:20px;height:20px;" viewBox="0 0 24 24">
             <path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1V11.1Z" />
           </svg>
@@ -68,7 +68,32 @@
 
 <script type="module">
   import { startClock } from "./js/utils.js";
-  import { signInManagerWithGoogle } from "./js/auth.js";
+  import { signInManagerWithGoogle, ALLOWED_MANAGERS, auth } from "./js/auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        if (ALLOWED_MANAGERS.includes(user.email.toLowerCase())) {
+            const btn = document.getElementById("login-btn");
+            if(btn) btn.innerHTML = "Redirecting...";
+            window.location.href = "dashboard.html?v=clearCache2";
+        } else {
+            await signOut(auth);
+            const btn = document.getElementById("login-btn");
+            if(btn) btn.disabled = false;
+            const errEl = document.getElementById("error-msg");
+            const errText = document.getElementById("error-text");
+            if (errEl && errText) {
+                errText.textContent = "Your email is not authorized for manager access.";
+                errEl.classList.remove("hidden");
+            }
+        }
+    } else {
+        const btn = document.getElementById("login-btn");
+        if(btn) btn.disabled = false;
+    }
+});
 
   startClock("live-clock");
 
@@ -86,7 +111,7 @@
 
     try {
       await signInManagerWithGoogle();
-      window.location.href = "dashboard.html";
+      window.location.href = "dashboard.html?v=clearCache2";
     } catch(err) {
       if (err.message === "UNAUTHORIZED_EMAIL") {
         errText.textContent = "Your email is not authorized for manager access.";

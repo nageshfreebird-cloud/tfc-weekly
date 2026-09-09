@@ -55,11 +55,11 @@
       <h2>Teach for Change</h2>
     </div>
     <div class="sidebar-nav">
-      <a href="associate-vol.html" class="active">📊 Dashboard</a>
-      <a href="team.html">📝 Weekly Tasks</a>
-      <a href="associate-vol-attendance.html">📍 Attendance</a>
-      <a href="associate-vol-calls.html">📞 Calls</a>
-      <a href="associate-vol-register.html">📝 Registration</a>
+      <a href="gateway.html" id="nav-gateway" style="display:none; background:#4f46e5; color:white;">&#8592; Back to Gateway</a>
+      <a href="associate-vol.html" class="active">&#128202; Dashboard</a>
+      <a href="associate-vol-attendance.html">&#128205; Attendance</a>
+      <a href="associate-vol-calls.html">&#128222; Calls</a>
+      <a href="associate-vol-register.html">&#128221; Registration</a>
     </div>
   </div>
 
@@ -105,12 +105,13 @@
               <th>Phone Number</th>
               <th>State</th>
               <th>School Name</th>
+              <th>Classes</th>
               <th>Duration</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="6" class="text-center">Loading volunteers...</td></tr>
+            <tr><td colspan="7" class="text-center">Loading volunteers...</td></tr>
           </tbody>
         </table>
       </div>
@@ -128,10 +129,14 @@
   async function init() {
     const userName = sessionStorage.getItem("tfc_member_name");
     const userRole = sessionStorage.getItem("tfc_member_role");
-    if (!userName || userRole !== 'associate-vol') { window.location.href = "index.html"; return; }
+    if (!userName || !['associate-vol', 'supervisor', 'associate-sc'].includes(userRole)) { window.location.href = "index.html"; return; }
 
     startClock("live-clock");
     document.getElementById("welcome-name").textContent = "Welcome, " + userName;
+    if (['supervisor', 'associate-sc'].includes(userRole)) {
+        const nav = document.getElementById("nav-gateway");
+        if (nav) nav.style.display = "block";
+    }
 
     await loadData();
   }
@@ -181,6 +186,7 @@
         <td>${v.phone || '-'}</td>
         <td>${v.location || '-'}</td>
         <td>${v.school || '-'}</td>
+        <td>${v.classes || '-'}</td>
         <td>${v.duration ? v.duration + ' Months' : '-'}</td>
         <td><span class="badge ${badgeClass}">${v.status || 'Active'}</span></td>
       `;
