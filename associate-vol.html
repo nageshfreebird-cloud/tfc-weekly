@@ -60,6 +60,7 @@
       <a href="associate-vol-attendance.html">&#128205; Attendance</a>
       <a href="associate-vol-calls.html">&#128222; Calls</a>
       <a href="associate-vol-register.html">&#128221; Registration</a>
+      <a href="associate-vol-assessment.html">&#128218; Assessment Entry</a>
     </div>
   </div>
 
@@ -106,12 +107,13 @@
               <th>State</th>
               <th>School Name</th>
               <th>Classes</th>
+              <th>Manual</th>
               <th>Duration</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="7" class="text-center">Loading volunteers...</td></tr>
+            <tr><td colspan="8" class="text-center">Loading volunteers...</td></tr>
           </tbody>
         </table>
       </div>
@@ -187,6 +189,7 @@
         <td>${v.location || '-'}</td>
         <td>${v.school || '-'}</td>
         <td>${v.classes || '-'}</td>
+        <td>${v.assignedManual || '-'}</td>
         <td>${v.duration ? v.duration + ' Months' : '-'}</td>
         <td><span class="badge ${badgeClass}">${v.status || 'Active'}</span></td>
       `;

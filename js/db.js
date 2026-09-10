@@ -492,6 +492,7 @@ export async function saveUsers(users) {
   // Keep legacy team list in sync for existing code
   const memberNames = users.map(u => u.name);
   await saveTeamMembers(memberNames);
+  sessionStorage.removeItem("tfc_users");
 }
 
 export async function verifyUserLogin(name, password) {
@@ -748,6 +749,25 @@ export async function saveVolunteerAttendance(id, data) {
   await setDoc(docRef, data);
   sessionStorage.removeItem("tfc_vol_attendance");
   sessionStorage.removeItem("tfc_vol_attendance");
+}
+
+
+export async function getVolunteerAssessments() {
+  const cached = sessionStorage.getItem("tfc_vol_assessments");
+  if (cached) return JSON.parse(cached);
+  const colRef = await getScopedCollection("volunteer_assessments");
+  const snap = await getDocs(colRef);
+  let res = [];
+  snap.forEach(d => res.push({ id: d.id, ...d.data() }));
+  sessionStorage.setItem("tfc_vol_assessments", JSON.stringify(res));
+  return res;
+}
+
+export async function saveVolunteerAssessment(id, data) {
+  const colRef = await getScopedCollection("volunteer_assessments");
+  const docRef = doc(colRef, id);
+  await setDoc(docRef, data);
+  sessionStorage.removeItem("tfc_vol_assessments");
 }
 
 export async function getVolunteerCalls() {

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assessment Entry - Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .grid-table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; }
+    .grid-table th, .grid-table td { border: 1px solid var(--border); padding: 0; }
+    .grid-table th { background: var(--primary); color: white; padding: 0.5rem; font-size: 0.85rem; text-align: center; }
+    .grid-table input { width: 100%; border: none; padding: 0.5rem; text-align: center; box-sizing: border-box; }
+    .grid-table input:focus { background: #eef2ff; outline: none; }
+    .grid-table .col-name { text-align: left; }
+    .class-header { margin-top: 2rem; margin-bottom: 0.5rem; color: var(--primary); display:flex; justify-content:space-between; align-items:center; }
+    
+    .filter-panel { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .filter-panel > div { flex: 1; min-width: 200px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;" />
+    <span>Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span id="welcome-name" style="margin-right:1rem; font-weight:600; color:#475569;"></span>
+    <span id="live-clock"></span>
+    <button class="btn btn-outline" style="color:white; border-color:white; margin-left:1rem; padding: 0.3rem 0.8rem; font-size:0.85rem;" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container-fluid" style="display:flex;">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-header">
+      <h2>Teach for Change</h2>
+    </div>
+    <div class="sidebar-nav">
+      <a href="gateway.html" id="nav-gateway" style="display:none; background:#4f46e5; color:white;">&#8592; Back to Gateway</a>
+      <a href="associate-vol.html">&#128202; Dashboard</a>
+      <a href="associate-vol-attendance.html">&#128205; Attendance</a>
+      <a href="associate-vol-calls.html">&#128222; Calls</a>
+      <a href="associate-vol-register.html">&#128221; Registration</a>
+      <a href="associate-vol-assessment.html" class="active">&#128218; Assessment Entry</a>
+    </div>
+  </div>
+
+  <main class="page" style="flex:1;">
+    <div class="container" style="max-width:1200px; margin:0 auto;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h1 style="margin:0;">Volunteer Assessment Entry</h1>
+        <span id="save-status" style="color:var(--text-muted); font-size:0.9rem; font-weight:600;"></span>
+      </div>
+
+      <!-- Filters & Selection -->
+      <div class="filter-panel">
+        <div>
+          <label>Filter State</label>
+          <select id="sel-state" onchange="filterVolunteers()">
+            <option value="">All States</option>
+            <option value="Telangana">Telangana</option>
+            <option value="Andhra Pradesh">Andhra Pradesh</option>
+            <option value="Karnataka">Karnataka</option>
+          </select>
+        </div>
+        <div>
+          <label>Search Phone</label>
+          <input type="text" id="sel-phone" placeholder="e.g. 9876543210" oninput="filterVolunteers()" />
+        </div>
+        <div>
+          <label>Select Volunteer <span style="color:red;">*</span></label>
+          <select id="sel-vol" onchange="loadVolunteerData()" required>
+            <option value="">-- Choose Volunteer --</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Assessment Metadata -->
+      <div class="filter-panel" id="metadata-panel" style="display:none; background:#f8fafc; border:1px solid #e2e8f0;">
+        <div style="flex:100%; display:flex; gap:1rem; margin-bottom:1rem; align-items:center;">
+            <div style="flex:1;"><strong>School:</strong> <span id="lbl-school">-</span></div>
+            <div style="flex:1;"><strong>Classes:</strong> <span id="lbl-classes">-</span></div>
+        </div>
+        <div>
+          <label>Phase <span style="color:red;">*</span></label>
+          <select id="sel-phase" onchange="switchPhase()">
+            <option value="Baseline">Baseline</option>
+            <option value="Endline">Endline</option>
+          </select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" id="sel-date" onchange="triggerAutoSave()" />
+        </div>
+        <div>
+          <label>Expected Endline Date</label>
+          <input type="date" id="sel-endline-date" onchange="triggerAutoSave()" />
+        </div>
+        <div>
+          <label>Total Students</label>
+          <input type="number" id="sel-total-stu" onchange="triggerAutoSave()" />
+        </div>
+        <div style="flex:100%;">
+          <label>Select Classes to Enter Marks <span style="color:red;">*</span></label>
+          <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.5rem;" id="class-checkboxes">
+             <label><input type="checkbox" value="3rd" onchange="renderGrids()"> 3rd</label>
+             <label><input type="checkbox" value="4th" onchange="renderGrids()"> 4th</label>
+             <label><input type="checkbox" value="5th" onchange="renderGrids()"> 5th</label>
+             <label><input type="checkbox" value="6th" onchange="renderGrids()"> 6th</label>
+             <label><input type="checkbox" value="7th" onchange="renderGrids()"> 7th</label>
+             <label><input type="checkbox" value="8th" onchange="renderGrids()"> 8th</label>
+             <label><input type="checkbox" value="9th" onchange="renderGrids()"> 9th</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div id="action-panel" style="display:none; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <div style="display:flex; gap:0.5rem;">
+             <button class="btn btn-primary" onclick="downloadTemplate()">&#128229; Download Template</button>
+             <div style="position:relative; display:inline-block;">
+                <input type="file" id="upload-excel" accept=".xlsx, .xls" style="opacity:0; position:absolute; left:0; top:0; width:100%; height:100%; cursor:pointer;" onchange="handleBulkUpload(event)" />
+                <button class="btn btn-outline" style="pointer-events:none;">&#128228; Upload Excel</button>
+             </div>
+          </div>
+      </div>
+
+      <!-- Grids Container -->
+      <div id="grids-container"></div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  import { getVolunteers, getVolunteerAssessments, saveVolunteerAssessment } from "./js/db.js";
+
+  const userName = sessionStorage.getItem("tfc_member_name");
+  const userRole = sessionStorage.getItem("tfc_member_role");
+
+  if (!userName || !['associate-vol', 'supervisor', 'associate-sc'].includes(userRole)) { 
+      window.location.href = "index.html"; 
+  }
+
+  document.getElementById("welcome-name").textContent = "Welcome, " + userName;
+  if (['supervisor', 'associate-sc'].includes(userRole)) {
+      const nav = document.getElementById("nav-gateway");
+      if (nav) nav.style.display = "block";
+  }
+  startClock("live-clock");
+  document.getElementById("sel-date").valueAsDate = new Date();
+
+  let allVolunteers = [];
+  let currentVol = null;
+  let allAssessments = [];
+  
+  // Data structure: gridData[className] = [ { sno: 1, name: "", words: "", sentences: "", story: "" }, ... ]
+  window.gridData = {}; 
+
+  async function init() {
+    allVolunteers = await getVolunteers();
+    allAssessments = await getVolunteerAssessments();
+    filterVolunteers();
+  }
+
+  window.filterVolunteers = function() {
+    const state = document.getElementById("sel-state").value;
+    const phone = document.getElementById("sel-phone").value.toLowerCase();
+    const sel = document.getElementById("sel-vol");
+    
+    // Clear
+    sel.innerHTML = '<option value="">-- Choose Volunteer --</option>';
+    
+    allVolunteers.forEach(v => {
+      if (state && v.location !== state) return;
+      if (phone && !(v.phone || "").includes(phone)) return;
+      
+      const opt = document.createElement("option");
+      opt.value = v.id;
+      opt.textContent = v.name + (v.school ? ` (${v.school})` : "");
+      sel.appendChild(opt);
+    });
+  }
+
+  window.loadVolunteerData = function() {
+    const volId = document.getElementById("sel-vol").value;
+    if (!volId) {
+        document.getElementById("metadata-panel").style.display = "none";
+        document.getElementById("action-panel").style.display = "none";
+        document.getElementById("grids-container").innerHTML = "";
+        return;
+    }
+    
+    currentVol = allVolunteers.find(v => v.id === volId);
+    document.getElementById("lbl-school").textContent = currentVol.school || "-";
+    document.getElementById("lbl-classes").textContent = currentVol.classes || "-";
+    document.getElementById("metadata-panel").style.display = "flex";
+    document.getElementById("action-panel").style.display = "flex";
+    
+    // Check boxes based on their classes if possible, else leave empty for manual
+    const cbs = document.querySelectorAll("#class-checkboxes input");
+    cbs.forEach(cb => cb.checked = false);
+    if(currentVol.classes) {
+        const theirClasses = currentVol.classes.split(",").map(s => s.trim());
+        cbs.forEach(cb => {
+            if(theirClasses.includes(cb.value) || theirClasses.includes(cb.value + " class")) {
+                cb.checked = true;
+            }
+        });
+    }
+
+    switchPhase();
+  }
+
+  window.switchPhase = function() {
+    if (!currentVol) return;
+    const phase = document.getElementById("sel-phase").value;
+    const docId = `vol_assess_${currentVol.id}_${phase}`;
+    const existing = allAssessments.find(a => a.id === docId);
+    
+    if (existing) {
+        document.getElementById("sel-date").value = existing.date || "";
+        document.getElementById("sel-endline-date").value = existing.expectedEndlineDate || "";
+        document.getElementById("sel-total-stu").value = existing.totalStudents || "";
+        window.gridData = existing.gridData || {};
+    } else {
+        document.getElementById("sel-date").valueAsDate = new Date();
+        document.getElementById("sel-endline-date").value = "";
+        document.getElementById("sel-total-stu").value = "";
+        window.gridData = {};
+    }
+    
+    renderGrids();
+  }
+
+  window.renderGrids = function() {
+    const cbs = document.querySelectorAll("#class-checkboxes input:checked");
+    const container = document.getElementById("grids-container");
+    container.innerHTML = "";
+    
+    cbs.forEach(cb => {
+        const cls = cb.value;
+        if (!window.gridData[cls]) {
+            // Default 10 rows
+            window.gridData[cls] = Array.from({length: 10}, (_, i) => ({ sno: i+1, name: "", words: "", sentences: "", story: "" }));
+        }
+        
+        const wrap = document.createElement("div");
+        wrap.innerHTML = `
+            <div class="class-header">
+                <h3 style="margin:0;">Class ${cls}</h3>
+                <button class="btn btn-sm btn-outline" onclick="addRow('${cls}')">+ Add Row</button>
+            </div>
+            <table class="grid-table" id="table-${cls}">
+                <thead>
+                    <tr>
+                        <th style="width:5%; min-width:60px;">Sl.No</th>
+                        <th style="width:30%; min-width:200px;">Student Name</th>
+                        <th style="width:20%; min-width:120px;">Words Read (1 min)</th>
+                        <th style="width:20%; min-width:120px;">Sentences (1 min)</th>
+                        <th style="width:20%; min-width:120px;">Story Read (1 min)</th>
+                        <th style="width:5%; min-width:50px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-${cls}"></tbody>
+            </table>
+        `;
+        container.appendChild(wrap);
+        drawGridRows(cls);
+    });
+    
+    if (cbs.length > 0) {
+       document.getElementById("action-panel").style.display = "flex";
+    } else {
+       document.getElementById("action-panel").style.display = "none";
+    }
+  }
+
+  window.drawGridRows = function(cls) {
+    const tbody = document.getElementById(`tbody-${cls}`);
+    if(!tbody) return;
+    tbody.innerHTML = "";
+    
+    window.gridData[cls].forEach((row, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td style="text-align:center;">${row.sno}</td>
+            <td><input type="text" class="col-name" value="${row.name || ''}" oninput="updateData('${cls}', ${idx}, 'name', this.value)" onpaste="handlePaste(event, '${cls}', ${idx}, 'name')" /></td>
+            <td><input type="text" value="${row.words || ''}" oninput="updateData('${cls}', ${idx}, 'words', this.value)" onpaste="handlePaste(event, '${cls}', ${idx}, 'words')" /></td>
+            <td><input type="text" value="${row.sentences || ''}" oninput="updateData('${cls}', ${idx}, 'sentences', this.value)" onpaste="handlePaste(event, '${cls}', ${idx}, 'sentences')" /></td>
+            <td><input type="text" value="${row.story || ''}" oninput="updateData('${cls}', ${idx}, 'story', this.value)" onpaste="handlePaste(event, '${cls}', ${idx}, 'story')" /></td>
+            <td style="text-align:center;"><button class="btn btn-sm btn-ghost" style="color:var(--danger); padding:0.2rem;" onclick="removeRow('${cls}', ${idx})" tabindex="-1">&#10006;</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+  }
+
+  window.updateData = function(cls, idx, field, value) {
+      window.gridData[cls][idx][field] = value;
+      triggerAutoSave();
+  }
+  
+  window.addRow = function(cls) {
+      window.gridData[cls].push({ sno: window.gridData[cls].length + 1, name: "", words: "", sentences: "", story: "" });
+      drawGridRows(cls);
+  }
+  window.removeRow = function(cls, idx) {
+      window.gridData[cls].splice(idx, 1);
+      // Re-number
+      window.gridData[cls].forEach((r, i) => r.sno = i+1);
+      drawGridRows(cls);
+      triggerAutoSave();
+  }
+
+  window.handlePaste = function(e, cls, startRow, startCol) {
+    e.preventDefault();
+    const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+    const rows = pasteData.split(/\r?\n/).filter(r => r.trim() !== "");
+    const fields = ['name', 'words', 'sentences', 'story'];
+    const startColIdx = fields.indexOf(startCol);
+    
+    rows.forEach((rowText, i) => {
+        const rIdx = startRow + i;
+        if (!window.gridData[cls][rIdx]) {
+            window.gridData[cls].push({ sno: rIdx + 1, name: "", words: "", sentences: "", story: "" });
+        }
+        const cols = rowText.split('\t');
+        cols.forEach((colText, j) => {
+            const fIdx = startColIdx + j;
+            if (fIdx < fields.length) {
+                window.gridData[cls][rIdx][fields[fIdx]] = colText.trim();
+            }
+        });
+    });
+    drawGridRows(cls);
+    triggerAutoSave();
+  }
+
+  let autoSaveTimer = null;
+  window.triggerAutoSave = function() {
+       const status = document.getElementById("save-status");
+       if(status) {
+         status.style.color = "var(--text-muted)";
+         status.innerHTML = "&#8983; Saving changes...";
+       }
+       if (autoSaveTimer) clearTimeout(autoSaveTimer);
+       autoSaveTimer = setTimeout(async () => {
+          await executeSave();
+       }, 1500);
+  }
+
+  window.executeSave = async function() {
+      if (!currentVol) return;
+      const phase = document.getElementById("sel-phase").value;
+      const date = document.getElementById("sel-date").value;
+      const expectedEndlineDate = document.getElementById("sel-endline-date").value;
+      const totalStudents = document.getElementById("sel-total-stu").value;
+      
+      const docId = `vol_assess_${currentVol.id}_${phase}`;
+      const dataToSave = {
+          volunteerId: currentVol.id,
+          volunteerName: currentVol.name,
+          school: currentVol.school || "",
+          phase, date, expectedEndlineDate, totalStudents,
+          gridData: window.gridData
+      };
+      
+      const status = document.getElementById("save-status");
+      try {
+          await saveVolunteerAssessment(docId, dataToSave);
+          // Update local cache
+          const idx = allAssessments.findIndex(a => a.id === docId);
+          if (idx !== -1) allAssessments[idx] = {id: docId, ...dataToSave};
+          else allAssessments.push({id: docId, ...dataToSave});
+          
+          if(status) {
+             status.style.color = "#10b981";
+             status.innerHTML = "&#10004; All changes saved";
+          }
+      } catch(err) {
+          console.error(err);
+          if(status) {
+             status.style.color = "var(--danger)";
+             status.innerHTML = "&#10006; Error saving data";
+          }
+      }
+  }
+
+  window.downloadTemplate = function() {
+      if (!currentVol) return;
+      const cbs = document.querySelectorAll("#class-checkboxes input:checked");
+      if (cbs.length === 0) { alert("Please select at least one class."); return; }
+      
+      const wb = XLSX.utils.book_new();
+      cbs.forEach(cb => {
+          const cls = cb.value;
+          const data = [ ["Sl.No", "Student Name", "Words Read (1 min)", "Sentences Made (1 min)", "Story Read (1 min)"] ];
+          for(let i=1; i<=20; i++) data.push([i, "", "", "", ""]);
+          const ws = XLSX.utils.aoa_to_sheet(data);
+          XLSX.utils.book_append_sheet(wb, ws, `Class ${cls}`);
+      });
+      XLSX.writeFile(wb, `${currentVol.name.replace(/\\s+/g, '_')}_Template.xlsx`);
+  }
+
+  window.handleBulkUpload = function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+          try {
+              const data = new Uint8Array(evt.target.result);
+              const workbook = XLSX.read(data, {type: 'array'});
+              
+              workbook.SheetNames.forEach(sheetName => {
+                  const clsMatch = sheetName.match(/Class (\\w+)/);
+                  if (clsMatch) {
+                      const cls = clsMatch[1];
+                      // ensure it's checked
+                      const cb = document.querySelector(`#class-checkboxes input[value="${cls}"]`);
+                      if (cb && !cb.checked) {
+                          cb.checked = true;
+                      }
+                      
+                      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1});
+                      const newGrid = [];
+                      let rCount = 1;
+                      for(let i=1; i<rows.length; i++) { // skip header
+                          const r = rows[i];
+                          if (r && r.length > 0 && r[1]) { // requires at least a name
+                              newGrid.push({
+                                  sno: rCount++,
+                                  name: String(r[1] || ""),
+                                  words: String(r[2] || ""),
+                                  sentences: String(r[3] || ""),
+                                  story: String(r[4] || "")
+                              });
+                          }
+                      }
+                      if (newGrid.length > 0) {
+                          window.gridData[cls] = newGrid;
+                      }
+                  }
+              });
+              renderGrids();
+              triggerAutoSave();
+              alert("Excel uploaded successfully!");
+          } catch(err) {
+              console.error(err);
+              alert("Error parsing Excel file.");
+          }
+      };
+      reader.readAsArrayBuffer(file);
+      e.target.value = ""; // clear
+  }
+
+  window.doLogout = function() {
+    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  }
+
+  
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+  };
+
+  init();
+</script>
+</body>
+</html>

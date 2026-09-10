@@ -105,6 +105,49 @@
       </div>
     </div>
 
+    <!-- Assessments Analytics Panel -->
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+        <h2 style="margin:0;">&#128202; Volunteer Assessments Analytics</h2>
+        <button class="btn btn-primary" onclick="downloadMasterExport()">&#128229; Download Master Export</button>
+      </div>
+      
+      <div class="stat-cards">
+        <div class="stat-card">
+          <h3 id="stat-baseline">0</h3>
+          <p>Baseline Students Assessed</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-endline">0</h3>
+          <p>Endline Students Assessed</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-vol-participation">0%</h3>
+          <p>Volunteer Participation</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-avg-words">-</h3>
+          <p>Avg Words Read (Baseline)</p>
+        </div>
+      </div>
+      
+      <!-- Topic-Wise Performance -->
+      <div class="stat-cards" style="grid-template-columns: repeat(3, 1fr); margin-bottom:0;">
+        <div class="stat-card" style="background:#f0fdf4; border-color:#bbf7d0;">
+          <h3 id="topic-words" style="color:#166534;">-</h3>
+          <p style="color:#166534;">Avg Words Read Growth</p>
+        </div>
+        <div class="stat-card" style="background:#eff6ff; border-color:#bfdbfe;">
+          <h3 id="topic-sentences" style="color:#1e3a8a;">-</h3>
+          <p style="color:#1e3a8a;">Avg Sentences Made Growth</p>
+        </div>
+        <div class="stat-card" style="background:#fefce8; border-color:#fef08a;">
+          <h3 id="topic-story" style="color:#854d0e;">-</h3>
+          <p style="color:#854d0e;">Avg Story Read Growth</p>
+        </div>
+      </div>
+    </div>
+
     <div class="panel">
       <div class="filter-bar">
         <h2>Volunteer Master Directory</h2>
@@ -137,6 +180,7 @@
               <th>State</th>
               <th>School Name</th>
               <th>Classes</th>
+              <th>Manual</th>
               <th>Status</th>
               <th>Total Hrs</th>
               <th>Latest Call</th>
@@ -144,7 +188,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="9" class="text-center">Loading volunteers...</td></tr>
+            <tr><td colspan="10" class="text-center">Loading volunteers...</td></tr>
           </tbody>
         </table>
       </div>
@@ -195,11 +239,12 @@
 <script type="module">
   import { requireManagerAuth, signOutManager } from "./js/auth.js";
   import { startClock } from "./js/utils.js";
-    import { db, getVolunteers, getVolunteerAttendance, getVolunteerCalls, saveVolunteer, deleteVolunteer } from "./js/db.js";
+    import { db, getVolunteers, getVolunteerAttendance, getVolunteerCalls, getVolunteerAssessments, saveVolunteer, deleteVolunteer } from "./js/db.js";
 
   let allVolunteers = [];
   let allAttendance = [];
   let allCalls = [];
+  let allAssessments = [];
   let currentEditVol = null;
 
   async function init() {
@@ -216,6 +261,7 @@
     allVolunteers = await getVolunteers();
     allAttendance = await getVolunteerAttendance();
     allCalls = await getVolunteerCalls();
+    allAssessments = await getVolunteerAssessments();
     
     // Calculate stats
     const active = allVolunteers.filter(v => v.status === 'Active' || !v.status);
@@ -227,6 +273,72 @@
     document.getElementById("stat-inactive").textContent = inactive.length;
     document.getElementById("stat-hours").textContent = totalHours;
     document.getElementById("stat-schools").textContent = schools.size;
+
+    let baseStus = 0, endStus = 0;
+    let baseWords = 0, baseSentences = 0, baseStories = 0;
+    let endWords = 0, endSentences = 0, endStories = 0;
+    
+    let baseWordCount = 0, baseSentCount = 0, baseStoryCount = 0;
+    let endWordCount = 0, endSentCount = 0, endStoryCount = 0;
+    
+    let volsSubmitted = new Set();
+    
+    allAssessments.forEach(a => {
+        volsSubmitted.add(a.volunteerId);
+        
+        let stuCount = 0;
+        let tWords = 0, tSents = 0, tStories = 0;
+        let cWords = 0, cSents = 0, cStories = 0;
+        
+        if (a.gridData) {
+            Object.values(a.gridData).forEach(grid => {
+                grid.forEach(row => {
+                    if (row.name && row.name.trim() !== "") {
+                        stuCount++;
+                        if (row.words) { tWords += parseInt(row.words)||0; cWords++; }
+                        if (row.sentences) { tSents += parseInt(row.sentences)||0; cSents++; }
+                        if (row.story) { tStories += parseInt(row.story)||0; cStories++; }
+                    }
+                });
+            });
+        }
+        
+        if (a.phase === "Baseline") {
+            baseStus += stuCount;
+            baseWords += tWords; baseWordCount += cWords;
+            baseSentences += tSents; baseSentCount += cSents;
+            baseStories += tStories; baseStoryCount += cStories;
+        } else {
+            endStus += stuCount;
+            endWords += tWords; endWordCount += cWords;
+            endSentences += tSents; endSentCount += cSents;
+            endStories += tStories; endStoryCount += cStories;
+        }
+    });
+    
+    const activeVols = active.length;
+    const partRate = activeVols > 0 ? Math.round((volsSubmitted.size / activeVols) * 100) : 0;
+    
+    const avgBaseWords = baseWordCount > 0 ? (baseWords/baseWordCount).toFixed(1) : 0;
+    const avgBaseSents = baseSentCount > 0 ? (baseSentences/baseSentCount).toFixed(1) : 0;
+    const avgBaseStories = baseStoryCount > 0 ? (baseStories/baseStoryCount).toFixed(1) : 0;
+    
+    const avgEndWords = endWordCount > 0 ? (endWords/endWordCount).toFixed(1) : 0;
+    const avgEndSents = endSentCount > 0 ? (endSentences/endSentCount).toFixed(1) : 0;
+    const avgEndStories = endStoryCount > 0 ? (endStories/endStoryCount).toFixed(1) : 0;
+    
+    document.getElementById("stat-baseline").textContent = baseStus;
+    document.getElementById("stat-endline").textContent = endStus;
+    document.getElementById("stat-vol-participation").textContent = partRate + "%";
+    document.getElementById("stat-avg-words").textContent = avgBaseWords;
+    
+    const wGrowth = endWordCount > 0 ? "+" + (avgEndWords - avgBaseWords).toFixed(1) : "Need Endline";
+    const sGrowth = endSentCount > 0 ? "+" + (avgEndSents - avgBaseSents).toFixed(1) : "Need Endline";
+    const stGrowth = endStoryCount > 0 ? "+" + (avgEndStories - avgBaseStories).toFixed(1) : "Need Endline";
+    
+    document.getElementById("topic-words").textContent = wGrowth;
+    document.getElementById("topic-sentences").textContent = sGrowth;
+    document.getElementById("topic-story").textContent = stGrowth;
 
     renderTable();
   }
@@ -276,6 +388,7 @@
         <td>${v.location || '-'}</td>
         <td>${v.school || '-'}</td>
         <td>${v.classes || '-'}</td>
+        <td>${v.assignedManual || '-'}</td>
         <td><span class="badge ${badgeClass}">${isAct ? 'Active' : 'Inactive'}</span></td>
         <td><strong>${myHours}</strong></td>
         <td>${callDisplay}</td>
@@ -369,6 +482,54 @@
   };
 
   init();
+  window.downloadMasterExport = function() {
+    if (allAssessments.length === 0) {
+      alert("No assessment data available to export.");
+      return;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    
+    // Group assessments by volunteer ID
+    const volsMap = {};
+    allAssessments.forEach(a => {
+        if (!volsMap[a.volunteerId]) volsMap[a.volunteerId] = [];
+        volsMap[a.volunteerId].push(a);
+    });
+    
+    // For each volunteer, create a worksheet
+    Object.keys(volsMap).forEach(vId => {
+        const vAs = volsMap[vId];
+        let volName = vAs[0].volunteerName || "Unknown_Volunteer";
+        // sanitize sheet name
+        volName = volName.substring(0, 31).replace(/[\*?\[\]\/\\]/g, "");
+        
+        const data = [];
+        
+        vAs.forEach(a => {
+            data.push([`Phase: ${a.phase}`, `Date: ${a.date}`, `School: ${a.school}`]);
+            if (a.gridData) {
+                Object.keys(a.gridData).forEach(cls => {
+                    data.push([`--- Class ${cls} ---`]);
+                    data.push(["Sl.No", "Student Name", "Words Read (1 min)", "Sentences Made (1 min)", "Story Read (1 min)"]);
+                    a.gridData[cls].forEach(row => {
+                        if (row.name && row.name.trim() !== "") {
+                            data.push([row.sno, row.name, row.words, row.sentences, row.story]);
+                        }
+                    });
+                    data.push([]); // blank row
+                });
+            }
+            data.push([]); // blank row between phases
+        });
+        
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, volName);
+    });
+    
+    XLSX.writeFile(wb, "TFC_Volunteer_Assessments_Master.xlsx");
+  };
+
 </script>
 </body>
 </html>

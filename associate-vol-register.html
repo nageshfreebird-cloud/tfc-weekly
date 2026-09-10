@@ -55,6 +55,7 @@
       <a href="associate-vol-attendance.html">&#128205; Attendance</a>
       <a href="associate-vol-calls.html">&#128222; Calls</a>
       <a href="associate-vol-register.html" class="active">&#128221; Registration</a>
+      <a href="associate-vol-assessment.html">&#128218; Assessment Entry</a>
     </div>
   </div>
 
@@ -88,6 +89,13 @@
               <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="7th"> 7th</label>
               <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="8th"> 8th</label>
               <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" value="9th"> 9th</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Assigned Manual <span style="color:red;">*</span></label>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="radio" name="reg-manual" value="Student Teacher Manual" required> Student Teacher Manual</label>
+              <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="radio" name="reg-manual" value="Workshop Manual"> Workshop Manual</label>
             </div>
           </div>
           <div class="form-group">
@@ -141,13 +149,14 @@
               <th>State</th>
               <th>School Name</th>
               <th>Classes</th>
+              <th>Manual</th>
               <th>Duration</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="8" class="text-center">Loading volunteers...</td></tr>
+            <tr><td colspan="9" class="text-center">Loading volunteers...</td></tr>
           </tbody>
         </table>
       </div>
@@ -160,6 +169,7 @@
   import { db, getVolunteers, saveVolunteer } from "./js/db.js";
 
   let allVolunteers = [];
+  let editingVolId = null;
 
   async function init() {
     const userName = sessionStorage.getItem("tfc_member_name");
@@ -202,9 +212,10 @@
         <td>${v.location || '-'}</td>
         <td>${v.school || '-'}</td>
         <td>${v.classes || '-'}</td>
+        <td>${v.assignedManual || '-'}</td>
         <td>${v.duration ? v.duration + ' Months' : '-'}</td>
         <td><button class="toggle-btn ${btnClass}" onclick="toggleStatus('${v.id}')">${statusText}</button></td>
-        <td><button class="btn btn-ghost btn-sm" onclick="alert('Edit feature coming soon')">✏️ Edit</button></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="editVolunteer('${v.id}')">✏️ Edit</button></td>
       `;
       tbody.appendChild(tr);
     });
@@ -231,23 +242,79 @@
       phone: document.getElementById("reg-phone").value,
       school: document.getElementById("reg-school").value,
       classes: classesAssigned,
+      assignedManual: document.querySelector('input[name="reg-manual"]:checked') ? document.querySelector('input[name="reg-manual"]:checked').value : "",
       location: document.getElementById("reg-location").value,
-      duration: document.getElementById("reg-duration").value,
-      status: 'Active',
-      registeredDate: new Date().toISOString()
+      duration: document.getElementById("reg-duration").value
     };
+
+    if (editingVolId) {
+      newVol.id = editingVolId;
+      const oldVol = allVolunteers.find(v => v.id === editingVolId);
+      if (oldVol) {
+        newVol.registeredDate = oldVol.registeredDate;
+        newVol.status = oldVol.status;
+      }
+    } else {
+      newVol.status = 'Active';
+      newVol.registeredDate = new Date().toISOString();
+    }
 
     await saveVolunteer(newVol);
     e.target.reset();
     btn.textContent = "Save Volunteer";
     btn.disabled = false;
+    
+    if (editingVolId) {
+       alert("Volunteer updated successfully!");
+       editingVolId = null;
+    } else {
+       alert("Volunteer saved successfully!");
+    }
+    
     await loadData();
-    alert("Volunteer saved successfully!");
   }
+
+  
+  window.editVolunteer = function(id) {
+    const vol = allVolunteers.find(v => v.id === id);
+    if (!vol) return;
+    
+    editingVolId = id;
+    document.getElementById("reg-name").value = vol.name || "";
+    document.getElementById("reg-phone").value = vol.phone || "";
+    document.getElementById("reg-school").value = vol.school || "";
+    document.getElementById("reg-location").value = vol.location || "";
+    document.getElementById("reg-duration").value = vol.duration || "3";
+    
+    // Manual Radio Buttons
+    const radios = document.querySelectorAll('input[name="reg-manual"]');
+    radios.forEach(r => r.checked = false);
+    if (vol.assignedManual) {
+       const match = Array.from(radios).find(r => r.value === vol.assignedManual);
+       if (match) match.checked = true;
+    }
+    
+    // Classes Checkboxes
+    const cbs = document.querySelectorAll("#reg-classes input");
+    cbs.forEach(cb => cb.checked = false);
+    if (vol.classes) {
+       const theirClasses = vol.classes.split(",").map(s => s.trim());
+       cbs.forEach(cb => {
+           if (theirClasses.includes(cb.value) || theirClasses.includes(cb.value + " class")) {
+               cb.checked = true;
+           }
+       });
+    }
+    
+    const btn = document.querySelector("#reg-form button[type='submit']");
+    btn.textContent = "Update Volunteer";
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   window.downloadTemplate = function() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)", "Classes Assigned (e.g. 3rd, 4th)"]
+      ["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)", "Classes Assigned (e.g. 3rd, 4th)", "Assigned Manual (Student Teacher Manual/Workshop Manual)"]
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
@@ -281,6 +348,7 @@
             school: String(row[3] || "").trim(),
             duration: String(row[4] || "3").trim(),
             classes: String(row[5] || "").trim(),
+            assignedManual: String(row[6] || "").trim(),
             status: 'Active',
             registeredDate: new Date().toISOString()
           });
