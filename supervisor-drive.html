@@ -967,7 +967,14 @@
   init();
 
   async function getSchoolAverages(dist, school, prefetchedData = null) {
-    let schoolData = { District: dist, Mandal: dist, School_Name: school, classes: {} };
+    let mandalName = dist;
+    try {
+        let allSchools = await getSchools(dist);
+        let schObj = allSchools.find(s => s['School Name'] === school);
+        if (schObj) { mandalName = schObj['Mandal Name'] || schObj.Mandal || dist; }
+    } catch(e) {}
+    
+    let schoolData = { District: dist, Mandal: mandalName, School_Name: school, classes: {} };
     const classList = ["3rd class", "4th class", "5th class"];
     const classNum = [3, 4, 5];
     const cleanSchool = school.replace(/[^a-zA-Z0-9]/g, "_");

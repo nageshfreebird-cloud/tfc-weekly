@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
 <script>
 window.onerror = function(msg, url, line, col, error) {
     document.body.innerHTML = "<h1 style='color:red;padding:2rem;'>CRASH: " + msg + "<br>Line: " + line + "</h1><pre>" + (error && error.stack ? error.stack : "") + "</pre>";

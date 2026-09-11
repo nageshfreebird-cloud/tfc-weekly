@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Attendance - Teach for Change</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { background: #f8fafc; font-family: 'Inter', sans-serif; }
+    .att-container { max-width: 600px; margin: 0 auto; padding: 1rem; }
+    .header { background: var(--primary); color: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; }
+    .search-box { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem; font-size: 1rem; }
+    .user-card { background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .user-info { flex: 1; }
+    .user-name { font-weight: 600; color: #1e293b; font-size: 1.1rem; }
+    .user-role { font-size: 0.85rem; color: #64748b; }
+    .btn-group { display: flex; gap: 0.5rem; }
+    .btn-in { background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; }
+    .btn-out { background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; }
+    
+    .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="mobile-error" style="display:none; text-align:center; padding:3rem 1rem;">
+  <div style="font-size:4rem; margin-bottom:1rem;">&#128241;</div>
+  <h2 style="color:var(--danger);">Mobile Only Feature</h2>
+  <p style="color:var(--text-muted); font-size:1.1rem;">Attendance can only be logged from a Mobile Phone.</p>
+</div>
+
+<div id="app-content" class="att-container" style="display:none;">
+  <div class="header">
+    <h2 style="margin:0; font-size:1.5rem;">&#128205; Live Attendance</h2>
+    <p style="margin:0.5rem 0 0 0; opacity:0.9;">Select your name and punch your location.</p>
+  </div>
+  
+  <input type="text" id="search-input" class="search-box" placeholder="Search your name..." oninput="filterUsers()" />
+  
+  <div id="users-list"></div>
+</div>
+
+<div id="loading" class="loading-overlay">
+  <div class="spinner"></div>
+  <h3 style="color:var(--primary); margin:0;" id="loading-msg">Fetching GPS Location...</h3>
+  <p style="color:#64748b; font-size:0.9rem;">Please allow location access if prompted.</p>
+</div>
+
+<script type="module">
+  import { getUsers, logTeamAttendance } from "./js/db.js";
+
+  let allUsers = [];
+
+  function checkMobile() {
+    const isMobileStr = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isSmallScreen = window.innerWidth <= 800;
+    
+    if (!isMobileStr && !isSmallScreen) {
+      document.getElementById("mobile-error").style.display = "block";
+      return false;
+    }
+    document.getElementById("app-content").style.display = "block";
+    return true;
+  }
+
+  async function init() {
+    if (!checkMobile()) return;
+    
+    try {
+      const users = await getUsers();
+      // Filter out managers
+      allUsers = users.filter(u => u.role !== 'manager').sort((a,b) => a.name.localeCompare(b.name));
+      renderUsers(allUsers);
+    } catch(err) {
+      alert("Error loading users: " + err.message);
+    }
+  }
+
+  function renderUsers(list) {
+    const container = document.getElementById("users-list");
+    container.innerHTML = "";
+    
+    list.forEach(u => {
+      const card = document.createElement("div");
+      card.className = "user-card";
+      
+      let roleDisplay = "Team Member";
+      if (u.role === 'supervisor') roleDisplay = "Supervisor";
+      else if (u.role === 'associate-sc') roleDisplay = "SC Associate";
+      else if (u.role === 'associate-vol') roleDisplay = "Vol Associate";
+      
+      card.innerHTML = `
+        <div class="user-info">
+          <div class="user-name">${u.name}</div>
+          <div class="user-role">${roleDisplay}</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn-in" onclick="punchAttendance('${u.name}', 'IN')">IN</button>
+          <button class="btn-out" onclick="punchAttendance('${u.name}', 'OUT')">OUT</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  window.filterUsers = function() {
+    const q = document.getElementById("search-input").value.toLowerCase();
+    const filtered = allUsers.filter(u => u.name.toLowerCase().includes(q));
+    renderUsers(filtered);
+  }
+
+  window.punchAttendance = function(name, type) {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    if (!confirm(`Punch ${type} for ${name}?`)) return;
+
+    const loader = document.getElementById("loading");
+    loader.style.display = "flex";
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        await logTeamAttendance(name, type, lat, lng);
+        
+        loader.style.display = "none";
+        alert(`Successfully punched ${type}!\nTime and Location logged.`);
+      } catch (err) {
+        loader.style.display = "none";
+        alert("Database error: " + err.message);
+      }
+    }, (error) => {
+      loader.style.display = "none";
+      alert("Location Error: Please ensure GPS is ON and you have granted location permissions to this site.");
+    }, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    });
+  }
+
+  init();
+</script>
+</body>
+</html>

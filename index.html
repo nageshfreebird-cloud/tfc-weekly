@@ -89,18 +89,28 @@
     </div>
 
     <!-- Role Selection -->
-    <div class="choice-grid">
-      <div class="choice-card" role="button" tabindex="0" id="manager-card" onclick="goManager()">
-        <div class="choice-icon">👤</div>
-        <div class="choice-title">Manager</div>
-        <div class="choice-sub">Login to dashboard</div>
+          <div class="choice-grid">
+        <div class="choice-card" role="button" tabindex="0" onclick="alert('This feature will come soon')">
+          <div class="choice-icon">&#128188;</div>
+          <div class="choice-title">Founder Dashboard</div>
+          <div class="choice-sub">Login to dashboard</div>
+        </div>
+        <div class="choice-card" role="button" tabindex="0" onclick="window.location.href='attendance.html'">
+          <div class="choice-icon">&#128205;</div>
+          <div class="choice-title">Attendance</div>
+          <div class="choice-sub">Mobile check-in</div>
+        </div>
+        <div class="choice-card" role="button" tabindex="0" id="manager-card" onclick="goManager()">
+          <div class="choice-icon">&#128100;</div>
+          <div class="choice-title">Manager</div>
+          <div class="choice-sub">Login to dashboard</div>
+        </div>
+        <div class="choice-card" role="button" tabindex="0" id="team-card" onclick="showTeamDrop()">
+          <div class="choice-icon">&#128101;</div>
+          <div class="choice-title">Team Member</div>
+          <div class="choice-sub">Login to dashboard</div>
+        </div>
       </div>
-      <div class="choice-card" role="button" tabindex="0" id="team-card" onclick="showTeamDrop()">
-        <div class="choice-icon">👥</div>
-        <div class="choice-title">Team Member</div>
-        <div class="choice-sub">Login to dashboard</div>
-      </div>
-    </div>
 
     <!-- Team Member Name Drop (hidden until clicked) -->
     <div id="team-section" class="card hidden animate-in" style="position: relative;">

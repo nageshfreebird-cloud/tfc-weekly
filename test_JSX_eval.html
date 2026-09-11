@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script type="text/template" id="lazy-react-code">
+  const expandSchoolName = (rawName) => { return rawName; };
+
+  window.SchoolReportPDF = function({ school, phase, config }) {
+    return React.createElement("div", null, "Hello World!");
+  };
+</script>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script>
+setTimeout(() => {
+    try {
+        const jsxSource = document.getElementById("lazy-react-code").innerHTML;
+        const transpiled = window.Babel.transform(jsxSource, { presets: ["react"] }).code;
+        window.eval(transpiled);
+        console.log("Is SchoolReportPDF defined?", typeof window.SchoolReportPDF);
+    } catch (e) {
+        console.error(e);
+    }
+}, 2000);
+</script>
+</body>
+</html>

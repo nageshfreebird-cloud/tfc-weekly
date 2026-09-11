@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volunteer Oversight - Teach for Change</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script>
+    window.togglePassword = function(id) {
+      const input = document.getElementById(id);
+      if (input.type === "password") { input.type = "text"; } 
+      else { input.type = "password"; }
+    };
+  </script>
+  <style>
+    .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; }
+    .stat-card h3 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
+    .stat-card p { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+    @media (max-width: 900px) { .stat-cards { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .stat-cards { grid-template-columns: 1fr; } }
+    
+    .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; }
+    .filter-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+    .filter-group { display: flex; gap: 0.5rem; flex: 1; min-width: 300px; }
+    .filter-group select, .filter-group input { padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; flex: 1; }
+    
+    .vol-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .vol-table th, .vol-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .vol-table th { background: var(--bg-alt); font-weight: 600; color: var(--text-muted); }
+    
+    .badge { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg); padding: 2rem; border-radius: var(--radius-md); width: 100%; max-width: 500px; }
+    .modal h2 { margin-top: 0; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
+    <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+  </div>
+</nav>
+
+<main class="page">
+  <!-- Sidebar Navigation -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Logo" />
+      <h2>Teach for Change</h2>
+    </div>
+    <div class="sidebar-nav">
+      <a href="dashboard.html">&#128202; Dashboard</a>
+      <a href="tab-a.html">&#128203; Weekly Tasks</a>
+      <a href="manager-calls.html">&#128222; 15-Days Teacher Calls</a>
+      <a href="manager-assessments.html">&#128197; Assessments Received</a>
+      <a href="manager-drive.html">&#128200; Assessments Analytics</a>
+      <a href="sheets.html">&#128279; Google Sheet Links</a>
+      <a href="manager-syllabus.html">&#128214; Syllabus Registry</a>
+      <a href="manager-volunteers.html" >&#128101; Volunteer Oversight</a>
+      <a href="settings.html?v=ign">&#9881;&#65039; My Settings</a>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:1200px; margin:0 auto;">
+    <h1 style="margin-bottom:1.5rem; color:var(--primary);">Volunteer Oversight</h1>
+    
+    
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+        <h2 style="margin:0;">&#128205; Daily Check-Ins</h2>
+        <button class="btn btn-primary" onclick="downloadAttendanceExport()">&#128229; Export to Excel</button>
+      </div>
+      
+      <div style="margin-bottom:1rem;">
+        <input type="date" id="filter-date" class="form-control" style="max-width:200px;" onchange="renderTable()" />
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="vol-table" id="att-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>In Time</th>
+              <th>In Location</th>
+              <th>Out Time</th>
+              <th>Out Location</th>
+            </tr>
+          </thead>
+          <tbody id="att-tbody">
+            <!-- Dynamic -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+      </main>
+<script type="module">
+import { requireManagerAuth } from "./js/auth.js";
+import { startClock } from "./js/utils.js";
+import { getTeamAttendance } from "./js/db.js";
+
+let allAttendance = [];
+
+async function init() {
+  await requireManagerAuth();
+  startClock("live-clock");
+  
+  // Default to today
+  document.getElementById("filter-date").valueAsDate = new Date();
+  
+  try {
+    allAttendance = await getTeamAttendance();
+    renderTable();
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+window.renderTable = function() {
+  const fDate = document.getElementById("filter-date").value;
+  const tbody = document.getElementById("att-tbody");
+  tbody.innerHTML = "";
+  
+  const filtered = allAttendance.filter(a => a.date === fDate).sort((a,b) => a.name.localeCompare(b.name));
+  
+  if (filtered.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:2rem;'>No attendance records found for this date.</td></tr>";
+    return;
+  }
+  
+  filtered.forEach(a => {
+    const tr = document.createElement("tr");
+    
+    const inTimeStr = a.inTime ? new Date(a.inTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
+    const outTimeStr = a.outTime ? new Date(a.outTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
+    
+    const inLoc = a.inLat ? `<a href="https://maps.google.com/?q=${a.inLat},${a.inLng}" target="_blank" style="color:var(--primary);">&#128205; View Map</a>` : "-";
+    const outLoc = a.outLat ? `<a href="https://maps.google.com/?q=${a.outLat},${a.outLng}" target="_blank" style="color:var(--primary);">&#128205; View Map</a>` : "-";
+    
+    tr.innerHTML = `
+      <td>${a.date}</td>
+      <td style="font-weight:600;">${a.name}</td>
+      <td>${inTimeStr}</td>
+      <td>${inLoc}</td>
+      <td>${outTimeStr}</td>
+      <td>${outLoc}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.downloadAttendanceExport = function() {
+  if (allAttendance.length === 0) {
+    alert("No attendance data available to export.");
+    return;
+  }
+  
+  const data = [["Date", "Team Member Name", "In Time", "In Location (Maps Link)", "Out Time", "Out Location (Maps Link)"]];
+  
+  // Sort by date desc, then name
+  const sorted = [...allAttendance].sort((a,b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      return a.name.localeCompare(b.name);
+  });
+  
+  sorted.forEach(a => {
+      const inTimeStr = a.inTime ? new Date(a.inTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
+      const outTimeStr = a.outTime ? new Date(a.outTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
+      const inLoc = a.inLat ? `https://maps.google.com/?q=${a.inLat},${a.inLng}` : "";
+      const outLoc = a.outLat ? `https://maps.google.com/?q=${a.outLat},${a.outLng}` : "";
+      
+      data.push([a.date, a.name, inTimeStr, inLoc, outTimeStr, outLoc]);
+  });
+  
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Team Attendance");
+  XLSX.writeFile(wb, "TFC_Team_Attendance.xlsx");
+}
+
+window.toggleSidebar = function() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if(sidebar) sidebar.classList.toggle('active');
+  if(overlay) overlay.classList.toggle('active');
+};
+
+window.doLogout = function() {
+  sessionStorage.clear();
+  window.location.href = "index.html";
+}
+
+init();
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</body>
+</html>

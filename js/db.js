@@ -770,6 +770,44 @@ export async function saveVolunteerAssessment(id, data) {
   sessionStorage.removeItem("tfc_vol_assessments");
 }
 
+
+export async function getTeamAttendance() {
+  const colRef = await getScopedCollection("team_attendance");
+  const snap = await getDocs(colRef);
+  let res = [];
+  snap.forEach(d => res.push({ id: d.id, ...d.data() }));
+  return res;
+}
+
+export async function logTeamAttendance(name, type, lat, lng) {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const dateStr = `${yyyy}-${mm}-${dd}`;
+  
+  const cleanName = name.replace(/[^a-zA-Z0-9]/g, "_");
+  const docId = `attend_${cleanName}_${dateStr}`;
+  
+  const colRef = await getScopedCollection("team_attendance");
+  const docRef = doc(colRef, docId);
+  
+  const timeStr = today.toISOString();
+  
+  const updateData = { name, date: dateStr };
+  if (type === 'IN') {
+      updateData.inTime = timeStr;
+      updateData.inLat = lat;
+      updateData.inLng = lng;
+  } else {
+      updateData.outTime = timeStr;
+      updateData.outLat = lat;
+      updateData.outLng = lng;
+  }
+  
+  await setDoc(docRef, updateData, { merge: true });
+}
+
 export async function getVolunteerCalls() {
   const cached = sessionStorage.getItem("tfc_vol_calls");
   if (cached) return JSON.parse(cached);
