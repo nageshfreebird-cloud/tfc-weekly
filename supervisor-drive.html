@@ -754,8 +754,35 @@
 
   window.handlePaste = function(e, inputEl) {
     e.preventDefault();
-    const pasteData = (e.clipboardData || window.clipboardData).getData('text');
-    const rows = pasteData.split(/\r?\n/).filter(r => r.trim() !== "");
+    
+    const cb = e.clipboardData || window.clipboardData;
+    const htmlData = cb.getData('text/html');
+    let rowsData = [];
+    
+    if (htmlData && htmlData.includes('<table')) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlData, 'text/html');
+        const table = doc.querySelector('table');
+        if (table) {
+            table.querySelectorAll('tr').forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td, th').forEach(td => row.push(td.innerText.trim()));
+                if (row.length > 0) rowsData.push(row);
+            });
+        }
+    }
+    
+    if (rowsData.length === 0) {
+        const textData = cb.getData('text') || "";
+        const lines = textData.split(/\r?\n/).filter(r => r.trim() !== "");
+        rowsData = lines.map(line => {
+            if (line.includes('\t')) return line.split('\t');
+            // Mobile fallback if tabs are missing
+            return line.split(/\s{2,}/);
+        });
+    }
+
+    const rows = rowsData;
     const startRow = parseInt(inputEl.getAttribute("data-row"));
     const colName = inputEl.getAttribute("data-col");
     let startColIdx = 0;
@@ -767,8 +794,7 @@
     }
     const term = document.getElementById("sel-term").value;
 
-    rows.forEach((rowStr, i) => {
-      const cells = rowStr.split('\t');
+    rows.forEach((cells, i) => {
       const rIdx = startRow + i;
       while(rIdx >= currentGridData.length) currentGridData.push({ sno: currentGridData.length + 1, name: "", scores: {} });
       
@@ -791,8 +817,7 @@
     // Proper paste logic for Remarks considering Total column offset:
     // If they copy from Excel, Excel has TOTAL at index `2 + schema.length`.
     // Remarks is at `2 + schema.length + 1`.
-    rows.forEach((rowStr, i) => {
-      const cells = rowStr.split('\t');
+    rows.forEach((cells, i) => {
       const rIdx = startRow + i;
       cells.forEach((cellVal, j) => {
         const cIdx = startColIdx + j;

@@ -322,17 +322,42 @@
 
   window.handlePaste = function(e, cls, startRow, startCol) {
     e.preventDefault();
-    const pasteData = (e.clipboardData || window.clipboardData).getData('text');
-    const rows = pasteData.split(/\r?\n/).filter(r => r.trim() !== "");
+    const cb = e.clipboardData || window.clipboardData;
+    const htmlData = cb.getData('text/html');
+    let rowsData = [];
+    
+    if (htmlData && htmlData.includes('<table')) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlData, 'text/html');
+        const table = doc.querySelector('table');
+        if (table) {
+            table.querySelectorAll('tr').forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td, th').forEach(td => row.push(td.innerText.trim()));
+                if (row.length > 0) rowsData.push(row);
+            });
+        }
+    }
+    
+    if (rowsData.length === 0) {
+        const textData = cb.getData('text') || "";
+        const lines = textData.split(/\r?\n/).filter(r => r.trim() !== "");
+        rowsData = lines.map(line => {
+            if (line.includes('\t')) return line.split('\t');
+            // Mobile fallback if tabs are missing
+            return line.split(/\s{2,}/);
+        });
+    }
+
+    const rows = rowsData;
     const fields = ['name', 'words', 'sentences', 'story'];
     const startColIdx = fields.indexOf(startCol);
     
-    rows.forEach((rowText, i) => {
+    rows.forEach((cols, i) => {
         const rIdx = startRow + i;
         if (!window.gridData[cls][rIdx]) {
             window.gridData[cls].push({ sno: rIdx + 1, name: "", words: "", sentences: "", story: "" });
         }
-        const cols = rowText.split('\t');
         cols.forEach((colText, j) => {
             const fIdx = startColIdx + j;
             if (fIdx < fields.length) {

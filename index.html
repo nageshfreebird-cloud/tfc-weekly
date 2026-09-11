@@ -330,10 +330,8 @@
     sessionStorage.setItem("tfc_member_role", user.role);
     
     // Redirect based on role
-    if (user.role === 'supervisor' || user.role === 'associate-sc') {
+    if (user.role === 'supervisor' || user.role === 'associate-sc' || user.role === 'associate-vol') {
       window.location.href = "gateway.html";
-    } else if (user.role === 'associate-vol') {
-      window.location.href = "associate-vol.html";
     } else {
       window.location.href = "team.html";
     }

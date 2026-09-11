@@ -35,17 +35,7 @@
     <h2 style="color: #4f46e5; margin-bottom: 0.5rem;" id="welcome-name">Welcome!</h2>
     <p class="text-muted">Please select the programme you want to access today.</p>
 
-    <div class="gateway-cards">
-      <div class="gateway-card" onclick="window.location.href='supervisor.html'">
-        <div class="gateway-icon">💡</div>
-        <h3>Smartclassroom Initiative</h3>
-      </div>
-      
-      <div class="gateway-card" onclick="window.location.href='associate-vol.html'">
-        <div class="gateway-icon">🤝</div>
-        <h3>Volunteer Programme</h3>
-      </div>
-    </div>
+    <div class="gateway-cards" id="gateway-cards"></div>
   </div>
 </main>
 
@@ -55,11 +45,43 @@
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
 
-  if (!userName || !['supervisor', 'associate-sc'].includes(userRole)) {
+  if (!userName || !['supervisor', 'associate-sc', 'associate-vol'].includes(userRole)) {
     window.location.href = "index.html";
   } else {
     document.getElementById("welcome-name").textContent = "Welcome, " + userName + "!";
     startClock("live-clock");
+    
+    const container = document.getElementById("gateway-cards");
+    let html = "";
+    
+    // Smartclassroom for supervisors/sc-associates
+    if (userRole === 'supervisor' || userRole === 'associate-sc') {
+       html += `
+         <div class="gateway-card" onclick="window.location.href='supervisor.html'">
+           <div class="gateway-icon">&#128161;</div>
+           <h3>Smartclassroom Initiative</h3>
+         </div>
+       `;
+    }
+    
+    // Volunteer Programme for everyone (or specifically requested)
+    html += `
+      <div class="gateway-card" onclick="window.location.href='associate-vol.html'">
+        <div class="gateway-icon">&#129309;</div>
+        <h3>Volunteer Programme</h3>
+      </div>
+    `;
+    
+    // LLF & PTM for everyone
+    html += `
+      <div class="gateway-card" onclick="alert('This feature will soon')">
+        <div class="gateway-icon">&#127979;</div>
+        <h3>LLF & PTM</h3>
+      </div>
+    `;
+    
+    container.innerHTML = html;
+
   }
 
   window.doLogout = function() {
