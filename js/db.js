@@ -1049,12 +1049,13 @@ export async function checkMissingOutPunch(name) {
   const dateStr = `${yyyy}-${mm}-${dd}`;
   
   const colRef = await getScopedCollection("team_attendance");
-  const q = query(colRef, where("name", "==", name), where("date", "<", dateStr));
+  // Query only by name to avoid needing a composite index for date < dateStr
+  const q = query(colRef, where("name", "==", name));
   const snap = await getDocs(q);
   let missing = null;
   snap.forEach(d => {
     const data = d.data();
-    if (data.inTime && !data.outTime) {
+    if (data.date < dateStr && data.inTime && !data.outTime) {
       if (!missing || data.date > missing.date) missing = data;
     }
   });

@@ -124,8 +124,8 @@
           <div class="user-role">${roleDisplay}</div>
         </div>
         <div class="btn-group">
-          <button id="btn-in-${cleanName}" class="btn-in ${inActive}" onclick="punchAttendance('${u.name}', 'IN')">IN</button>
-          <button id="btn-out-${cleanName}" class="btn-out ${outActive}" onclick="punchAttendance('${u.name}', 'OUT')">OUT</button>
+          <button id="btn-in-${cleanName}" class="btn-in ${inActive}" onclick="window.punchAttendance('${u.name}', 'IN')">IN</button>
+          <button id="btn-out-${cleanName}" class="btn-out ${outActive}" onclick="window.punchAttendance('${u.name}', 'OUT')">OUT</button>
         </div>
       `;
       container.appendChild(card);
@@ -150,19 +150,19 @@
   }
 
   window.punchAttendance = async function(name, type) {
-    if (!navigator.geolocation) {
-      Swal.fire("Error", "Geolocation is not supported by your browser.", "error");
-      return;
-    }
-    
-    // Find user's base location
-    const user = allUsers.find(u => u.name === name);
-    if(!user) return;
-    
-    
-    // Missing punch check for IN
-    if (type === 'IN') {
-        const missing = await checkMissingOutPunch(name);
+    try {
+      if (!navigator.geolocation) {
+        Swal.fire("Error", "Geolocation is not supported by your browser.", "error");
+        return;
+      }
+      
+      // Find user's base location
+      const user = allUsers.find(u => u.name === name);
+      if(!user) return;
+      
+      // Missing punch check for IN
+      if (type === 'IN') {
+          const missing = await checkMissingOutPunch(name);
         if (missing) {
             await Swal.fire("Missing Punch!", `?? You forgot to punch OUT on ${missing.date}. Please inform your manager to correct your timesheet.`, "warning");
         }
