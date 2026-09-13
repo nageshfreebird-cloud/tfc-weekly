@@ -183,6 +183,16 @@
       
     </div>
   </div>
+
+  <!-- Leave Management Modal -->
+  <dialog id="leave-modal" style="border:none; border-radius:8px; padding:2rem; max-width:600px; width:100%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+      <h3 style="margin:0; color:var(--primary); font-size:1.5rem;">Pending Leaves</h3>
+      <button onclick="document.getElementById('leave-modal').close()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+    </div>
+    <div id="leave-list" style="display:flex; flex-direction:column; gap:1rem;"></div>
+  </dialog>
+
 </main>
 
 <!-- Edit Timesheet Modal -->
@@ -431,57 +441,62 @@ window.generateMonthlyReport = async function() {
         headHtml += `<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center; padding:0.2rem; min-width:30px;'>${d}</th>`;
     }
     headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>P</th>";
-    headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>L</th>";
-    headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>E</th>";
+      headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>LT</th>";
+      headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>E</th>";
+      headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>L</th>";
     headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>A</th>";
     headHtml += "</tr>";
     thead.innerHTML = headHtml;
     
     let bodyHtml = "";
     
-    names.forEach(name => {
-        let pCount = 0, lCount = 0, eCount = 0, aCount = 0;
-        let rowHtml = `<tr><td style='background:white; border:1px solid #e2e8f0; position:sticky; left:0; font-weight:600;'>${name}</td>`;
-        
-        for(let d=1; d<=daysInMonth; d++) {
-            const dateStr = `${y}-${m}-${String(d).padStart(2, '0')}`;
-            const isHol = holidays.includes(dateStr);
-            const rec = attData.find(a => a.name === name && a.date === dateStr);
-            
-            let val = "", bg = "transparent", col = "inherit";
-            
-            if (isHol) { val = "H"; bg = "#f1f5f9"; col = "#64748b"; }
-            
-            if (rec) {
-                if (rec.inTime && !rec.outTime) {
-                    val = "M"; bg = "#fee2e2"; col = "#ef4444";
-                } else if (rec.inTime && rec.outTime) {
-                    const inHr = new Date(rec.inTime).getHours();
-                    const inMin = new Date(rec.inTime).getMinutes();
-                    const outHr = new Date(rec.outTime).getHours();
-                    
-                    const isLate = (inHr > 11) || (inHr === 11 && inMin > 0);
-                    const isEarly = (outHr < 17);
-                    
-                    if (isLate && isEarly) { val = "L/E"; bg = "#fef3c7"; col = "#d97706"; lCount++; eCount++; pCount++; }
-                    else if (isLate) { val = "L"; bg = "#fef3c7"; col = "#d97706"; lCount++; pCount++; }
-                    else if (isEarly) { val = "E"; bg = "#fef3c7"; col = "#d97706"; eCount++; pCount++; }
-                    else { val = "P"; bg = "#dcfce7"; col = "#16a34a"; pCount++; }
-                }
-            } else if (!isHol) {
-                if (new Date(dateStr) < new Date()) { val = "A"; bg = "#fee2e2"; col = "#dc2626"; aCount++; }
-            }
-            
-            rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; background:${bg}; color:${col}; font-weight:600;'>${val}</td>`;
-        }
-        
-        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700;'>${pCount}</td>`;
-        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#d97706;'>${lCount}</td>`;
-        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#d97706;'>${eCount}</td>`;
-        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#dc2626;'>${aCount}</td>`;
-        rowHtml += "</tr>";
-        bodyHtml += rowHtml;
-    });
+          names.forEach(name => {
+          let pCount = 0, ltCount = 0, eCount = 0, leaveCount = 0, aCount = 0;
+          let rowHtml = `<tr><td style='background:white; border:1px solid #e2e8f0; position:sticky; left:0; font-weight:600;'>${name}</td>`;
+          
+          for(let d=1; d<=daysInMonth; d++) {
+              const dateStr = `${y}-${m}-${String(d).padStart(2, '0')}`;
+              const isHol = holidays.includes(dateStr);
+              const rec = attData.find(a => a.name === name && a.date === dateStr);
+              const leaveReq = (window.approvedLeavesCache || []).find(l => l.name === name && l.date === dateStr);
+              
+              let val = "", bg = "transparent", col = "inherit";
+              
+              if (isHol) { val = "H"; bg = "#f1f5f9"; col = "#64748b"; }
+              
+              if (rec) {
+                  if (rec.inTime && !rec.outTime) {
+                      val = "M"; bg = "#fee2e2"; col = "#ef4444";
+                  } else if (rec.inTime && rec.outTime) {
+                      const inHr = new Date(rec.inTime).getHours();
+                      const inMin = new Date(rec.inTime).getMinutes();
+                      const outHr = new Date(rec.outTime).getHours();
+                      
+                      const isLate = (inHr > 11) || (inHr === 11 && inMin > 0);
+                      const isEarly = (outHr < 17);
+                      
+                      if (isLate && isEarly) { val = "LT/E"; bg = "#fef3c7"; col = "#d97706"; ltCount++; eCount++; pCount++; }
+                      else if (isLate) { val = "LT"; bg = "#fef3c7"; col = "#d97706"; ltCount++; pCount++; }
+                      else if (isEarly) { val = "E"; bg = "#fef3c7"; col = "#d97706"; eCount++; pCount++; }
+                      else { val = "P"; bg = "#dcfce7"; col = "#16a34a"; pCount++; }
+                  }
+              } else if (leaveReq) {
+                  val = "L"; bg = "#dbeafe"; col = "#2563eb"; leaveCount++;
+              } else if (!isHol) {
+                  if (new Date(dateStr) < new Date()) { val = "A"; bg = "#fee2e2"; col = "#dc2626"; aCount++; }
+              }
+              
+              rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; background:${bg}; color:${col}; font-weight:600;'>${val}</td>`;
+          }
+          
+          rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700;'>${pCount}</td>`;
+          rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#d97706;'>${ltCount}</td>`;
+          rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#d97706;'>${eCount}</td>`;
+          rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#2563eb;'>${leaveCount}</td>`;
+          rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#dc2626;'>${aCount}</td>`;
+          rowHtml += "</tr>";
+          bodyHtml += rowHtml;
+      });
     
     tbody.innerHTML = bodyHtml;
     document.getElementById("grid-subtitle").innerText = `${mName} ${y}`;

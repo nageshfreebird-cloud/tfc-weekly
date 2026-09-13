@@ -1072,3 +1072,53 @@ export async function getAttendanceForMonth(yyyy, mm) {
   snap.forEach(d => res.push({ id: d.id, ...d.data() }));
   return res;
 }
+
+// LEAVE MANAGEMENT
+// ============================================
+
+export async function requestLeave(name, dateStr, reason) {
+  const colRef = await getScopedCollection("leave_requests");
+  // ensure no duplicate pending request for same date
+  const q = query(colRef, where("name", "==", name), where("date", "==", dateStr));
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+      throw new Error("Leave already requested for this date.");
+  }
+  await addDoc(colRef, {
+    name,
+    date: dateStr,
+    reason,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  });
+}
+
+export async function getPendingLeaves() {
+  const colRef = await getScopedCollection("leave_requests");
+  const q = query(colRef, where("status", "==", "pending"));
+  const snap = await getDocs(q);
+  let reqs = [];
+  snap.forEach(d => reqs.push({ id: d.id, ...d.data() }));
+  return reqs;
+}
+
+export async function updateLeaveStatus(id, newStatus) {
+  const colRef = await getScopedCollection("leave_requests");
+  const docRef = doc(colRef, id);
+  await setDoc(docRef, { status: newStatus, updatedAt: new Date().toISOString() }, { merge: true });
+}
+
+export async function getApprovedLeavesForMonth(yyyy, mm) {
+  const colRef = await getScopedCollection("leave_requests");
+  const q = query(colRef, where("status", "==", "approved"));
+  const snap = await getDocs(q);
+  let leaves = [];
+  const prefix = `${yyyy}-${mm}`;
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.date && data.date.startsWith(prefix)) {
+      leaves.push(data);
+    }
+  });
+  return leaves;
+}

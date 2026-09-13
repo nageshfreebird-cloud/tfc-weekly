@@ -54,7 +54,7 @@
 </div>
 
 <script type="module">
-  import { getUsers, logTeamAttendance, checkMissingOutPunch, updateUserBaseLocation, getTodayTeamAttendance, getHolidays } from "./js/db.js";
+  import { getUsers, logTeamAttendance, checkMissingOutPunch, updateUserBaseLocation, getTodayTeamAttendance, getHolidays, requestLeave } from "./js/db.js";
 
   let allUsers = [];
   let attMap = {};
@@ -149,6 +149,48 @@
     return R * c; // Distance in m
   }
 
+  
+  window.requestLeaveFlow = async function() {
+      const { value: formValues } = await Swal.fire({
+          title: 'Request Leave',
+          html:
+            '<label style="display:block;text-align:left;margin-bottom:0.25rem;">Select Your Name:</label>' +
+            `<select id="swal-leave-name" class="swal2-input" style="width:100%; max-width:100%; margin: 0 0 1rem 0;">
+                <option value="">-- Choose Name --</option>
+                ${allUsers.map(u => `<option value="${u.name}">${u.name}</option>`).join('')}
+             </select>` +
+            '<label style="display:block;text-align:left;margin-bottom:0.25rem;">Leave Date:</label>' +
+            '<input id="swal-leave-date" type="date" class="swal2-input" style="width:100%; max-width:100%; margin: 0 0 1rem 0;">' +
+            '<label style="display:block;text-align:left;margin-bottom:0.25rem;">Reason:</label>' +
+            '<input id="swal-leave-reason" class="swal2-input" placeholder="e.g., Sick, Personal" style="width:100%; max-width:100%; margin: 0 0 1rem 0;">',
+          focusConfirm: false,
+          showCancelButton: true,
+          confirmButtonText: 'Submit Request',
+          preConfirm: () => {
+            const name = document.getElementById('swal-leave-name').value;
+            const date = document.getElementById('swal-leave-date').value;
+            const reason = document.getElementById('swal-leave-reason').value;
+            if (!name || !date || !reason) {
+                Swal.showValidationMessage('Please fill all fields');
+                return false;
+            }
+            return { name, date, reason };
+          }
+      });
+
+      if (formValues) {
+          try {
+              document.getElementById("loading").style.display = "flex";
+              await requestLeave(formValues.name, formValues.date, formValues.reason);
+              document.getElementById("loading").style.display = "none";
+              Swal.fire('Success', 'Leave request sent to Manager for approval!', 'success');
+          } catch(e) {
+              document.getElementById("loading").style.display = "none";
+              Swal.fire('Error', e.message, 'error');
+          }
+      }
+  };
+
   window.punchAttendance = async function(name, type) {
     try {
       if (!navigator.geolocation) {
@@ -160,6 +202,16 @@
       const user = allUsers.find(u => u.name === name);
       if(!user) return;
       
+      // Block Double Punch IN and OUT
+      if (type === 'IN' && attMap[name] && attMap[name].inTime) {
+          Swal.fire("Already Punched", "You have already punched IN today!", "error");
+          return;
+      }
+      if (type === 'OUT' && attMap[name] && attMap[name].outTime) {
+          Swal.fire("Already Punched", "You have already punched OUT today!", "error");
+          return;
+      }
+
       // Missing punch check for IN
       if (type === 'IN') {
           const missing = await checkMissingOutPunch(name);
