@@ -151,7 +151,7 @@
   }
 
   
-  window.requestLeaveFlow = async function() {
+    window.requestLeaveFlow = async function() {
       const { value: formValues } = await Swal.fire({
           title: 'Request Leave',
           html:
@@ -160,8 +160,16 @@
                 <option value="">-- Choose Name --</option>
                 ${allUsers.map(u => `<option value="${u.name}">${u.name}</option>`).join('')}
              </select>` +
-            '<label style="display:block;text-align:left;margin-bottom:0.25rem;">Leave Date:</label>' +
-            '<input id="swal-leave-date" type="date" class="swal2-input" style="width:100%; max-width:100%; margin: 0 0 1rem 0;">' +
+            '<div style="display:flex; gap:0.5rem; margin-bottom:1rem;">' +
+                '<div style="flex:1;">' +
+                    '<label style="display:block;text-align:left;margin-bottom:0.25rem;">From Date:</label>' +
+                    '<input id="swal-leave-from" type="date" class="swal2-input" style="width:100%; max-width:100%; margin:0;">' +
+                '</div>' +
+                '<div style="flex:1;">' +
+                    '<label style="display:block;text-align:left;margin-bottom:0.25rem;">To Date (Optional):</label>' +
+                    '<input id="swal-leave-to" type="date" class="swal2-input" style="width:100%; max-width:100%; margin:0;">' +
+                '</div>' +
+            '</div>' +
             '<label style="display:block;text-align:left;margin-bottom:0.25rem;">Reason:</label>' +
             '<input id="swal-leave-reason" class="swal2-input" placeholder="e.g., Sick, Personal" style="width:100%; max-width:100%; margin: 0 0 1rem 0;">',
           focusConfirm: false,
@@ -169,22 +177,45 @@
           confirmButtonText: 'Submit Request',
           preConfirm: () => {
             const name = document.getElementById('swal-leave-name').value;
-            const date = document.getElementById('swal-leave-date').value;
+            const fromDate = document.getElementById('swal-leave-from').value;
+            let toDate = document.getElementById('swal-leave-to').value;
             const reason = document.getElementById('swal-leave-reason').value;
-            if (!name || !date || !reason) {
-                Swal.showValidationMessage('Please fill all fields');
+            
+            if (!name || !fromDate || !reason) {
+                Swal.showValidationMessage('Please fill your Name, From Date, and Reason');
                 return false;
             }
-            return { name, date, reason };
+            if (!toDate) toDate = fromDate;
+            
+            if (new Date(toDate) < new Date(fromDate)) {
+                Swal.showValidationMessage('"To Date" cannot be before "From Date"');
+                return false;
+            }
+            
+            return { name, fromDate, toDate, reason };
           }
       });
 
       if (formValues) {
           try {
               document.getElementById("loading").style.display = "flex";
-              await requestLeave(formValues.name, formValues.date, formValues.reason);
+              
+              // Generate all dates between fromDate and toDate
+              let curr = new Date(formValues.fromDate);
+              const end = new Date(formValues.toDate);
+              const dates = [];
+              while (curr <= end) {
+                  dates.push(curr.toISOString().split('T')[0]);
+                  curr.setDate(curr.getDate() + 1);
+              }
+              
+              // Submit each individually
+              for (const d of dates) {
+                  await requestLeave(formValues.name, d, formValues.reason);
+              }
+              
               document.getElementById("loading").style.display = "none";
-              Swal.fire('Success', 'Leave request sent to Manager for approval!', 'success');
+              Swal.fire('Success', `Leave request sent for ${dates.length} day(s)!`, 'success');
           } catch(e) {
               document.getElementById("loading").style.display = "none";
               Swal.fire('Error', e.message, 'error');

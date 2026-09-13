@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, initializeFirestore, doc, getDoc, setDoc, updateDoc,
-  collection, query, where, getDocs, onSnapshot, deleteDoc, documentId
+  collection, query, where, getDocs, onSnapshot, deleteDoc, documentId, addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import firebaseConfig from "./firebase-config.js";
 import { DEFAULT_USER_ID, DEFAULT_PASSWORD, getMondayOf, getSaturdayOf, toYMD } from "./utils.js";
