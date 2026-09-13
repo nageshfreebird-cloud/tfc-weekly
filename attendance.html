@@ -15,13 +15,15 @@
     .user-name { font-weight: 600; color: #1e293b; font-size: 1.1rem; }
     .user-role { font-size: 0.85rem; color: #64748b; }
     .btn-group { display: flex; gap: 0.5rem; }
-    .btn-in { background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; }
-    .btn-out { background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; }
+    .btn-in, .btn-out { background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; transition: all 0.2s; cursor: pointer; }
+    .btn-in.active { background: #10b981; color: white; border-color: #10b981; }
+    .btn-out.active { background: #ef4444; color: white; border-color: #ef4444; }
     
     .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; }
     .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -32,10 +34,13 @@
 </div>
 
 <div id="app-content" class="att-container" style="display:none;">
-  <div class="header">
-    <h2 style="margin:0; font-size:1.5rem;">&#128205; Live Attendance</h2>
-    <p style="margin:0.5rem 0 0 0; opacity:0.9;">Select your name and punch your location.</p>
-  </div>
+      <div class="header">
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button onclick="window.location.href='index.html'" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&#8592;</button>
+        <h2 style="margin:0; font-size:1.5rem;">&#128205; Live Attendance</h2>
+      </div>
+      <p style="margin:0.5rem 0 0 0; opacity:0.9;">Select your name and punch your location.</p>
+    </div>
   
   <input type="text" id="search-input" class="search-box" placeholder="Search your name..." oninput="filterUsers()" />
   
@@ -52,6 +57,7 @@
   import { getUsers, logTeamAttendance } from "./js/db.js";
 
   let allUsers = [];
+  let attMap = {};
 
   function checkMobile() {
     const isMobileStr = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -91,14 +97,19 @@
       else if (u.role === 'associate-sc') roleDisplay = "SC Associate";
       else if (u.role === 'associate-vol') roleDisplay = "Vol Associate";
       
+      const att = attMap[u.name] || {};
+      const inActive = att.inTime ? "active" : "";
+      const outActive = att.outTime ? "active" : "";
+      const cleanName = u.name.replace(/[^a-zA-Z0-9]/g, '_');
+      
       card.innerHTML = `
         <div class="user-info">
           <div class="user-name">${u.name}</div>
           <div class="user-role">${roleDisplay}</div>
         </div>
         <div class="btn-group">
-          <button class="btn-in" onclick="punchAttendance('${u.name}', 'IN')">IN</button>
-          <button class="btn-out" onclick="punchAttendance('${u.name}', 'OUT')">OUT</button>
+          <button id="btn-in-${cleanName}" class="btn-in ${inActive}" onclick="punchAttendance('${u.name}', 'IN')">IN</button>
+          <button id="btn-out-${cleanName}" class="btn-out ${outActive}" onclick="punchAttendance('${u.name}', 'OUT')">OUT</button>
         </div>
       `;
       container.appendChild(card);
@@ -111,13 +122,43 @@
     renderUsers(filtered);
   }
 
-  window.punchAttendance = function(name, type) {
+  function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
+    var R = 6371000; // Radius of the earth in m
+    var dLat = (lat2-lat1) * (Math.PI/180);
+    var dLon = (lon2-lon1) * (Math.PI/180); 
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2); 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c; // Distance in m
+  }
+
+  window.punchAttendance = async function(name, type) {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      Swal.fire("Error", "Geolocation is not supported by your browser.", "error");
       return;
     }
-
-    if (!confirm(`Punch ${type} for ${name}?`)) return;
+    
+    // Find user's base location
+    const user = allUsers.find(u => u.name === name);
+    if(!user) return;
+    
+    
+    // Missing punch check for IN
+    if (type === 'IN') {
+        const missing = await checkMissingOutPunch(name);
+        if (missing) {
+            await Swal.fire("Missing Punch!", `?? You forgot to punch OUT on ${missing.date}. Please inform your manager to correct your timesheet.`, "warning");
+        }
+    }
+    
+    const result = await Swal.fire({
+      title: `Punch ${type} for ${name}?`,
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Punch ' + type
+    });
+    
+    if(!result.isConfirmed) return;
 
     const loader = document.getElementById("loading");
     loader.style.display = "flex";
@@ -126,23 +167,71 @@
       try {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
+        let reason = null;
         
-        await logTeamAttendance(name, type, lat, lng);
+        // Geofencing Check
+        if (user.baseLat && user.baseLng) {
+            const dist = getDistanceFromLatLonInM(lat, lng, user.baseLat, user.baseLng);
+            if (dist > 200) {
+                loader.style.display = "none";
+                const { value: reasonText, isDismissed } = await Swal.fire({
+                    title: 'Out of Range',
+                    text: `You are ${Math.round(dist)} meters away from your assigned base location. Please enter a reason (e.g., Field Work).`,
+                    input: 'text',
+                    inputPlaceholder: 'Enter reason here...',
+                    showCancelButton: true,
+                    inputValidator: (value) => {
+                        if (!value) return 'You need to write a reason to check in!'
+                    }
+                });
+                
+                if (isDismissed || !reasonText) return; // Cancelled punch
+                reason = reasonText;
+                loader.style.display = "flex";
+            }
+        } else {
+            // No base location assigned yet!
+            loader.style.display = "none";
+            const setBasePrompt = await Swal.fire({
+                title: 'Set Base Location?',
+                text: 'Is your current location your permanent Base Location?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, set as Base',
+                cancelButtonText: 'No, just log attendance'
+            });
+            loader.style.display = "flex";
+            
+            if (setBasePrompt.isConfirmed) {
+                await updateUserBaseLocation(name, lat, lng);
+                user.baseLat = lat; // update local state
+                user.baseLng = lng;
+            }
+        }
+        
+        await logTeamAttendance(name, type, lat, lng, reason);
         
         loader.style.display = "none";
-        alert(`Successfully punched ${type}!\nTime and Location logged.`);
+        Swal.fire("Success", `Successfully punched ${type}!\nTime and Location logged.`, "success");
+        
+        // Update DOM instantly
+        const cleanName = name.replace(/[^a-zA-Z0-9]/g, '_');
+        const btnId = type === 'IN' ? `btn-in-${cleanName}` : `btn-out-${cleanName}`;
+        const btn = document.getElementById(btnId);
+        if (btn) btn.classList.add("active");
+        
+        // Update local state map so search/filter preserves it
+        if(!attMap[name]) attMap[name] = {};
+        if (type === 'IN') attMap[name].inTime = true;
+        if (type === 'OUT') attMap[name].outTime = true;
       } catch (err) {
         loader.style.display = "none";
-        alert("Database error: " + err.message);
+        Swal.fire("Error", "Error logging attendance: " + err.message, "error");
       }
-    }, (error) => {
+    }, (err) => {
       loader.style.display = "none";
-      alert("Location Error: Please ensure GPS is ON and you have granted location permissions to this site.");
-    }, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-    });
+      Swal.fire("Location Error", "Please enable GPS/Location to check in.", "error");
+    }, { enableHighAccuracy: true });
   }
 
   init();

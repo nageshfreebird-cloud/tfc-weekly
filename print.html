@@ -11,6 +11,10 @@
   <link rel="stylesheet" href="css/style.css" />
   <style>
     @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       .no-print { display: none !important; }
       body { background: white; }
       .navbar { display: none; }

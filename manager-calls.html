@@ -65,23 +65,25 @@
 
         <!-- Sidebar Navigation -->
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-    <div class="sidebar" id="sidebar">
+        <div class="sidebar" id="sidebar">
       <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
       <div class="sidebar-header">
         <img src="logo.png" alt="Logo" />
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-      <a href="dashboard.html">&#128202; Dashboard</a>
-      <a href="tab-a.html">&#128203; Weekly Tasks</a>
-      <a href="manager-calls.html" class="active">&#128222; 15-Days Teacher Calls</a>
-      <a href="manager-assessments.html">&#128197; Assessments Received</a>
-      <a href="manager-drive.html">&#128200; Assessments Analytics</a>
-      <a href="sheets.html">&#128279; Google Sheet Links</a>
-      <a href="manager-syllabus.html">&#128214; Syllabus Registry</a>
-      <a href="manager-volunteers.html">&#128101; Volunteer Oversight</a>
-      <a href="settings.html?v=ign">&#9881;&#65039; My Settings</a>
-    </div>
+        <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
+        <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
+        <a href="manager-calls.html" id="nav-calls" class="active">&#128222; 15-Days Teacher Calls</a>
+        <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
+        <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
+        <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
+        <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
+        <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
+        <a href="manager-attendance.html" id="nav-attendance">&#128205; Team Attendance</a>
+        <a href="#" onclick="alert('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
+        <a href="settings.html?v=ign" id="nav-settings">&#9881;&#65039; My Settings</a>
+      </div>
     </div>
 
     <div class="setup-panel">

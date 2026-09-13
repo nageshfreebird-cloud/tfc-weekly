@@ -655,6 +655,11 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* ---- Print Styles ---- */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .no-print { display: none !important; }
   .navbar { display: none; }
   body { background: white; }

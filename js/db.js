@@ -779,7 +779,22 @@ export async function getTeamAttendance() {
   return res;
 }
 
-export async function logTeamAttendance(name, type, lat, lng) {
+export async function getTodayTeamAttendance() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const dateStr = `${yyyy}-${mm}-${dd}`;
+  
+  const colRef = await getScopedCollection("team_attendance");
+  const q = query(colRef, where("date", "==", dateStr));
+  const snap = await getDocs(q);
+  let res = [];
+  snap.forEach(d => res.push(d.data()));
+  return res;
+}
+
+export async function logTeamAttendance(name, type, lat, lng, reason = null) {
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -799,14 +814,36 @@ export async function logTeamAttendance(name, type, lat, lng) {
       updateData.inTime = timeStr;
       updateData.inLat = lat;
       updateData.inLng = lng;
+      if (reason) updateData.inReason = reason;
   } else {
       updateData.outTime = timeStr;
       updateData.outLat = lat;
       updateData.outLng = lng;
+      if (reason) updateData.outReason = reason;
   }
   
   await setDoc(docRef, updateData, { merge: true });
 }
+
+export async function updateUserBaseLocation(name, lat, lng) {
+  const users = await getUsers();
+  const idx = users.findIndex(u => u.name === name);
+  if (idx !== -1) {
+    users[idx].baseLat = lat;
+    users[idx].baseLng = lng;
+    await saveUsers(users);
+  }
+}
+
+  export async function clearUserBaseLocation(name) {
+    const users = await getUsers();
+    const idx = users.findIndex(u => u.name === name);
+    if (idx !== -1) {
+      delete users[idx].baseLat;
+      delete users[idx].baseLng;
+      await saveUsers(users);
+    }
+  }
 
 export async function getVolunteerCalls() {
   const cached = sessionStorage.getItem("tfc_vol_calls");
@@ -978,4 +1015,59 @@ export async function ignoreResetRequest(name) {
     return true;
   }
   return false;
+}
+
+export async function getHolidays() {
+  let dates = [];
+  try {
+    const snap = await getDoc(doc(db, "settings", "holidays"));
+    if (snap.exists() && Array.isArray(snap.data().dates)) {
+      dates = snap.data().dates;
+    }
+  } catch(e) {}
+  return dates;
+}
+
+export async function saveHolidays(dates) {
+  await setDoc(doc(db, "settings", "holidays"), { dates }, { merge: true });
+}
+
+export async function updateAttendanceTimes(docId, inTime, outTime) {
+  const colRef = await getScopedCollection("team_attendance");
+  const docRef = doc(colRef, docId);
+  const updateData = {};
+  if (inTime !== undefined) updateData.inTime = inTime;
+  if (outTime !== undefined) updateData.outTime = outTime;
+  await setDoc(docRef, updateData, { merge: true });
+}
+
+export async function checkMissingOutPunch(name) {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const dateStr = `${yyyy}-${mm}-${dd}`;
+  
+  const colRef = await getScopedCollection("team_attendance");
+  const q = query(colRef, where("name", "==", name), where("date", "<", dateStr));
+  const snap = await getDocs(q);
+  let missing = null;
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.inTime && !data.outTime) {
+      if (!missing || data.date > missing.date) missing = data;
+    }
+  });
+  return missing;
+}
+
+export async function getAttendanceForMonth(yyyy, mm) {
+  const colRef = await getScopedCollection("team_attendance");
+  const startStr = `${yyyy}-${mm}-01`;
+  const endStr = `${yyyy}-${mm}-31`;
+  const q = query(colRef, where("date", ">=", startStr), where("date", "<=", endStr));
+  const snap = await getDocs(q);
+  let res = [];
+  snap.forEach(d => res.push({ id: d.id, ...d.data() }));
+  return res;
 }

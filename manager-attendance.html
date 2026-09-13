@@ -7,13 +7,14 @@
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Volunteer Oversight - Teach for Change</title>
+  <title>Team Attendance Report - Teach for Change</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script>
     window.togglePassword = function(id) {
       const input = document.getElementById(id);
@@ -61,84 +62,223 @@
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">&#128274; Logout</button>
   </div>
 </nav>
 
 <main class="page">
   <!-- Sidebar Navigation -->
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-  <div class="sidebar" id="sidebar">
-    <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
-    <div class="sidebar-header">
-      <img src="logo.png" alt="Logo" />
-      <h2>Teach for Change</h2>
+      <div class="sidebar" id="sidebar">
+      <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+      <div class="sidebar-header">
+        <img src="logo.png" alt="Logo" />
+        <h2>Teach for Change</h2>
+      </div>
+      <div class="sidebar-nav">
+        <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
+        <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
+        <a href="manager-calls.html" id="nav-calls">&#128222; 15-Days Teacher Calls</a>
+        <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
+        <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
+        <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
+        <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
+        <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
+        <a href="manager-attendance.html" id="nav-attendance" class="active">&#128205; Team Attendance</a>
+        <a href="#" onclick="alert('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
+        <a href="settings.html?v=ign" id="nav-settings">&#9881;&#65039; My Settings</a>
+      </div>
     </div>
-    <div class="sidebar-nav">
-      <a href="dashboard.html">&#128202; Dashboard</a>
-      <a href="tab-a.html">&#128203; Weekly Tasks</a>
-      <a href="manager-calls.html">&#128222; 15-Days Teacher Calls</a>
-      <a href="manager-assessments.html">&#128197; Assessments Received</a>
-      <a href="manager-drive.html">&#128200; Assessments Analytics</a>
-      <a href="sheets.html">&#128279; Google Sheet Links</a>
-      <a href="manager-syllabus.html">&#128214; Syllabus Registry</a>
-      <a href="manager-volunteers.html" >&#128101; Volunteer Oversight</a>
-      <a href="settings.html?v=ign">&#9881;&#65039; My Settings</a>
-    </div>
-  </div>
 
   <div class="container" style="max-width:1200px; margin:0 auto;">
-    <h1 style="margin-bottom:1.5rem; color:var(--primary);">Volunteer Oversight</h1>
-    
+    <h1 style="margin-bottom:1.5rem; color:var(--primary);">Team Attendance Report</h1>
     
     <div class="panel">
+      
+      <!-- TABS AND CONTROLS HEADER -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
-        <h2 style="margin:0;">&#128205; Daily Check-Ins</h2>
-        <button class="btn btn-primary" onclick="downloadAttendanceExport()">&#128229; Export to Excel</button>
+          <div style="display:flex; gap:1rem; align-items:center;">
+              <button id="tab-daily" class="btn btn-primary" onclick="switchTab('daily')">&#128205; Daily Check-Ins</button>
+              <button id="tab-monthly" class="btn btn-outline" onclick="switchTab('monthly')">&#128197; Monthly Report</button>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-outline" onclick="openHolidayModal()">&#128197; Manage Holidays</button>
+            <button class="btn btn-primary" onclick="downloadAttendanceExport()" id="btn-export-excel">&#128229; Export to Excel</button>
+          </div>
       </div>
       
-      <div style="margin-bottom:1rem;">
-        <input type="date" id="filter-date" class="form-control" style="max-width:200px;" onchange="renderTable()" />
+      <!-- DAILY VIEW -->
+      <div id="view-daily">
+        <div style="margin-bottom:1rem;">
+          <input type="date" id="filter-date" class="form-control" style="max-width:200px;" onchange="renderTable()" />
+        </div>
+        
+        <div style="overflow-x:auto;">
+          <table class="vol-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Name</th>
+                <th>In Time</th>
+                <th>In Location</th>
+                <th>Out Time</th>
+                <th>Out Location</th>
+                <th>Reason</th>
+                <th>Base Action</th>
+              </tr>
+            </thead>
+            <tbody id="att-tbody">
+              <!-- Dynamic -->
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <div style="overflow-x:auto;">
-        <table class="vol-table" id="att-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Name</th>
-              <th>In Time</th>
-              <th>In Location</th>
-              <th>Out Time</th>
-              <th>Out Location</th>
-            </tr>
-          </thead>
-          <tbody id="att-tbody">
-            <!-- Dynamic -->
-          </tbody>
-        </table>
+      
+      <!-- MONTHLY VIEW -->
+      <div id="view-monthly" style="display:none; padding:1.5rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-md);">
+        <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; align-items:center;">
+            <select id="report-year" class="form-control" style="max-width:120px;">
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+            </select>
+            <select id="report-month" class="form-control" style="max-width:150px;">
+                <option value="01">January</option>
+                <option value="02">February</option>
+                <option value="03">March</option>
+                <option value="04">April</option>
+                <option value="05">May</option>
+                <option value="06">June</option>
+                <option value="07">July</option>
+                <option value="08">August</option>
+                <option value="09">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
+            <button class="btn btn-primary" onclick="generateMonthlyReport()">Generate Grid</button>
+            <button class="btn btn-outline" onclick="downloadGridPDF()" id="btn-dl-pdf" style="display:none; color:var(--primary); border-color:var(--primary);">Download PDF</button>
+        </div>
+        
+        <div id="grid-container" style="overflow-x:auto; background:white; padding:1rem; border:1px solid var(--border); display:none;">
+            <div style="text-align:center; margin-bottom:1rem;">
+                <h2>Monthly Attendance Report</h2>
+                <h4 id="grid-subtitle" style="color:var(--text-muted); margin-top:0;"></h4>
+            </div>
+            
+            <div style="display:flex; gap:1.5rem; justify-content:center; margin-bottom:1rem; font-size:0.85rem; font-weight:600; flex-wrap:wrap;">
+                <span style="color:#16a34a;">[ P ] Present</span>
+                <span style="color:#d97706;">[ L ] Late (In after 11AM)</span>
+                <span style="color:#d97706;">[ E ] Early (Out before 5PM)</span>
+                <span style="color:#dc2626;">[ A ] Absent</span>
+                <span style="color:#ef4444;">[ M ] Missing Punch</span>
+                <span style="color:#64748b;">[ H ] Holiday / Weekend</span>
+            </div>
+            
+            <table class="vol-table" id="grid-table" style="font-size:0.85rem; white-space:nowrap; border:1px solid #e2e8f0;">
+                <thead id="grid-thead"></thead>
+                <tbody id="grid-tbody"></tbody>
+            </table>
+        </div>
       </div>
+      
     </div>
-      </main>
+  </div>
+</main>
+
+<!-- Edit Timesheet Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>&#9998; Edit Timesheet</h2>
+    <p id="edit-modal-name" style="font-weight:600; margin-bottom:1rem;"></p>
+    
+    <input type="hidden" id="edit-doc-id" />
+    
+    <div class="form-group">
+      <label>Punch IN Time</label>
+      <input type="datetime-local" id="edit-in-time" class="form-control" />
+    </div>
+    <div class="form-group">
+      <label>Punch OUT Time</label>
+      <input type="datetime-local" id="edit-out-time" class="form-control" />
+    </div>
+    
+    <div style="display:flex; justify-content:flex-end; gap:1rem; margin-top:1.5rem;">
+      <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTimesheetEdit()">Save Corrections</button>
+    </div>
+  </div>
+</div>
+
+<!-- Holiday Modal -->
+<div class="modal-overlay" id="holiday-modal">
+  <div class="modal" style="max-width:400px;">
+    <h2>&#128197; Manage Holidays</h2>
+    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1rem;">Click days to toggle them as Holidays/Weekends. Red days are blocked.</p>
+    
+    <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+      <select id="hol-month" class="form-control" onchange="renderHolidayCalendar()">
+        <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+        <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+        <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+      </select>
+      <select id="hol-year" class="form-control" onchange="renderHolidayCalendar()">
+        <option value="2026">2026</option><option value="2027">2027</option>
+      </select>
+    </div>
+    
+    <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.5rem; text-align:center; font-weight:700; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">
+        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+    </div>
+    <div id="hol-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.5rem; margin-bottom:1.5rem;">
+        <!-- dynamic -->
+    </div>
+    
+    <div style="display:flex; justify-content:flex-end; gap:1rem;">
+      <button class="btn btn-outline" onclick="closeHolidayModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHolidayUpdates()">Save Updates</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { requireManagerAuth } from "./js/auth.js";
 import { startClock } from "./js/utils.js";
-import { getTeamAttendance } from "./js/db.js";
+import { getTeamAttendance, clearUserBaseLocation, getHolidays, saveHolidays, updateAttendanceTimes, getAttendanceForMonth, getUsers } from "./js/db.js";
+
+// Make functions globally accessible for inline HTML handlers
+window.updateAttendanceTimes = updateAttendanceTimes;
+window.getAttendanceForMonth = getAttendanceForMonth;
+window.getHolidays = getHolidays;
+window.getUsers = getUsers;
+window.clearUserBaseLocation = clearUserBaseLocation;
+window.saveHolidays = saveHolidays;
 
 let allAttendance = [];
+let allHolidays = [];
 
 async function init() {
   await requireManagerAuth();
-  startClock("live-clock");
+  startClock();
   
-  // Default to today
-  document.getElementById("filter-date").valueAsDate = new Date();
+  const userName = sessionStorage.getItem("tfc_member_name");
+  document.getElementById("welcome-name").innerText = userName || "Manager";
   
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById("filter-date").value = `${yyyy}-${mm}-${dd}`;
+  
+  // Also default month selector
+  document.getElementById("report-year").value = String(yyyy);
+  document.getElementById("report-month").value = mm;
+
   try {
     allAttendance = await getTeamAttendance();
     renderTable();
   } catch(err) {
-    console.error(err);
+    alert("Error loading data: " + err.message);
   }
 }
 
@@ -150,7 +290,7 @@ window.renderTable = function() {
   const filtered = allAttendance.filter(a => a.date === fDate).sort((a,b) => a.name.localeCompare(b.name));
   
   if (filtered.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:2rem;'>No attendance records found for this date.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:2rem;'>No attendance records found for this date.</td></tr>";
     return;
   }
   
@@ -163,6 +303,11 @@ window.renderTable = function() {
     const inLoc = a.inLat ? `<a href="https://maps.google.com/?q=${a.inLat},${a.inLng}" target="_blank" style="color:var(--primary);">&#128205; View Map</a>` : "-";
     const outLoc = a.outLat ? `<a href="https://maps.google.com/?q=${a.outLat},${a.outLng}" target="_blank" style="color:var(--primary);">&#128205; View Map</a>` : "-";
     
+    let reasonText = "";
+    if (a.inReason) reasonText += `IN: ${a.inReason} `;
+    if (a.outReason) reasonText += `OUT: ${a.outReason}`;
+    if (!reasonText) reasonText = "-";
+    
     tr.innerHTML = `
       <td>${a.date}</td>
       <td style="font-weight:600;">${a.name}</td>
@@ -170,9 +315,24 @@ window.renderTable = function() {
       <td>${inLoc}</td>
       <td>${outTimeStr}</td>
       <td>${outLoc}</td>
+      <td style="color:#ef4444; font-size:0.85rem; max-width:150px;">${reasonText}</td>
+      <td>
+        <button onclick="window.resetUserBase('${a.name}')" style="background:#fee2e2; color:#b91c1c; border:none; padding:4px 8px; border-radius:4px; font-size:0.8rem; cursor:pointer; margin-bottom:4px; width:100%;">Reset Base</button>
+        <button onclick="window.openEditModal('${a.id}', '${a.name}', '${a.inTime || ''}', '${a.outTime || ''}')" style="background:#e0f2fe; color:#0369a1; border:none; padding:4px 8px; border-radius:4px; font-size:0.8rem; cursor:pointer; width:100%;">&#9998; Edit Time</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+window.resetUserBase = async function(name) {
+    if(!confirm(`Are you sure you want to erase ${name}'s permanent Base Location? They will be prompted to set a new one tomorrow.`)) return;
+    try {
+        await clearUserBaseLocation(name);
+        alert(`Reset base location for ${name} successfully.`);
+    } catch(err) {
+        alert("Failed to reset: " + err.message);
+    }
 }
 
 window.downloadAttendanceExport = function() {
@@ -181,9 +341,8 @@ window.downloadAttendanceExport = function() {
     return;
   }
   
-  const data = [["Date", "Team Member Name", "In Time", "In Location (Maps Link)", "Out Time", "Out Location (Maps Link)"]];
+  const data = [["Date", "Team Member Name", "In Time", "In Location (Maps Link)", "Out Time", "Out Location (Maps Link)", "Reason (Out of Bounds)"]];
   
-  // Sort by date desc, then name
   const sorted = [...allAttendance].sort((a,b) => {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
       return a.name.localeCompare(b.name);
@@ -195,13 +354,223 @@ window.downloadAttendanceExport = function() {
       const inLoc = a.inLat ? `https://maps.google.com/?q=${a.inLat},${a.inLng}` : "";
       const outLoc = a.outLat ? `https://maps.google.com/?q=${a.outLat},${a.outLng}` : "";
       
-      data.push([a.date, a.name, inTimeStr, inLoc, outTimeStr, outLoc]);
+      let reasonText = "";
+      if (a.inReason) reasonText += `IN: ${a.inReason} `;
+      if (a.outReason) reasonText += `OUT: ${a.outReason}`;
+      
+      data.push([a.date, a.name, inTimeStr, inLoc, outTimeStr, outLoc, reasonText]);
   });
   
   const ws = XLSX.utils.aoa_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Team Attendance");
   XLSX.writeFile(wb, "TFC_Team_Attendance.xlsx");
+}
+
+// --- TABS & EDIT LOGIC ---
+window.switchTab = function(tab) {
+    document.getElementById('view-daily').style.display = tab === 'daily' ? 'block' : 'none';
+    document.getElementById('view-monthly').style.display = tab === 'monthly' ? 'block' : 'none';
+    
+    document.getElementById('tab-daily').className = tab === 'daily' ? 'btn btn-primary' : 'btn btn-outline';
+    document.getElementById('tab-monthly').className = tab === 'monthly' ? 'btn btn-primary' : 'btn btn-outline';
+    
+    // Hide export excel button on monthly tab to avoid confusion
+    document.getElementById('btn-export-excel').style.display = tab === 'daily' ? 'inline-block' : 'none';
+}
+
+window.openEditModal = function(id, name, inTime, outTime) {
+    document.getElementById("edit-modal-name").innerText = `Correcting: ${name}`;
+    document.getElementById("edit-doc-id").value = id;
+    const formatISO = (iso) => iso && iso !== 'undefined' ? iso.substring(0, 16) : "";
+    document.getElementById("edit-in-time").value = formatISO(inTime);
+    document.getElementById("edit-out-time").value = formatISO(outTime);
+    document.getElementById("edit-modal").classList.add("active");
+}
+window.closeEditModal = function() {
+    document.getElementById("edit-modal").classList.remove("active");
+}
+window.saveTimesheetEdit = async function() {
+    const id = document.getElementById("edit-doc-id").value;
+    const inV = document.getElementById("edit-in-time").value;
+    const outV = document.getElementById("edit-out-time").value;
+    const inTime = inV ? new Date(inV).toISOString() : null;
+    const outTime = outV ? new Date(outV).toISOString() : null;
+    try {
+        await window.updateAttendanceTimes(id, inTime, outTime);
+        closeEditModal();
+        alert("Timesheet corrected.");
+        window.location.reload();
+    } catch(err) {
+        alert("Error updating: " + err.message);
+    }
+}
+
+// --- MONTHLY GRID LOGIC ---
+window.generateMonthlyReport = async function() {
+    const y = document.getElementById("report-year").value;
+    const m = document.getElementById("report-month").value;
+    const mName = document.getElementById("report-month").options[document.getElementById("report-month").selectedIndex].text;
+    
+    document.getElementById("grid-container").style.display = "none";
+    document.getElementById("btn-dl-pdf").style.display = "none";
+    
+    const attData = await window.getAttendanceForMonth(y, m);
+    const holidays = await window.getHolidays();
+    const users = await window.getUsers();
+    const team = users.filter(u => u.role !== 'manager');
+    
+    const names = team.map(t => t.name).sort();
+    const daysInMonth = new Date(parseInt(y), parseInt(m), 0).getDate();
+    
+    const thead = document.getElementById("grid-thead");
+    const tbody = document.getElementById("grid-tbody");
+    
+    let headHtml = "<tr><th style='background:#f8fafc; border:1px solid #e2e8f0; position:sticky; left:0; z-index:2; min-width:150px;'>Team Member</th>";
+    for(let d=1; d<=daysInMonth; d++) {
+        headHtml += `<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center; padding:0.2rem; min-width:30px;'>${d}</th>`;
+    }
+    headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>P</th>";
+    headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>L</th>";
+    headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>E</th>";
+    headHtml += "<th style='background:#f8fafc; border:1px solid #e2e8f0; text-align:center;'>A</th>";
+    headHtml += "</tr>";
+    thead.innerHTML = headHtml;
+    
+    let bodyHtml = "";
+    
+    names.forEach(name => {
+        let pCount = 0, lCount = 0, eCount = 0, aCount = 0;
+        let rowHtml = `<tr><td style='background:white; border:1px solid #e2e8f0; position:sticky; left:0; font-weight:600;'>${name}</td>`;
+        
+        for(let d=1; d<=daysInMonth; d++) {
+            const dateStr = `${y}-${m}-${String(d).padStart(2, '0')}`;
+            const isHol = holidays.includes(dateStr);
+            const rec = attData.find(a => a.name === name && a.date === dateStr);
+            
+            let val = "", bg = "transparent", col = "inherit";
+            
+            if (isHol) { val = "H"; bg = "#f1f5f9"; col = "#64748b"; }
+            
+            if (rec) {
+                if (rec.inTime && !rec.outTime) {
+                    val = "M"; bg = "#fee2e2"; col = "#ef4444";
+                } else if (rec.inTime && rec.outTime) {
+                    const inHr = new Date(rec.inTime).getHours();
+                    const inMin = new Date(rec.inTime).getMinutes();
+                    const outHr = new Date(rec.outTime).getHours();
+                    
+                    const isLate = (inHr > 11) || (inHr === 11 && inMin > 0);
+                    const isEarly = (outHr < 17);
+                    
+                    if (isLate && isEarly) { val = "L/E"; bg = "#fef3c7"; col = "#d97706"; lCount++; eCount++; pCount++; }
+                    else if (isLate) { val = "L"; bg = "#fef3c7"; col = "#d97706"; lCount++; pCount++; }
+                    else if (isEarly) { val = "E"; bg = "#fef3c7"; col = "#d97706"; eCount++; pCount++; }
+                    else { val = "P"; bg = "#dcfce7"; col = "#16a34a"; pCount++; }
+                }
+            } else if (!isHol) {
+                if (new Date(dateStr) < new Date()) { val = "A"; bg = "#fee2e2"; col = "#dc2626"; aCount++; }
+            }
+            
+            rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; background:${bg}; color:${col}; font-weight:600;'>${val}</td>`;
+        }
+        
+        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700;'>${pCount}</td>`;
+        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#d97706;'>${lCount}</td>`;
+        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#d97706;'>${eCount}</td>`;
+        rowHtml += `<td style='border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#dc2626;'>${aCount}</td>`;
+        rowHtml += "</tr>";
+        bodyHtml += rowHtml;
+    });
+    
+    tbody.innerHTML = bodyHtml;
+    document.getElementById("grid-subtitle").innerText = `${mName} ${y}`;
+    document.getElementById("grid-container").style.display = "block";
+    document.getElementById("btn-dl-pdf").style.display = "block";
+}
+
+window.downloadGridPDF = function() {
+    const el = document.getElementById('grid-container');
+    const opt = {
+      margin:       0.2,
+      filename:     'Monthly_Attendance_Report.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(el).save();
+}
+
+window.openHolidayModal = async function() {
+    allHolidays = await window.getHolidays();
+    
+    const today = new Date();
+    document.getElementById("hol-year").value = String(today.getFullYear());
+    document.getElementById("hol-month").value = String(today.getMonth() + 1).padStart(2, '0');
+    
+    renderHolidayCalendar();
+    document.getElementById('holiday-modal').classList.add('active');
+}
+window.closeHolidayModal = function() {
+    document.getElementById('holiday-modal').classList.remove('active');
+}
+
+window.renderHolidayCalendar = function() {
+    const y = document.getElementById("hol-year").value;
+    const m = document.getElementById("hol-month").value;
+    const daysInMonth = new Date(parseInt(y), parseInt(m), 0).getDate();
+    const firstDay = new Date(parseInt(y), parseInt(m) - 1, 1).getDay();
+    
+    const grid = document.getElementById("hol-grid");
+    grid.innerHTML = "";
+    
+    for(let i=0; i<firstDay; i++) {
+        const spacer = document.createElement("div");
+        grid.appendChild(spacer);
+    }
+    
+    for(let d=1; d<=daysInMonth; d++) {
+        const dateStr = `${y}-${m}-${String(d).padStart(2, '0')}`;
+        const isHol = allHolidays.includes(dateStr);
+        
+        const btn = document.createElement("button");
+        btn.innerText = d;
+        btn.style.padding = "0.5rem 0";
+        btn.style.border = "1px solid var(--border)";
+        btn.style.borderRadius = "4px";
+        btn.style.cursor = "pointer";
+        btn.style.fontWeight = "600";
+        
+        if (isHol) {
+            btn.style.background = "#fee2e2";
+            btn.style.color = "#dc2626";
+            btn.style.borderColor = "#fca5a5";
+        } else {
+            btn.style.background = "var(--bg)";
+            btn.style.color = "var(--text)";
+        }
+        
+        btn.onclick = function() {
+            if (allHolidays.includes(dateStr)) {
+                allHolidays = allHolidays.filter(h => h !== dateStr);
+            } else {
+                allHolidays.push(dateStr);
+            }
+            renderHolidayCalendar(); // re-render to update colors
+        };
+        
+        grid.appendChild(btn);
+    }
+}
+
+window.saveHolidayUpdates = async function() {
+    try {
+        await window.saveHolidays(allHolidays);
+        closeHolidayModal();
+        alert("Holidays updated successfully!");
+    } catch(err) {
+        alert("Error saving holidays: " + err.message);
+    }
 }
 
 window.toggleSidebar = function() {
@@ -217,7 +586,7 @@ window.doLogout = function() {
 }
 
 init();
+
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 </body>
 </html>
