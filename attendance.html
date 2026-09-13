@@ -54,7 +54,7 @@
 </div>
 
 <script type="module">
-  import { getUsers, logTeamAttendance } from "./js/db.js";
+  import { getUsers, logTeamAttendance, checkMissingOutPunch, updateUserBaseLocation, getTodayTeamAttendance, getHolidays } from "./js/db.js";
 
   let allUsers = [];
   let attMap = {};
@@ -75,8 +75,24 @@
     if (!checkMobile()) return;
     
     try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const holidays = await getHolidays();
+      if (holidays.includes(todayStr)) {
+          document.getElementById("app-content").innerHTML = `
+            <div style="padding:2rem; text-align:center; margin-top:30%;">
+                <h2 style="color:#dc2626;">⛔ Not Allowed</h2>
+                <p>Today is marked as a Holiday or Weekend. Attendance is blocked.</p>
+            </div>
+          `;
+          return;
+      }
+      
+      const todayLogs = await getTodayTeamAttendance();
+      todayLogs.forEach(a => {
+          attMap[a.name] = { inTime: a.inTime, outTime: a.outTime };
+      });
+      
       const users = await getUsers();
-      // Filter out managers
       allUsers = users.filter(u => u.role !== 'manager').sort((a,b) => a.name.localeCompare(b.name));
       renderUsers(allUsers);
     } catch(err) {
