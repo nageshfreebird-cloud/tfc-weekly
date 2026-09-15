@@ -21,6 +21,20 @@
     .filter-panel { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
     .filter-panel > div { flex: 1; min-width: 200px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+  
+</script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -33,7 +47,15 @@
   <div class="navbar-datetime">
     <span id="welcome-name" style="margin-right:1rem; font-weight:600; color:#475569;"></span>
     <span id="live-clock"></span>
-    <button class="btn btn-outline" style="color:white; border-color:white; margin-left:1rem; padding: 0.3rem 0.8rem; font-size:0.85rem;" onclick="doLogout()">Logout</button>
+    <button class="btn btn-outline" style="color:white; border-color:white; margin-left:1rem; padding: 0.3rem 0.8rem; font-size:0.85rem;" <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button onclick="doLogout()">🚪 Logout</button>
   </div>
 </nav>
 
@@ -144,6 +166,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script type="module">
+  window.doLogout = function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5';
+    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  }
+
+  
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+  };
+
   import { startClock } from "./js/utils.js";
   import { getVolunteers, getVolunteerAssessments, saveVolunteerAssessment } from "./js/db.js";
 
@@ -426,7 +461,7 @@
   window.downloadTemplate = function() {
       if (!currentVol) return;
       const cbs = document.querySelectorAll("#class-checkboxes input:checked");
-      if (cbs.length === 0) { alert("Please select at least one class."); return; }
+      if (cbs.length === 0) { showToast("Please select at least one class."); return; }
       
       const wb = XLSX.utils.book_new();
       cbs.forEach(cb => {
@@ -480,26 +515,17 @@
               });
               renderGrids();
               triggerAutoSave();
-              alert("Excel uploaded successfully!");
+              showToast("Excel uploaded successfully!");
           } catch(err) {
               console.error(err);
-              alert("Error parsing Excel file.");
+              showToast("Error parsing Excel file.");
           }
       };
       reader.readAsArrayBuffer(file);
       e.target.value = ""; // clear
   }
 
-  window.doLogout = function() {
-    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
-    window.location.href = "index.html";
-  }
-
   
-  window.toggleSidebar = function() {
-    document.getElementById('sidebar').classList.toggle('active');
-    document.getElementById('sidebar-overlay').classList.toggle('active');
-  };
 
   init();
 </script>

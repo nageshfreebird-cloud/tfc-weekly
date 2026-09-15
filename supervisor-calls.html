@@ -41,6 +41,20 @@
       height: 80px;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+  
+</script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -56,7 +70,16 @@
       <span class="time-icon">🕒</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -125,6 +148,30 @@
 </main>
 
 <script type="module">
+  window.doLogout = function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5';
+    sessionStorage.removeItem("tfc_member_name");
+    sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  }
+
+  startClock("live-clock");
+
+  init();
+</script>
+
+
+
+
+<script>
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+
   import { getCurrent15DayPeriod , startClock } from "./js/utils.js";
   import { getUsers, getSchools, getSyllabus, getTeacherCalls, saveTeacherCalls, getDistricts } from "./js/db.js";
 
@@ -315,7 +362,7 @@
     const remarksVal = card.querySelector(".call-remarks").value.trim();
 
     if (!dateVal) {
-      alert("Please select a date first!");
+      showToast("Please select a date first!");
       return;
     }
 
@@ -344,33 +391,13 @@
       loadSchools();
     } catch (err) {
       console.error(err);
-      alert("Error saving: " + err.message);
+      showToast("Error saving: " + err.message);
       btn.textContent = "Call";
       btn.disabled = false;
     }
   };
 
-  window.doLogout = function() {
-    sessionStorage.removeItem("tfc_member_name");
-    sessionStorage.removeItem("tfc_member_role");
-    window.location.href = "index.html";
-  }
-
-  startClock("live-clock");
-
-  init();
-</script>
-
-
-
-
-<script>
-  window.toggleSidebar = function() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if(sidebar) sidebar.classList.toggle('active');
-    if(overlay) overlay.classList.toggle('active');
-  };
+  
 </script>
 </body>
 </html>

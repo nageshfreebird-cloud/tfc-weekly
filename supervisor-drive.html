@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/ui.js"></script>
   <script defer src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script defer src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -19,11 +20,11 @@
   <script defer src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script>
     window.onerror = function(msg, url, lineNo, columnNo, error) {
-      alert("Error: " + msg + "\nLine: " + lineNo);
+      showToast("Error: " + msg + "\nLine: " + lineNo);
       return false;
     };
     window.addEventListener('unhandledrejection', function(event) {
-      alert("Promise Error: " + event.reason);
+      showToast("Promise Error: " + event.reason);
     });
   </script>
   <style>
@@ -106,6 +107,16 @@
     }
     .filter-bar > div { flex: 1; min-width: 150px; }
   </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -121,7 +132,16 @@
       <span class="time-icon">🕒</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -211,7 +231,7 @@
           </div>
         </div>
 
-        <div style="overflow-x:auto;">
+        <div class="table-responsive">
           <table class="grid-table" id="student-grid">
             <thead id="grid-head">
               <!-- Dynamically populated -->
@@ -504,6 +524,8 @@
   let currentSchema = [];
 
   window.doLogout = function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5';
     sessionStorage.clear();
     window.location.href = "index.html";
   }
@@ -710,13 +732,13 @@
           let numVal = Number(val);
           
           if (val.toLowerCase() === "a" && !isFirstCol) {
-             alert("Absent (A) can only be entered in the first column.");
+             showToast("Absent (A) can only be entered in the first column.");
              inputEl.value = currentGridData[rIdx][term][col] || "";
              return;
           }
           
           if (val !== "" && (isNaN(numVal) || numVal < 0 || numVal > max)) {
-            alert(`Please enter a valid number between 0 and ${max}`);
+            showToast(`Please enter a valid number between 0 and ${max}`);
             inputEl.value = currentGridData[rIdx][term][col] || "";
             return;
           }
@@ -935,7 +957,7 @@
       }
       drawGrid();
       e.target.value = "";
-      alert("Excel data mapped successfully!");
+      showToast("Excel data mapped successfully!");
       window.triggerAutoSave();
     };
     reader.readAsBinaryString(file);
@@ -947,13 +969,13 @@
     checks.forEach(c => c.checked = cb.checked);
   };
 
-  window.deleteSelected = function() {
+  window.deleteSelected = async function() {
     const checks = document.querySelectorAll(".row-checkbox:checked");
     if (checks.length === 0) {
-       alert("Please select at least one student to delete.");
+       showToast("Please select at least one student to delete.");
        return;
     }
-    if (!confirm(`Are you sure you want to delete ${checks.length} selected student(s)?`)) return;
+    if (!(await modernConfirm(`Are you sure you want to delete ${checks.length} selected student(s)?`, "Yes, delete", true))) return;
     
     const indices = Array.from(checks).map(c => parseInt(c.getAttribute("data-row"))).sort((a,b)=>b-a);
     indices.forEach(idx => {

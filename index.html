@@ -22,6 +22,18 @@
       }
     };
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -90,7 +102,7 @@
 
     <!-- Role Selection -->
           <div class="choice-grid">
-        <div class="choice-card" role="button" tabindex="0" onclick="alert('This feature will come soon')">
+        <div class="choice-card" role="button" tabindex="0" onclick="showToast('This feature will come soon')">
           <div class="choice-icon">&#128188;</div>
           <div class="choice-title">Founder Dashboard</div>
           <div class="choice-sub">Login to dashboard</div>
@@ -238,8 +250,8 @@
   window.goTeamForm = async function() {
     const name = document.getElementById("member-name").value;
     const pwd = document.getElementById("member-pwd").value;
-    if (!name) { alert("Please select your name."); return; }
-    if (!pwd) { alert("Please enter your password."); return; }
+    if (!name) { showToast("Please select your name."); return; }
+    if (!pwd) { showToast("Please enter your password."); return; }
 
     const err = document.getElementById("pwd-error");
     err.classList.add("hidden");
@@ -252,7 +264,7 @@
       const user = await verifyUserLogin(name, pwd);
       if (user) {
         if (window._weekSettings && !window._weekSettings.submissionsOpen) {
-          alert("Submissions are currently closed. Please contact your manager.");
+          showToast("Submissions are currently closed. Please contact your manager.");
           btn.textContent = "Login →";
           btn.disabled = false;
           return;
@@ -274,7 +286,7 @@
         btn.disabled = false;
       }
     } catch(e) {
-      alert("Login error: " + e.message);
+      showToast("Login error: " + e.message);
       btn.textContent = "Login →";
       btn.disabled = false;
     }
@@ -288,15 +300,15 @@
     const btn = document.getElementById("save-new-pwd-btn");
 
     if (newPwd.length < 8) {
-      alert("Password must be at least 8 characters.");
+      showToast("Password must be at least 8 characters.");
       return;
     }
     if (newPwd === "tfc@2014") {
-      alert("Please choose a password different from the default.");
+      showToast("Please choose a password different from the default.");
       return;
     }
     if (newPwd !== confirmPwd) {
-      alert("Passwords do not match.");
+      showToast("Passwords do not match.");
       return;
     }
 
@@ -308,12 +320,12 @@
       success = await updateUserPassword(window._pendingUser.name, newPwd);
     } catch(e) {
       console.error(e);
-      alert("Database error: " + e.message);
+      showToast("Database error: " + e.message);
     }
     if (success) {
       doLoginRedirect(window._pendingUser);
     } else {
-      alert("Failed to update password. Check connection.");
+      showToast("Failed to update password. Check connection.");
       btn.textContent = "Save Password & Login";
       btn.disabled = false;
     }
@@ -326,12 +338,12 @@
     const sel = document.getElementById("member-name");
     const name = sel.value;
     if (!name) {
-      alert("Please select your name first.");
+      showToast("Please select your name first.");
       return;
     }
-    if (confirm("Send a password reset request to your manager?")) {
+    if (await modernConfirm("Send a password reset request to your manager?")) {
       await requestPasswordReset(name);
-      alert("Request sent successfully. Please wait for your manager to reset it.");
+      showToast("Request sent successfully. Please wait for your manager to reset it.");
     }
   };
 

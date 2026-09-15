@@ -24,6 +24,20 @@
     .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
     .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+  
+</script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -35,7 +49,16 @@
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
     <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+    
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -61,11 +84,11 @@
   <div class="container" style="max-width:1200px; margin:0 auto;">
     <h1 style="margin-bottom:1.5rem; color:var(--primary);">Volunteer Calls Tracking</h1>
     
-    <div class="panel">
+    <div class="panel card">
       <div class="flex-header">
         <h2>Volunteer Check-in Log</h2>
       </div>
-      <div style="overflow-x:auto;">
+      <div class="table-responsive">
         <table class="vol-table" id="manage-table">
           <thead>
             <tr>
@@ -118,6 +141,13 @@
 </div>
 
 <script type="module">
+  window.doLogout = function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5';
+    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
+    window.location.href = "index.html";
+  };
+
   import { startClock } from "./js/utils.js";
   import { db, getVolunteers, getVolunteerCalls, saveVolunteerCall } from "./js/db.js";
 
@@ -238,10 +268,7 @@
     document.getElementById('sidebar-overlay').classList.toggle('active');
   };
 
-  window.doLogout = function() {
-    sessionStorage.removeItem("tfc_member_name"); sessionStorage.removeItem("tfc_member_role");
-    window.location.href = "index.html";
-  };
+  
 
   init();
 </script>

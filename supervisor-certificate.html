@@ -15,13 +15,26 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
   
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+  
+</script>
+  <script src="./js/ui.js"></script>
   
   <style>
     #cert-canvas {
       display: none;
     }
   </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -37,7 +50,16 @@
       <span class="time-icon">🕒</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+    
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -75,7 +97,7 @@
       </div>
 
       <!-- Controls -->
-      <div class="panel" style="margin-bottom:1.5rem; padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+      <div class="panel card" style="margin-bottom:1.5rem; padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
           <div style="display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
             <div id="state-filter-container" style="display:none; flex:1; min-width:150px; margin-right:1rem; margin-bottom:1rem;">
             <label class="form-label" style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.25rem;">State</label>
@@ -125,7 +147,7 @@
       </div>
 
       <!-- Certificate Paragraph Customization -->
-      <div class="panel" style="margin-bottom:1.5rem; padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+      <div class="panel card" style="margin-bottom:1.5rem; padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
               <label style="font-size:0.8rem; font-weight:600;">Certificate Paragraph Text</label>
               <button class="btn btn-sm btn-outline" onclick="updateParagraphPreview(true)" style="padding:0.2rem 0.5rem; font-size:0.75rem;">Reset to Default</button>
@@ -135,7 +157,7 @@
       </div>
 
       <!-- Custom Certificate Entry -->
-      <div class="panel" style="margin-bottom:1.5rem; padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+      <div class="panel card" style="margin-bottom:1.5rem; padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
         <h3 style="margin-top:0; margin-bottom:1rem;">Generate Custom Certificate</h3>
         <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1rem;">Use this if a new HM or Teacher attended who is not listed in the database below.</p>
         <div style="display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
@@ -165,7 +187,7 @@
       <!-- Schools List -->
       <div class="panel hidden" id="schools-card" style="padding:1.5rem; background:white; border-radius:var(--radius); box-shadow:var(--shadow-sm);">
         <h3 style="margin-top:0; margin-bottom:1rem;">Schools in <span id="lbl-dist-name" style="color:var(--primary);"></span></h3>
-        <div style="overflow-x:auto;">
+        <div class="table-responsive">
           <table style="width:100%; border-collapse:collapse; text-align:left;">
             <thead>
               <tr style="border-bottom:2px solid var(--border);">
@@ -190,6 +212,33 @@
 <canvas id="cert-canvas"></canvas>
 
 <script type="module">
+  window.doLogout = function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5';
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  }
+
+    // Immediately show state filter for associate-sc to prevent layout pop-in
+    if (sessionStorage.getItem('tfc_member_role') === 'associate-sc') {
+        const stateContainer = document.getElementById('state-filter-container');
+        if (stateContainer) stateContainer.style.display = 'block';
+    }
+
+
+  ;
+</script>
+
+
+
+<script>
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(sidebar) sidebar.classList.toggle('active');
+    if(overlay) overlay.classList.toggle('active');
+  };
+
   import { startClock } from "./js/utils.js";
   import { getUsers, getSchools, getDistricts, getGlobalAcademicYear } from "./js/db.js";
 
@@ -549,30 +598,7 @@
 
 </script>
 <script>
-  window.doLogout = function() {
-    sessionStorage.clear();
-    window.location.href = "index.html";
-  }
-
-    // Immediately show state filter for associate-sc to prevent layout pop-in
-    if (sessionStorage.getItem('tfc_member_role') === 'associate-sc') {
-        const stateContainer = document.getElementById('state-filter-container');
-        if (stateContainer) stateContainer.style.display = 'block';
-    }
-
-
-  ;
-</script>
-
-
-
-<script>
-  window.toggleSidebar = function() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if(sidebar) sidebar.classList.toggle('active');
-    if(overlay) overlay.classList.toggle('active');
-  };
+  
 </script>
 </body>
 </html>

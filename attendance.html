@@ -24,6 +24,18 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -55,7 +67,7 @@
 </div>
 
 <script type="module">
-  import { getUsers, logTeamAttendance, checkMissingOutPunch, updateUserBaseLocation, getTodayTeamAttendance, getHolidays, requestLeave } from "./js/db.js";
+  import { getUsers, logTeamAttendance, checkMissingOutPunch, updateUserBaseLocation, getTodayTeamAttendance, getHolidays, requestLeave, saveUserBiometrics } from "./js/db.js";
 
   let allUsers = [];
   let attMap = {};
@@ -97,7 +109,7 @@
       allUsers = users.filter(u => u.role !== 'manager').sort((a,b) => a.name.localeCompare(b.name));
       renderUsers(allUsers);
     } catch(err) {
-      alert("Error loading users: " + err.message);
+      showToast("Error loading users: " + err.message);
     }
   }
 
@@ -223,7 +235,7 @@
       }
   };
 
-  window.punchAttendance = async function(name, type) {
+  window.oldPunchAttendance = async function(name, type) {
     try {
       if (!navigator.geolocation) {
         Swal.fire("Error", "Geolocation is not supported by your browser.", "error");
@@ -265,7 +277,8 @@
 
     navigator.geolocation.getCurrentPosition(async (position) => {
       try {
-        const lat = position.coords.latitude;
+        if(position.coords.accuracy > 35) { loader.style.display="none"; Swal.fire("GPS Weak", `Accuracy is +/-${Math.round(position.coords.accuracy)}m. Please step outdoors or near a window to mark attendance.`, "error"); return; }
+          const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         let reason = null;
         
@@ -336,6 +349,214 @@
   }
 
   init();
+
+  
+  let modelsLoaded = false;
+  async function loadModels() {
+    if(modelsLoaded) return;
+    try {
+      showLoading("Loading AI Models...");
+      await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
+      modelsLoaded = true;
+      if (typeof Swal !== 'undefined') Swal.close();
+    } catch(e) {
+      console.error(e);
+      if (typeof Swal !== 'undefined') Swal.fire("Error", "Could not load AI models.", "error");
+    }
+  }
+
+  let stream = null;
+  let detectInterval = null;
+  
+  async function startCamera() {
+    await loadModels();
+    const video = document.getElementById('webcam');
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    video.srcObject = stream;
+    return new Promise(resolve => {
+        video.onloadedmetadata = () => {
+            video.play();
+            resolve();
+        };
+    });
+  }
+  
+  window.closeCamera = function() {
+    if(stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    if(detectInterval) {
+      clearInterval(detectInterval);
+      detectInterval = null;
+    }
+    if(window.removeScanLine) window.removeScanLine();
+    document.getElementById('camera-modal').close();
+  }
+  
+  function dist2D(p1, p2) {
+    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+  }
+
+  function calculateEAR(eye) {
+    const v1 = dist2D(eye[1], eye[5]);
+    const v2 = dist2D(eye[2], eye[4]);
+    const h = dist2D(eye[0], eye[3]);
+    return (v1 + v2) / (2.0 * h);
+  }
+
+  window.registerFace = async function(name) {
+    document.getElementById('camera-modal').showModal();
+    if(window.addScanLine) window.addScanLine();
+    document.getElementById('btn-pin-fallback').style.display = 'none';
+    document.getElementById('camera-msg').innerText = "Look straight at the camera...";
+    
+    await startCamera();
+    
+    const video = document.getElementById('webcam');
+    const overlay = document.getElementById('overlay');
+    const displaySize = { width: video.videoWidth, height: video.videoHeight };
+    faceapi.matchDimensions(overlay, displaySize);
+    
+    detectInterval = setInterval(async () => {
+       const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+       if (detection) {
+           clearInterval(detectInterval);
+           document.getElementById('camera-msg').innerText = "Face captured!";
+           const dims = faceapi.matchDimensions(overlay, displaySize);
+           faceapi.draw.drawDetections(overlay, faceapi.resizeResults(detection, dims));
+           
+           setTimeout(async () => {
+               window.closeCamera();
+               const { value: pin } = await Swal.fire({
+                  title: 'Create 4-Digit PIN',
+                  text: 'Enter a backup PIN if the camera ever fails.',
+                  input: 'text',
+                  inputAttributes: { pattern: "\\d{4}", maxlength: 4 },
+                  showCancelButton: true
+               });
+               
+               if(pin && pin.length === 4) {
+                   showLoading("Saving profile...");
+                   const descriptorArray = Array.from(detection.descriptor);
+                   await saveUserBiometrics(name, descriptorArray, pin);
+                   Swal.fire("Success", "Face and PIN registered!", "success");
+                   renderUsers();
+               } else {
+                   showToast("Registration cancelled or invalid PIN.");
+               }
+           }, 1000);
+       }
+    }, 200);
+  };
+
+  async function promptPin(user, type) {
+      const { value: pin } = await Swal.fire({
+          title: 'Enter Backup PIN',
+          input: 'text',
+          inputAttributes: { maxlength: 4 },
+          showCancelButton: true
+      });
+      if(pin === user.pin) {
+          window.oldPunchAttendance(user.name, type);
+      } else if (pin) {
+          Swal.fire("Error", "Incorrect PIN", "error");
+      }
+  }
+
+  window.punchAttendance = async function(name, type) {
+     const users = await getUsers();
+     const user = users.find(u => u.name === name);
+     if(!user.faceDescriptor || !user.pin) {
+         return Swal.fire("Not Registered", "Please click 'Register Face' first.", "warning");
+     }
+     
+     // Double Punch Block
+     if (type === 'IN' && attMap[name] && attMap[name].inTime) {
+         Swal.fire("Already Punched", "You have already punched IN today!", "error");
+         return;
+     }
+     if (type === 'OUT' && attMap[name] && attMap[name].outTime) {
+         Swal.fire("Already Punched", "You have already punched OUT today!", "error");
+         return;
+     }
+     
+     document.getElementById('camera-modal').showModal();
+     if(window.addScanLine) window.addScanLine();
+     document.getElementById('btn-pin-fallback').style.display = 'block';
+     document.getElementById('btn-pin-fallback').onclick = () => { window.closeCamera(); promptPin(user, type); };
+     document.getElementById('camera-msg').innerText = "Verifying face + Waiting for BLINK...";
+     
+     await startCamera();
+     
+     const video = document.getElementById('webcam');
+     const overlay = document.getElementById('overlay');
+     const displaySize = { width: video.videoWidth, height: video.videoHeight };
+     faceapi.matchDimensions(overlay, displaySize);
+     
+     const savedDescriptor = new Float32Array(user.faceDescriptor);
+     const faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors(name, [savedDescriptor]), 0.55);
+     
+     let attempts = 0;
+     let eyeWasOpen = false;
+     
+     detectInterval = setInterval(async () => {
+        attempts++;
+        if(attempts > 75) {  // 15 seconds max
+            clearInterval(detectInterval);
+            document.getElementById('camera-msg').innerText = "Face/Blink not matched. Use PIN.";
+            return;
+        }
+        
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+        
+        if (detection) {
+            const marks = detection.landmarks.positions;
+            const leftEye = marks.slice(36, 42);
+            const rightEye = marks.slice(42, 48);
+            const avgEAR = (calculateEAR(leftEye) + calculateEAR(rightEye)) / 2.0;
+
+            if (avgEAR > 0.25) eyeWasOpen = true;
+
+            const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+            if(bestMatch.label === name) {
+                if (eyeWasOpen && avgEAR < 0.19) {
+                    clearInterval(detectInterval);
+                    document.getElementById('camera-msg').innerHTML = "Blink Confirmed! <br> Verified!";
+                    const dims = faceapi.matchDimensions(overlay, displaySize);
+                    faceapi.draw.drawDetections(overlay, faceapi.resizeResults(detection, dims));
+                    
+                    setTimeout(() => {
+                        window.closeCamera();
+                        window.oldPunchAttendance(name, type);
+                    }, 1000);
+                } else {
+                     document.getElementById('camera-msg').innerText = "Face Matches. Please BLINK.";
+                }
+            } else {
+                 document.getElementById('camera-msg').innerText = "Face mismatch.";
+            }
+        } else {
+             document.getElementById('camera-msg').innerText = "Look directly at camera...";
+        }
+     }, 200);
+  };
 </script>
+
+<dialog id="camera-modal" style="border:none; border-radius:12px; padding:1.5rem; max-width:90%; width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2); background:var(--card);">
+  <h3 style="margin-top:0; color:var(--primary); text-align:center;">Face Verification</h3>
+  <div style="position:relative; width:100%; height:300px; background:#000; border-radius:8px; overflow:hidden; display:flex; justify-content:center; align-items:center;">
+    <video id="webcam" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></video>
+    <canvas id="overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1);"></canvas>
+    <div id="camera-msg" style="position:absolute; bottom:10px; left:0; width:100%; text-align:center; color:white; font-weight:bold; text-shadow:0 1px 3px black; z-index:10;">Initializing...</div>
+  </div>
+  <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+    <button class="btn btn-outline" style="flex:1;" onclick="window.closeCamera()">Cancel</button>
+    <button class="btn btn-primary" style="flex:1; display:none;" id="btn-pin-fallback">Use PIN</button>
+  </div>
+</dialog>
+
 </body>
 </html>

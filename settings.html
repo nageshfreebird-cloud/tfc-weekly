@@ -9,6 +9,20 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+  
+</script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
   <nav class="navbar">
@@ -19,7 +33,16 @@
     </div>
     <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
       <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">&#128274; Logout</button>
+      
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
     </div>
   </nav>
 
@@ -34,17 +57,29 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-        <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
-        <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
-        <a href="manager-calls.html" id="nav-calls">&#128222; 15-Days Teacher Calls</a>
-        <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
-        <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
-        <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
-        <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
-        <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
-        <a href="manager-attendance.html" id="nav-attendance">&#128205; Team Attendance</a>
-        <a href="#" onclick="alert('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
-        <a href="settings.html?v=ign" id="nav-settings" class="active">&#9881;&#65039; My Settings</a>
+        <div class="nav-group">
+          <div class="nav-group-label">Core Operations</div>
+          <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
+          <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
+          <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
+          <a href="#" onclick="showToast('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Academics</div>
+          <a href="manager-calls.html" id="nav-calls">&#128222; 15-Days Teacher Calls</a>
+          <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
+          <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
+          <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Team & Volunteers</div>
+          <a href="manager-attendance.html" id="nav-attendance">&#128205; Team Attendance</a>
+          <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">System</div>
+          <a href="settings.html?v=ign" id="nav-settings" class="active">&#9881;&#65039; My Settings</a>
+        </div>
       </div>
     </div>
 
@@ -118,6 +153,13 @@
 </main>
 
 <script type="module">
+  window.doLogout = function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5';
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    };
+
   import { requireManagerAuth, signOutManager } from "./js/auth.js";
   import { startClock, getMondayOf, getSaturdayOf,
            toYMD, formatShortDate } from "./js/utils.js";
@@ -257,7 +299,7 @@
       if (districts[s].includes(val)) exists = true;
     }
     
-    if (exists) { alert("District already exists in the system."); return; }
+    if (exists) { showToast("District already exists in the system."); return; }
     
     districts[state].push(val);
     await saveDistricts(districts);
@@ -267,7 +309,7 @@
   };
 
   window.removeDistrict = async function(state, i) {
-    if (!confirm(`Remove this district from ${state}?`)) return;
+    if (!(await modernConfirm(`Remove this district from ${state}?`, "Yes, remove", true))) return;
     districts[state].splice(i, 1);
     await saveDistricts(districts);
     renderDistricts();
@@ -330,7 +372,7 @@
   
   
   window.doIgnoreReset = async function(name) {
-    if (confirm(`Ignore password reset request for ${name}?`)) {
+    if (await modernConfirm(`Ignore password reset request for ${name}?`)) {
       await ignoreResetRequest(name);
       const idx = users.findIndex(u => u.name === name);
       if (idx !== -1) users[idx].resetRequested = false;
@@ -339,13 +381,13 @@
   };
 
   window.resetUserPassword = async function(name) {
-    if (confirm(`Are you sure you want to reset ${name}'s password back to tfc@2014?`)) {
+    if (await modernConfirm(`Are you sure you want to reset ${name}'s password back to tfc@2014?`, "Yes, reset", true)) {
       const idx = users.findIndex(u => u.name === name);
       if (idx !== -1) {
         users[idx].password = 'tfc@2014';
         users[idx].resetRequested = false;
         await saveUsers(users);
-        alert(`Password for ${name} has been reset to tfc@2014.`);
+        showToast(`Password for ${name} has been reset to tfc@2014.`);
         renderMembers(); // re-render to clear any notifications
       }
     }
@@ -370,10 +412,10 @@
     const name = document.getElementById("tm-name").value.trim();
     const role = document.getElementById("tm-role").value;
     const pwd = editUserIndex !== -1 ? users[editUserIndex].password : "tfc@2014";
-      if (!name) { alert("Name is required."); return; }
+      if (!name) { showToast("Name is required."); return; }
     
     if (editUserIndex === -1 && users.find(u => u.name === name)) { 
-      alert("User already exists!"); return; 
+      showToast("User already exists!"); return; 
     }
 
     const assigned = [];
@@ -393,7 +435,7 @@
   };
 
   window.removeUser = async function(i) {
-    if (!confirm(`Delete user ${users[i].name}?`)) return;
+    if (!(await modernConfirm(`Delete user ${users[i].name}?`, "Yes, delete", true))) return;
     users.splice(i, 1);
     await saveUsers(users);
     renderUsers();
@@ -423,10 +465,7 @@
       if(sidebar) sidebar.classList.toggle('active');
       if(overlay) overlay.classList.toggle('active');
     };
-    window.doLogout = function() {
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    };
+    
   </script>
 </body>
 </html>

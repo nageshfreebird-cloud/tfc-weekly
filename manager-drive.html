@@ -41,6 +41,18 @@
     .grid-table th, .grid-table td { border: 1px solid var(--border); padding: 0.4rem; text-align: center; }
     .grid-table th { background: var(--primary); color: white; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
 
@@ -56,7 +68,16 @@
       <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+    
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -72,17 +93,29 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-        <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
-        <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
-        <a href="manager-calls.html" id="nav-calls">&#128222; 15-Days Teacher Calls</a>
-        <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
-        <a href="manager-drive.html" id="nav-analytics" class="active">&#128200; Assessments Analytics</a>
-        <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
-        <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
-        <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
-        <a href="manager-attendance.html" id="nav-attendance">&#128205; Team Attendance</a>
-        <a href="#" onclick="alert('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
-        <a href="settings.html?v=ign" id="nav-settings">&#9881;&#65039; My Settings</a>
+        <div class="nav-group">
+          <div class="nav-group-label">Core Operations</div>
+          <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
+          <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
+          <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
+          <a href="#" onclick="showToast('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Academics</div>
+          <a href="manager-calls.html" id="nav-calls">&#128222; 15-Days Teacher Calls</a>
+          <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
+          <a href="manager-drive.html" id="nav-analytics" class="active">&#128200; Assessments Analytics</a>
+          <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Team & Volunteers</div>
+          <a href="manager-attendance.html" id="nav-attendance">&#128205; Team Attendance</a>
+          <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">System</div>
+          <a href="settings.html?v=ign" id="nav-settings">&#9881;&#65039; My Settings</a>
+        </div>
       </div>
     </div>
 
@@ -196,7 +229,7 @@
             <!-- LEADERBOARD -->
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
                <h3 style="font-size:1rem; margin:0 0 1rem 0;">Top 3 & Bottom 3 Students</h3>
-               <div style="overflow-x:auto;">
+               <div class="table-responsive">
                    <table class="table" style="width:100%; font-size:0.85rem;">
                      <thead><tr><th>Name</th><th>School</th><th>Class</th><th>Score</th></tr></thead>
                      <tbody id="leaderboard-body"></tbody>
@@ -207,7 +240,7 @@
             <!-- DATA QUALITY -->
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
                <h3 style="font-size:1rem; margin:0 0 1rem 0; color:var(--danger);">Data Quality Exceptions</h3>
-               <div style="overflow-x:auto;">
+               <div class="table-responsive">
                    <table class="table" style="width:100%; font-size:0.85rem;">
                      <thead><tr><th>Student</th><th>School</th><th>Issue</th></tr></thead>
                      <tbody id="dq-body"></tbody>
@@ -236,7 +269,7 @@
         </select>
       </div>
       
-      <div id="modal-body" style="overflow-x:auto;"></div>
+      <div id="modal-body" class="table-responsive"></div>
     </div>
   </div>
 
@@ -257,7 +290,7 @@
     
     const schema = (exactLevel === 'Level-1' || exactLevel === 'Level-2') ? SCHEMA_L1_L2 : SCHEMA_L3_L4;
     const distSchools = allSchools.filter(s => s && s.District === dist && s.Level === exactLevel);
-    if(distSchools.length === 0) return alert("No schools found for " + dist + " in " + exactLevel);
+    if(distSchools.length === 0) return showToast("No schools found for " + dist + " in " + exactLevel);
     
     const wb = XLSX.utils.book_new();
     
@@ -283,13 +316,15 @@
        }
     });
     
-    if(wb.SheetNames.length === 0) return alert("No student data found for the selected schools.");
+    if(wb.SheetNames.length === 0) return showToast("No student data found for the selected schools.");
     XLSX.writeFile(wb, `${dist}_${exactLevel}_Student_Assessments.xlsx`);
   };  let chartInstance = null;
   
   let currentModalSchool = null;
 
-  window.doLogout = async function() { await signOutManager();
+  window.doLogout = async function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5'; await signOutManager();
     sessionStorage.clear();
     window.location.href = "login.html";
   };

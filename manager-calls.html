@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -13,7 +14,8 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
   <link rel="stylesheet" href="css/style.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js">
+</script>
   <style>
     .chart-card {
       background: var(--bg);
@@ -41,8 +43,22 @@
       margin-bottom: 1.5rem;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
 </head>
 <body>
+
+
 
 <nav class="navbar">
   <div class="navbar-brand">
@@ -56,7 +72,16 @@
       <span class="time-icon">⏰</span>
       <span id="live-clock">Loading...</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:var(--danger); border-color:var(--danger);">🔓 Logout</button>
+    
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
+      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
+        <option value="en">EN</option>
+        <option value="kn">&#3221;&#3240;&#3277;</option>
+        <option value="ta">&#2980;&#2990;&#3007;</option>
+        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
+        <option value="hi">&#2361;&#2367;&#2306;</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
 
@@ -72,17 +97,29 @@
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-        <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
-        <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
-        <a href="manager-calls.html" id="nav-calls" class="active">&#128222; 15-Days Teacher Calls</a>
-        <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
-        <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
-        <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
-        <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
-        <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
-        <a href="manager-attendance.html" id="nav-attendance">&#128205; Team Attendance</a>
-        <a href="#" onclick="alert('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
-        <a href="settings.html?v=ign" id="nav-settings">&#9881;&#65039; My Settings</a>
+        <div class="nav-group">
+          <div class="nav-group-label">Core Operations</div>
+          <a href="dashboard.html" id="nav-dashboard">&#128202; Dashboard</a>
+          <a href="tab-a.html" id="nav-tasks">&#128203; Weekly Tasks</a>
+          <a href="sheets.html" id="nav-sheets">&#128279; Google Sheet Links</a>
+          <a href="#" onclick="showToast('This feature will come soon')" id="nav-llf">&#127979; LLF & PTM Oversight</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Academics</div>
+          <a href="manager-calls.html" id="nav-calls" class="active">&#128222; 15-Days Teacher Calls</a>
+          <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
+          <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
+          <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Team & Volunteers</div>
+          <a href="manager-attendance.html" id="nav-attendance">&#128205; Team Attendance</a>
+          <a href="manager-volunteers.html" id="nav-volunteers">&#128101; Volunteer Oversight</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">System</div>
+          <a href="settings.html?v=ign" id="nav-settings">&#9881;&#65039; My Settings</a>
+        </div>
       </div>
     </div>
 
@@ -125,9 +162,9 @@
       <div id="level-3" class="hidden">
         <div class="drilldown-header">
           <h2 id="l3-title"></h2>
-          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">? Back to Supervisor</button>
+          <button class="btn btn-outline btn-sm" onclick="showLevel(2)">⬅️ Back to Supervisor</button>
         </div>
-        <div id="l3-content" style="overflow-x:auto;"></div>
+        <div id="l3-content" class="table-responsive"></div>
       </div>
 
     </div>
@@ -136,17 +173,24 @@
 </main>
 
 <script type="module">
+  window.doLogout = async function() {
+      if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+      document.body.style.opacity = '0.5'; await signOutManager();
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  };
+
   import { requireManagerAuth, signOutManager } from "./js/auth.js";
   import { generatePast15DayPeriods , startClock } from "./js/utils.js";
   import { getUsers, getSchools, getAllTeacherCalls, getGlobalAcademicYear, setLocalViewingYear } from "./js/db.js";
 
-  await requireManagerAuth();
-  startClock("live-clock");
 
-  window.doLogout = async function() { await signOutManager();
-    clearManagerSession();
-    window.location.href = "index.html";
-  };
+
+
+    await requireManagerAuth();
+    startClock("live-clock");
+  
+  
 
   let globalData = {}; // { supeName: { distLevel: { total: X, done: Y, schools: [] } } }
   let chartInstances = [];
@@ -155,11 +199,12 @@
   let allSchoolsByDistCache = {};
 
   async function init() {
-    const [year, uList] = await Promise.all([
+        try {
+          const [year, uList] = await Promise.all([
         getGlobalAcademicYear(),
         getUsers()
       ]);
-      document.getElementById("view-year-select").value = year;
+              document.getElementById("view-year-select").value = year;
       allUsers = uList;
     
     // Cache schools
@@ -174,7 +219,7 @@
         }
       }
     }
-    await Promise.all(promises);
+          await Promise.all(promises);
 
     // Populate periods
     const periods = generatePast15DayPeriods(10);
@@ -187,9 +232,13 @@
     if (periods.length > 0) {
       await loadDataForPeriod(periods[0].label);
     }
+  } catch(err) {
+    showToast('INIT ERROR: ' + err.message, 'error');
+    console.error(err);
   }
+}
 
-  window.changeViewingYear = function(year) {
+window.changeViewingYear = function(year) {
     setLocalViewingYear(year);
     window.location.reload(); 
   };
@@ -298,8 +347,20 @@
             print-color-adjust: exact !important;
           }
         </style>
-      </head>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
+</head>
       <body>
+
+
         <h1>Master Teacher Calls Report</h1>
         <div class="period"><strong>Period:</strong> ${periodLabel}</div>
     `;
@@ -528,7 +589,7 @@
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:1rem;vertical-align:top;width:30%;">
             <strong>${s.name}</strong><br/>
-            <span class="text-muted text-sm">👤 ${s.teacher || 'Unknown'} (${s.phone || 'N/A'})</span>
+            <span class="text-muted text-sm">&#128104;&#8205;&#127979;  ${s.teacher || 'Unknown'} (${s.phone || 'N/A'})</span>
           </td>
           <td style="padding:1rem;vertical-align:top;">
             ${logsHtml}

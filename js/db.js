@@ -1122,3 +1122,16 @@ export async function getApprovedLeavesForMonth(yyyy, mm) {
   });
   return leaves;
 }
+
+
+export async function saveUserBiometrics(name, descriptorArray, pin) {
+  const users = await getUsers();
+  const idx = users.findIndex(u => u.name === name);
+  if (idx !== -1) {
+    users[idx].faceDescriptor = descriptorArray;
+    users[idx].pin = pin;
+    await saveUsers(users);
+    return true;
+  }
+  return false;
+}
