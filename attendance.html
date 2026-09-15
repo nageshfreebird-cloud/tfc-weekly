@@ -439,7 +439,7 @@
     faceapi.matchDimensions(overlay, displaySize);
     
     detectInterval = setInterval(async () => {
-       const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceDescriptor();
+       const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
        if (detection) {
            clearInterval(detectInterval);
            document.getElementById('camera-msg').innerText = "Face captured!";
@@ -526,7 +526,7 @@
               return;
           }
           
-          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceDescriptor();
+          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
           
           if (detection) {
               const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
