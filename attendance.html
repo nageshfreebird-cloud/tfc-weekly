@@ -356,6 +356,8 @@
   }
 
   init();
+  // Silently preload AI models in background so camera opens instantly
+  setTimeout(() => { loadModels(true).catch(()=>{}); }, 1000);
 
   
   let modelsLoaded = false;
@@ -363,18 +365,18 @@
       if (typeof Swal !== "undefined") Swal.fire({title: msg, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     }
 
-    async function loadModels() {
+    async function loadModels(silent = false) {
     if(modelsLoaded) return;
     try {
-      showLoading("Loading AI Models...");
+      if (!silent) showLoading("Loading AI Models...");
       await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
       await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
       await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
       modelsLoaded = true;
-      if (typeof Swal !== 'undefined') Swal.close();
+      if (!silent && typeof Swal !== 'undefined') Swal.close();
     } catch(e) {
       console.error(e);
-      if (typeof Swal !== 'undefined') Swal.fire("Error", "Could not load AI models: " + e.message, "error");
+      if (!silent && typeof Swal !== 'undefined') Swal.fire("Error", "Could not load AI models: " + e.message, "error");
     }
   }
 
@@ -437,7 +439,7 @@
     faceapi.matchDimensions(overlay, displaySize);
     
     detectInterval = setInterval(async () => {
-       const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+       const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceDescriptor();
        if (detection) {
            clearInterval(detectInterval);
            document.getElementById('camera-msg').innerText = "Face captured!";
@@ -503,7 +505,7 @@
      if(window.addScanLine) window.addScanLine();
      document.getElementById('btn-pin-fallback').style.display = 'block';
      document.getElementById('btn-pin-fallback').onclick = () => { window.closeCamera(); promptPin(user, type); };
-     document.getElementById('camera-msg').innerText = "Verifying face + Waiting for BLINK...";
+     document.getElementById('camera-msg').innerText = "Look directly at camera...";
      
      await startCamera();
      
@@ -537,7 +539,7 @@
                   setTimeout(() => {
                       window.closeCamera();
                       window.oldPunchAttendance(name, type);
-                  }, 1000);
+                  }, 600);
               } else {
                    document.getElementById('camera-msg').innerText = "Face mismatch.";
               }
