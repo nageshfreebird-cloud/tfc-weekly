@@ -516,48 +516,35 @@
      const faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors(name, [savedDescriptor]), 0.55);
      
      let attempts = 0;
-     let eyeWasOpen = false;
-     
-     detectInterval = setInterval(async () => {
-        attempts++;
-        if(attempts > 75) {  // 15 seconds max
-            clearInterval(detectInterval);
-            document.getElementById('camera-msg').innerText = "Face/Blink not matched. Use PIN.";
-            return;
-        }
-        
-        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-        
-        if (detection) {
-            const marks = detection.landmarks.positions;
-            const leftEye = marks.slice(36, 42);
-            const rightEye = marks.slice(42, 48);
-            const avgEAR = (calculateEAR(leftEye) + calculateEAR(rightEye)) / 2.0;
-
-            if (avgEAR > 0.25) eyeWasOpen = true;
-
-            const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-            if(bestMatch.label === name) {
-                if (eyeWasOpen && avgEAR < 0.19) {
-                    clearInterval(detectInterval);
-                    document.getElementById('camera-msg').innerHTML = "Blink Confirmed! <br> Verified!";
-                    const dims = faceapi.matchDimensions(overlay, displaySize);
-                    faceapi.draw.drawDetections(overlay, faceapi.resizeResults(detection, dims));
-                    
-                    setTimeout(() => {
-                        window.closeCamera();
-                        window.oldPunchAttendance(name, type);
-                    }, 1000);
-                } else {
-                     document.getElementById('camera-msg').innerText = "Face Matches. Please BLINK.";
-                }
-            } else {
-                 document.getElementById('camera-msg').innerText = "Face mismatch.";
-            }
-        } else {
-             document.getElementById('camera-msg').innerText = "Look directly at camera...";
-        }
-     }, 200);
+            detectInterval = setInterval(async () => {
+          attempts++;
+          if(attempts > 50) {  // 10 seconds max
+              clearInterval(detectInterval);
+              document.getElementById('camera-msg').innerText = "Face not matched in time. Use PIN.";
+              return;
+          }
+          
+          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceDescriptor();
+          
+          if (detection) {
+              const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+              if(bestMatch.label === name) {
+                  clearInterval(detectInterval);
+                  document.getElementById('camera-msg').innerHTML = "Face Matched! <br> Verified!";
+                  const dims = faceapi.matchDimensions(overlay, displaySize);
+                  faceapi.draw.drawDetections(overlay, faceapi.resizeResults(detection, dims));
+                  
+                  setTimeout(() => {
+                      window.closeCamera();
+                      window.oldPunchAttendance(name, type);
+                  }, 1000);
+              } else {
+                   document.getElementById('camera-msg').innerText = "Face mismatch.";
+              }
+          } else {
+              document.getElementById('camera-msg').innerText = "Look directly at camera...";
+          }
+       }, 200);
   };
 </script>
 
