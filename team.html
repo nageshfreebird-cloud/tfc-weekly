@@ -287,14 +287,14 @@
       addThisWeekTask(); return;
     }
 
-    // Fetch schools for each district to build District_Level string
+    // Fetch schools for each district to build District_Level string (Parallel for speed)
     let distLevelSet = new Set();
-    for (const d of supe.districts) {
-      const schools = await getSchools(d);
+    const schoolsArrays = await Promise.all(supe.districts.map(d => getSchools(d)));
+    schoolsArrays.forEach(schools => {
       schools.forEach(s => {
-        if (s.Level) distLevelSet.add(`${d}_${s.Level}`);
+        if (s.Level) distLevelSet.add(`${s.District}_${s.Level}`);
       });
-    }
+    });
 
     if (distLevelSet.size === 0) {
       addThisWeekTask(); return;
