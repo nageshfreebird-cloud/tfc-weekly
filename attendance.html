@@ -25,7 +25,7 @@
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="./js/ui.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <script src="js/face-api.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -374,7 +374,7 @@
       if (typeof Swal !== 'undefined') Swal.close();
     } catch(e) {
       console.error(e);
-      if (typeof Swal !== 'undefined') Swal.fire("Error", "Could not load AI models.", "error");
+      if (typeof Swal !== 'undefined') Swal.fire("Error", "Could not load AI models: " + e.message, "error");
     }
   }
 
@@ -382,6 +382,7 @@
   let detectInterval = null;
   
   async function startCamera() {
+      try {
     await loadModels();
     const video = document.getElementById('webcam');
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -392,6 +393,10 @@
             resolve();
         };
     });
+      } catch(err) {
+        if (window.closeCamera) window.closeCamera();
+        throw err;
+      }
   }
   
   window.closeCamera = function() {
