@@ -13,12 +13,7 @@
     sessionStorage.removeItem("tfc_member_role");
     window.location.href = "index.html";
   }
-  startClock("live-clock");;
-
-
-
-  init();
-</script>
+  </script>
 
 
 
@@ -101,13 +96,6 @@ window.addEventListener("unhandledrejection", function(e) {
     </div>
     
       <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
-      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
-        <option value="en">EN</option>
-        <option value="kn">&#3221;&#3240;&#3277;</option>
-        <option value="ta">&#2980;&#2990;&#3007;</option>
-        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
-        <option value="hi">&#2361;&#2367;&#2306;</option>
-      </select>
       <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
@@ -384,8 +372,8 @@ window.addEventListener("unhandledrejection", function(e) {
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
   import { startClock } from "./js/utils.js";
-  import { AnalyticsEngine } from "./js/analytics_engine.js?v=2";
-  import { getAllStudentAssessments, getUsers, getDistricts, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, getAssessmentsForDistricts, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js?v=3";
+  import { AnalyticsEngine } from "./js/analytics_engine.js?v=4";
+  import { getAllStudentAssessments, getUsers, getDistricts, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, getAssessmentsForDistricts, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js?v=4";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -1123,6 +1111,8 @@ function renderChart(canvasId, type, labels, datasets, extraOptions = {}) {
     }
   };
   
+  init();
+
   window.deleteYearTask = async function(month, index) {
     if (!(await modernConfirm("Delete this task from the plan?", "Yes, delete", true))) return;
     yearPlan[month].splice(index, 1);

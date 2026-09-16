@@ -1,4 +1,4 @@
-import { SCHEMA_L1_L2, SCHEMA_L3_L4 } from './db.js';
+import { SCHEMA_L1_L2, SCHEMA_L3_L4 } from './db.js?v=4';
 
 export class AnalyticsEngine {
   constructor(allSchools, allAssessments) {

@@ -40,13 +40,6 @@
     </div>
     
       <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
-      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
-        <option value="en">EN</option>
-        <option value="kn">&#3221;&#3240;&#3277;</option>
-        <option value="ta">&#2980;&#2990;&#3007;</option>
-        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
-        <option value="hi">&#2361;&#2367;&#2306;</option>
-      </select>
       <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
   </div>
 </nav>
@@ -82,13 +75,6 @@
       </div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
         <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
-      <select onchange="switchLang(this.value)" style="background:var(--primary); color:white; border:1px solid rgba(255,255,255,0.3); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600;">
-        <option value="en">EN</option>
-        <option value="kn">&#3221;&#3240;&#3277;</option>
-        <option value="ta">&#2980;&#2990;&#3007;</option>
-        <option value="te">&#3108;&#3142;&#3122;&#3137;</option>
-        <option value="hi">&#2361;&#2367;&#2306;</option>
-      </select>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">🚪 Logout</button>
       </div>
     </div>
@@ -117,7 +103,7 @@
 
   import { requireManagerAuth, signOutManager } from "./js/auth.js";
   import { startClock } from "./js/utils.js";
-  import { getUsers, getAllGoogleSheetLinks } from "./js/db.js";
+  import { getUsers, getAllGoogleSheetLinks } from "./js/db.js?v=4";
 
   await requireManagerAuth();
   startClock("live-clock");

@@ -1055,11 +1055,17 @@ export async function checkMissingOutPunch(name) {
   let missing = null;
   snap.forEach(d => {
     const data = d.data();
-    if (data.date < dateStr && data.inTime && !data.outTime) {
-      if (!missing || data.date > missing.date) missing = data;
+    if (data.date < dateStr && data.inTime && !data.outTime && !data.missedPunchAcknowledged) {
+      if (!missing || data.date > missing.date) missing = { id: d.id, ...data };
     }
   });
   return missing;
+}
+
+export async function acknowledgeMissingPunch(docId) {
+  const colRef = await getScopedCollection("team_attendance");
+  const docRef = doc(colRef, docId);
+  markPendingWrite(); await updateDoc(docRef, { missedPunchAcknowledged: true });
 }
 
 export async function getAttendanceForMonth(yyyy, mm) {

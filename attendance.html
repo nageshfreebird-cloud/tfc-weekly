@@ -67,7 +67,7 @@
 </div>
 
 <script type="module">
-  import { getUsers, logTeamAttendance, checkMissingOutPunch, updateUserBaseLocation, getTodayTeamAttendance, getHolidays, requestLeave, saveUserBiometrics } from "./js/db.js";
+  import { getUsers, logTeamAttendance, checkMissingOutPunch, acknowledgeMissingPunch, updateUserBaseLocation, getTodayTeamAttendance, getHolidays, requestLeave, saveUserBiometrics } from "./js/db.js?v=4";
 
   let allUsers = [];
   let attMap = {};
@@ -263,13 +263,14 @@
           return;
       }
 
-      // Missing punch check for IN
+              // Missing punch check for IN
       if (type === 'IN') {
           const missing = await checkMissingOutPunch(name);
-        if (missing) {
-            await Swal.fire("Missing Punch!", `?? You forgot to punch OUT on ${missing.date}. Please inform your manager to correct your timesheet.`, "warning");
-        }
-    }
+          if (missing) {
+              await Swal.fire("Missing Punch!", `⚠️ You forgot to punch OUT on ${missing.date}. Please inform your manager to correct your timesheet.`, "warning");
+              await acknowledgeMissingPunch(missing.id);
+          }
+      }
     
     const result = await Swal.fire({
       title: `Punch ${type} for ${name}?`,
@@ -284,8 +285,7 @@
 
     navigator.geolocation.getCurrentPosition(async (position) => {
       try {
-        if(position.coords.accuracy > 35) { loader.style.display="none"; Swal.fire("GPS Weak", `Accuracy is +/-${Math.round(position.coords.accuracy)}m. Please step outdoors or near a window to mark attendance.`, "error"); return; }
-          const lat = position.coords.latitude;
+        const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         let reason = null;
         
@@ -461,7 +461,10 @@
                    const descriptorArray = Array.from(detection.descriptor);
                    await saveUserBiometrics(name, descriptorArray, pin);
                    Swal.fire("Success", "Face and PIN registered!", "success");
-                   renderUsers();
+                    // Update local user data so button shows Re-Register immediately
+                    const regUser = allUsers.find(u => u.name === name);
+                    if (regUser) { regUser.faceDescriptor = Array.from(detection.descriptor); regUser.pin = pin; }
+                    renderUsers(allUsers);
                } else {
                    showToast("Registration cancelled or invalid PIN.");
                }
@@ -562,6 +565,5 @@
     <button class="btn btn-primary" style="flex:1; display:none;" id="btn-pin-fallback">Use PIN</button>
   </div>
 </dialog>
-
 </body>
 </html>
