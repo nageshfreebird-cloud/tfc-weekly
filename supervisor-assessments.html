@@ -149,8 +149,16 @@
   </div>
 </main>
 
+
+
+
+
+
 <script type="module">
-  window.doLogout = function() {
+import { startClock } from "./js/utils.js";
+import { getUsers, getSchools, getAssessments, saveAssessments, getDistricts } from "./js/db.js?v=4";
+
+window.doLogout = function() {
       if(typeof Swal !== 'undefined') Swal.fire({title:'Logging out...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
       document.body.style.opacity = '0.5';
       sessionStorage.removeItem("tfc_member_name");
@@ -158,15 +166,6 @@
       window.location.href = "index.html";
     }
 
-  startClock("live-clock");
-
-  init();
-</script>
-
-
-
-
-<script>
   window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
@@ -174,8 +173,8 @@
     if(overlay) overlay.classList.toggle('active');
   };
 
-  import { startClock } from "./js/utils.js";
-  import { getUsers, getSchools, getAssessments, saveAssessments, getDistricts } from "./js/db.js?v=4";
+  
+  
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -190,8 +189,6 @@
         if (stateContainer) stateContainer.style.display = 'block';
     }
 
-
-  startClock("live-clock");
 
   document.getElementById("welcome-name").textContent = userName;
 
@@ -448,6 +445,9 @@
 
 
     
+
+  startClock("live-clock");
+  init();
 </script>
 </body>
 </html>

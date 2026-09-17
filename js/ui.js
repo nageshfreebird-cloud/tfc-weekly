@@ -92,11 +92,24 @@ function animateCounters() {
   document.querySelectorAll('[data-count]').forEach(el => {
     const target = parseInt(el.getAttribute('data-count'));
     if(isNaN(target)) return;
+    
+    if (el._countTimer) clearInterval(el._countTimer);
+    
+    if (target === 0) {
+      el.textContent = 0;
+      el.classList.add('stat-counted');
+      return;
+    }
+
     let current = 0;
     const step = Math.max(1, Math.ceil(target / 40));
-    const timer = setInterval(() => {
+    el._countTimer = setInterval(() => {
       current += step;
-      if(current >= target) { current = target; clearInterval(timer); el.classList.add('stat-counted'); }
+      if(current >= target) { 
+        current = target; 
+        clearInterval(el._countTimer); 
+        el.classList.add('stat-counted'); 
+      }
       el.textContent = current;
     }, 30);
   });

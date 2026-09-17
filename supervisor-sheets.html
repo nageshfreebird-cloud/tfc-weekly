@@ -108,24 +108,25 @@
     sessionStorage.removeItem("tfc_member_role");
     window.location.href = "index.html";
   }
-  startClock("live-clock");;
+  ;
 
-  init();
-</script>
-
+  </script>
 
 
 
-<script>
-  window.toggleSidebar = function() {
+
+<script type="module">
+import { startClock } from "./js/utils.js";
+import { getSheetLinks, saveSheetLinks } from "./js/db.js?v=4";
+window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     if(sidebar) sidebar.classList.toggle('active');
     if(overlay) overlay.classList.toggle('active');
   };
 
-  import { startClock } from "./js/utils.js";
-  import { getSheetLinks, saveSheetLinks } from "./js/db.js?v=4";
+  
+  
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -133,8 +134,7 @@
   if (!userName || (userRole !== 'supervisor' && userRole !== 'associate-sc')) {
     window.location.href = "index.html";
   }
-  startClock("live-clock");
-
+  
   document.getElementById("welcome-name").textContent = userName;
 
   async function init() {
@@ -204,6 +204,9 @@
   };
 
   
+
+  startClock("live-clock");
+  init();
 </script>
 </body>
 </html>

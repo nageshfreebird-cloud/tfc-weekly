@@ -214,13 +214,15 @@
   </div>
 
   <!-- Leave Management Modal -->
-  <dialog id="leave-modal" style="border:none; border-radius:8px; padding:2rem; max-width:600px; width:100%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-      <h3 style="margin:0; color:var(--primary); font-size:1.5rem;">Pending Leaves</h3>
-      <button onclick="document.getElementById('leave-modal').close()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+  <div class="modal-overlay" id="leave-modal">
+    <div class="modal" style="max-width:600px; padding:2rem; width:100%;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="margin:0; color:var(--primary); font-size:1.5rem;">Pending Leaves</h3>
+        <button onclick="document.getElementById('leave-modal').classList.remove('active')" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+      </div>
+      <div id="leave-list" style="display:flex; flex-direction:column; gap:1rem;"></div>
     </div>
-    <div id="leave-list" style="display:flex; flex-direction:column; gap:1rem;"></div>
-  </dialog>
+  </div>
 
 </main>
 
@@ -582,7 +584,7 @@ window.downloadGridPDF = function() {
                 </div>`;
             });
         }
-        document.getElementById("leave-modal").showModal();
+        document.getElementById("leave-modal").classList.add("active");
     };
     
     window.processLeave = async function(id, status) {

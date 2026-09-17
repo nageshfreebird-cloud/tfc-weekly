@@ -642,7 +642,7 @@ window.renderAnalytics = function() {
         const isTop = sortedStudents.indexOf(s) < 3;
         const color = isTop ? "var(--success)" : "var(--danger)";
         
-        return `<tr><td>${s.name}</td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:${color};">${Math.round(s.score)}%</td></tr>`;
+        return `<tr><td>${s.name} <span style="font-size:0.75rem; color:#64748b;">(${s.district})</span></td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:${color};">${Math.round(s.score)}%</td></tr>`;
     }).join('');
     
     if(results.topStudents.length === 0) lBody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No students assessed in this term.</td></tr>';

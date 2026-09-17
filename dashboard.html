@@ -895,26 +895,6 @@
     }
 
     // ── AUTO TRIGGERS ON LOGIN ─────────────────────────────────────────────
-    ;(function autoReportTrigger() {
-      const now  = new Date();
-      const day  = now.getDay();    // 0=Sun, 1=Mon
-      const hour = now.getHours();
-
-      // Monday after 5 PM — show weekly PDF popup (once per week)
-      const mondayKey = 'monday-report-' + now.toDateString();
-      if (day === 1 && hour >= 17 && !sessionStorage.getItem(mondayKey)) {
-        sessionStorage.setItem(mondayKey, '1');
-        setTimeout(() => window.showMondayPopup(), 3000);
-        return; // Don't show both on same day
-      }
-
-      // Any day after 12 PM — show daily attendance copy popup (once per day)
-      const noonKey = 'noon-report-' + now.toDateString();
-      if (hour >= 12 && !sessionStorage.getItem(noonKey)) {
-        sessionStorage.setItem(noonKey, '1');
-        setTimeout(() => window.showNoonPopup(), 3000);
-      }
-    })();
 
 </script>
 </body>

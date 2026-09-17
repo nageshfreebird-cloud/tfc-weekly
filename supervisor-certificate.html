@@ -224,19 +224,20 @@
 
 
 
-<script>
-  window.toggleSidebar = function() {
+<script type="module">
+import { startClock } from "./js/utils.js";
+import { getUsers, getSchools, getDistricts, getGlobalAcademicYear } from "./js/db.js?v=4";
+window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     if(sidebar) sidebar.classList.toggle('active');
     if(overlay) overlay.classList.toggle('active');
   };
 
-  import { startClock } from "./js/utils.js";
-  import { getUsers, getSchools, getDistricts, getGlobalAcademicYear } from "./js/db.js?v=4";
+  
+  
 
-  startClock("live-clock");
-
+  
   let myUser = null;
   let currentSchools = [];
   let certImage = null;
@@ -335,8 +336,7 @@
     updateParagraphPreview();
   }
   
-  init();
-
+  
   
     window.updateViewDistricts = function(callLoad = true) {
       const st = document.getElementById("state-select").value;
@@ -589,6 +589,9 @@
     document.body.removeChild(link);
   };
 
+
+  startClock("live-clock");
+  init();
 </script>
 <script>
   
