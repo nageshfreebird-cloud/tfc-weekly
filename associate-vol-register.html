@@ -26,6 +26,16 @@
     .toggle-active { background: #dcfce7; color: #166534; }
     .toggle-inactive { background: #fee2e2; color: #991b1b; }
     .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+
+    /* Volunteer Type Toggle */
+    .vol-type-toggle { display: flex; gap: 0; border: 2px solid var(--primary); border-radius: 8px; overflow: hidden; margin-bottom: 1.25rem; }
+    .vol-type-btn { flex: 1; padding: 0.6rem 1rem; border: none; background: transparent; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--primary); transition: all 0.2s; }
+    .vol-type-btn.active { background: var(--primary); color: white; }
+    .vol-type-btn:hover:not(.active) { background: var(--bg-alt); }
+    .student-only-fields { display: none; }
+    .student-only-fields.visible { display: block; }
+    .student-badge { display: inline-block; background: #dbeafe; color: #1d4ed8; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+    .normal-badge { display: inline-block; background: #f3e8ff; color: #7e22ce; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="./js/ui.js"></script>
@@ -83,10 +93,32 @@
       <div class="panel card">
         <h2>Manual Registration</h2>
         <form id="reg-form">
+          <!-- Volunteer Type Toggle -->
+          <div style="margin-bottom:1rem;">
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Volunteer Type</label>
+            <div class="vol-type-toggle">
+              <button type="button" class="vol-type-btn active" id="btn-type-normal" onclick="setVolType('normal')">👤 Normal Volunteer</button>
+              <button type="button" class="vol-type-btn" id="btn-type-student" onclick="setVolType('student')">🎓 Student Volunteer</button>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Volunteer Name</label>
             <input type="text" id="reg-name" required />
           </div>
+
+          <!-- Student-Only Fields -->
+          <div class="student-only-fields" id="student-fields">
+            <div class="form-group">
+              <label>College Name <span style="color:red;">*</span></label>
+              <input type="text" id="reg-college" placeholder="e.g. Osmania University" />
+            </div>
+            <div class="form-group">
+              <label>Number of Students in College <span style="color:red;">*</span></label>
+              <input type="number" id="reg-college-count" placeholder="e.g. 500" min="1" />
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Phone Number</label>
             <input type="tel" id="reg-phone" required />
@@ -140,7 +172,10 @@
       <div class="panel card">
         <h2>Excel Bulk Upload</h2>
         <p class="text-muted" style="margin-bottom:1rem;">Upload a filled Excel file to register multiple volunteers at once.</p>
-        <button class="btn btn-outline" onclick="downloadTemplate()" style="margin-bottom:1rem; width:100%;">📥 Download Excel Template</button>
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <button class="btn btn-outline" onclick="downloadTemplate('normal')" style="flex:1;">📥 Normal Template</button>
+          <button class="btn btn-outline" onclick="downloadTemplate('student')" style="flex:1; border-color:#1d4ed8; color:#1d4ed8;">🎓 Student Template</button>
+        </div>
         
         <div class="form-group">
           <label>Upload Filled Template</label>
@@ -161,6 +196,7 @@
           <thead>
             <tr>
               <th>Name</th>
+              <th>Type</th>
               <th>Phone</th>
               <th>State</th>
               <th>School Name</th>
@@ -172,7 +208,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="9" class="text-center">Loading volunteers...</td></tr>
+            <tr><td colspan="10" class="text-center">Loading volunteers...</td></tr>
           </tbody>
         </table>
       </div>
@@ -193,6 +229,24 @@
 
   let allVolunteers = [];
   let editingVolId = null;
+  let currentVolType = 'normal'; // 'normal' or 'student'
+
+  // ----- Type Toggle -----
+  window.setVolType = function(type) {
+    currentVolType = type;
+    document.getElementById('btn-type-normal').classList.toggle('active', type === 'normal');
+    document.getElementById('btn-type-student').classList.toggle('active', type === 'student');
+    const sf = document.getElementById('student-fields');
+    if (type === 'student') {
+      sf.classList.add('visible');
+      document.getElementById('reg-college').setAttribute('required', 'required');
+      document.getElementById('reg-college-count').setAttribute('required', 'required');
+    } else {
+      sf.classList.remove('visible');
+      document.getElementById('reg-college').removeAttribute('required');
+      document.getElementById('reg-college-count').removeAttribute('required');
+    }
+  };
 
   async function init() {
     const userName = sessionStorage.getItem("tfc_member_name");
@@ -206,13 +260,11 @@
         if (nav) nav.style.display = "block";
     }
     await loadData();
-
     document.getElementById("reg-form").addEventListener("submit", handleManualSubmit);
   }
 
   async function loadData() {
     allVolunteers = await getVolunteers();
-    // Sort by name
     allVolunteers.sort((a,b) => a.name.localeCompare(b.name));
     renderTable();
   }
@@ -221,16 +273,21 @@
     const tbody = document.querySelector("#manage-table tbody");
     tbody.innerHTML = "";
     if (allVolunteers.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No volunteers found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">No volunteers found.</td></tr>`;
       return;
     }
     allVolunteers.forEach(v => {
-      const isAct = v.status !== 'Inactive'; // Default to active
+      const isAct = v.status !== 'Inactive';
       const statusText = isAct ? 'Active' : 'Inactive';
       const btnClass = isAct ? 'toggle-active' : 'toggle-inactive';
+      const vType = v.volunteerType || 'normal';
+      const typeBadge = vType === 'student'
+        ? `<span class="student-badge">🎓 Student</span>`
+        : `<span class="normal-badge">👤 Normal</span>`;
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><strong>${v.name}</strong></td>
+        <td>${typeBadge}</td>
         <td>${v.phone || '-'}</td>
         <td>${v.location || '-'}</td>
         <td>${v.school || '-'}</td>
@@ -254,20 +311,25 @@
 
   async function handleManualSubmit(e) {
     e.preventDefault();
-    const btn = e.target.querySelector("button");
+    const btn = e.target.querySelector("button[type='submit']");
     btn.textContent = "Saving...";
     btn.disabled = true;
 
     const classInputs = document.querySelectorAll("#reg-classes input:checked");
     const classesAssigned = Array.from(classInputs).map(cb => cb.value).join(", ");
+
     const newVol = {
+      volunteerType: currentVolType,
       name: document.getElementById("reg-name").value,
       phone: document.getElementById("reg-phone").value,
       school: document.getElementById("reg-school").value,
       classes: classesAssigned,
       assignedManual: document.querySelector('input[name="reg-manual"]:checked') ? document.querySelector('input[name="reg-manual"]:checked').value : "",
       location: document.getElementById("reg-location").value,
-      duration: document.getElementById("reg-duration").value
+      duration: document.getElementById("reg-duration").value,
+      // Student-only fields (empty string if normal)
+      collegeName: currentVolType === 'student' ? (document.getElementById("reg-college").value || "") : "",
+      collegeStudentCount: currentVolType === 'student' ? (document.getElementById("reg-college-count").value || "") : ""
     };
 
     if (editingVolId) {
@@ -284,31 +346,38 @@
 
     await saveVolunteer(newVol);
     e.target.reset();
+    // Reset type toggle back to normal after submit
+    setVolType('normal');
     btn.textContent = "Save Volunteer";
     btn.disabled = false;
-    
+
     if (editingVolId) {
        showToast("Volunteer updated successfully!");
        editingVolId = null;
     } else {
        showToast("Volunteer saved successfully!");
     }
-    
+
     await loadData();
   }
 
-  
   window.editVolunteer = function(id) {
     const vol = allVolunteers.find(v => v.id === id);
     if (!vol) return;
-    
+
     editingVolId = id;
+
+    // Set type toggle based on volunteer type
+    setVolType(vol.volunteerType || 'normal');
+
     document.getElementById("reg-name").value = vol.name || "";
     document.getElementById("reg-phone").value = vol.phone || "";
     document.getElementById("reg-school").value = vol.school || "";
     document.getElementById("reg-location").value = vol.location || "";
     document.getElementById("reg-duration").value = vol.duration || "3";
-    
+    document.getElementById("reg-college").value = vol.collegeName || "";
+    document.getElementById("reg-college-count").value = vol.collegeStudentCount || "";
+
     // Manual Radio Buttons
     const radios = document.querySelectorAll('input[name="reg-manual"]');
     radios.forEach(r => r.checked = false);
@@ -316,7 +385,7 @@
        const match = Array.from(radios).find(r => r.value === vol.assignedManual);
        if (match) match.checked = true;
     }
-    
+
     // Classes Checkboxes
     const cbs = document.querySelectorAll("#reg-classes input");
     cbs.forEach(cb => cb.checked = false);
@@ -328,21 +397,27 @@
            }
        });
     }
-    
+
     const btn = document.querySelector("#reg-form button[type='submit']");
     btn.textContent = "Update Volunteer";
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  window.downloadTemplate = function() {
-    const ws = XLSX.utils.aoa_to_sheet([
-      ["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)", "Classes Assigned (e.g. 3rd, 4th)", "Assigned Manual (Student Teacher Manual/Workshop Manual)"]
-    ]);
+  window.downloadTemplate = function(type) {
+    let headers, filename;
+    if (type === 'student') {
+      headers = [["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)", "Classes Assigned (e.g. 3rd, 4th)", "Assigned Manual (Student Teacher Manual/Workshop Manual)", "College Name", "Number of Students in College"]];
+      filename = "Student_Volunteer_Template.xlsx";
+    } else {
+      headers = [["Name", "Phone", "State (Telangana/Karnataka/Andhra Pradesh)", "School Name", "Duration (Months)", "Classes Assigned (e.g. 3rd, 4th)", "Assigned Manual (Student Teacher Manual/Workshop Manual)"]];
+      filename = "Normal_Volunteer_Template.xlsx";
+    }
+    const ws = XLSX.utils.aoa_to_sheet(headers);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "Volunteer_Template.xlsx");
-  }
+    XLSX.writeFile(wb, filename);
+  };
 
   window.handleFileUpload = function() {
     const fileInput = document.getElementById('excel-file');
@@ -359,12 +434,17 @@
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-        
+
+        // Auto-detect if it's a student template (has 9 columns)
+        const headerRow = rows[0] || [];
+        const isStudentTemplate = headerRow.length >= 9;
+
         let imported = 0;
         for (let i = 1; i < rows.length; i++) {
           const row = rows[i];
           if (!row || row.length === 0 || !row[0]) continue;
-          await saveVolunteer({
+          const volData = {
+            volunteerType: isStudentTemplate ? 'student' : 'normal',
             name: String(row[0] || "").trim(),
             phone: String(row[1] || "").trim(),
             location: String(row[2] || "").trim(),
@@ -372,13 +452,16 @@
             duration: String(row[4] || "3").trim(),
             classes: String(row[5] || "").trim(),
             assignedManual: String(row[6] || "").trim(),
+            collegeName: isStudentTemplate ? String(row[7] || "").trim() : "",
+            collegeStudentCount: isStudentTemplate ? String(row[8] || "").trim() : "",
             status: 'Active',
             registeredDate: new Date().toISOString()
-          });
+          };
+          await saveVolunteer(volData);
           imported++;
         }
-        
-        document.getElementById("upload-status").textContent = `Successfully imported ${imported} volunteers!`;
+
+        document.getElementById("upload-status").textContent = `✅ Successfully imported ${imported} ${isStudentTemplate ? 'student ' : ''}volunteers!`;
         fileInput.value = "";
         await loadData();
       } catch(err) {
@@ -387,14 +470,12 @@
       }
     };
     reader.readAsArrayBuffer(file);
-  }
+  };
 
   window.toggleSidebar = function() {
     document.getElementById('sidebar').classList.toggle('active');
     document.getElementById('sidebar-overlay').classList.toggle('active');
   };
-
-  
 
   init();
 </script>

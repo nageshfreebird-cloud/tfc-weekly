@@ -857,22 +857,33 @@
        status.innerHTML = "⏳ Saving changes...";
      }
      
+     // ✅ RACE CONDITION FIX: Capture a snapshot of the current context RIGHT NOW,
+     // before any class/school/data changes happen during the 1500ms debounce window.
+     const savedClass  = currentClass;
+     const savedDist   = document.getElementById("sel-dist").value;
+     const savedSchool = document.getElementById("sel-school").value;
+     const savedData   = JSON.parse(JSON.stringify(currentGridData));
+     
      if (autoSaveTimer) clearTimeout(autoSaveTimer);
      autoSaveTimer = setTimeout(async () => {
-        await executeSave();
+        await executeSave(savedDist, savedSchool, savedClass, savedData);
      }, 1500);
   };
 
-  window.executeSave = async function() {
-    const dist = document.getElementById("sel-dist").value;
-    const school = document.getElementById("sel-school").value;
-    if (!dist || !school || !currentClass) return;
+  window.executeSave = async function(snapDist, snapSchool, snapClass, snapData) {
+    // Use snapshot if provided (from auto-save timer), else read live values (from Save button click)
+    const dist   = snapDist   || document.getElementById("sel-dist").value;
+    const school = snapSchool || document.getElementById("sel-school").value;
+    const cls    = snapClass  || currentClass;
+    const data   = snapData   || currentGridData;
     
-    const validData = currentGridData.filter(r => r.name && r.name.trim() !== "");
+    if (!dist || !school || !cls) return;
+    
+    const validData = data.filter(r => r.name && r.name.trim() !== "");
     const status = document.getElementById("save-status");
     
     try {
-      await saveStudentAssessments(dist, school, currentClass, validData);
+      await saveStudentAssessments(dist, school, cls, validData);
       if(status) {
          status.style.color = "#10b981"; // success green
          status.innerHTML = "✓ All changes saved";

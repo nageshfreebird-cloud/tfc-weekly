@@ -9,16 +9,31 @@
     body { background: #f8fafc; font-family: 'Inter', sans-serif; }
     .att-container { max-width: 600px; margin: 0 auto; padding: 1rem; }
     .header { background: var(--primary); color: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; }
-    .search-box { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem; font-size: 1rem; }
-    .user-card { background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-    .user-info { flex: 1; }
-    .user-name { font-weight: 600; color: #1e293b; font-size: 1.1rem; }
-    .user-role { font-size: 0.85rem; color: #64748b; }
-    .btn-group { display: flex; gap: 0.5rem; }
-    .btn-in, .btn-out { background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; transition: all 0.2s; cursor: pointer; }
+    .search-box { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem; font-size: 1rem; box-sizing: border-box; }
+    .user-card { background: white; padding: 0.85rem 1rem; border-radius: 10px; margin-bottom: 0.65rem; border: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-weight: 600; color: #1e293b; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 0.8rem; color: #64748b; margin-top: 1px; }
+    .btn-group { display: flex; gap: 0.4rem; flex-shrink: 0; align-items: center; }
+    .btn-in, .btn-out { background: white; color: #475569; border: 1.5px solid #cbd5e1; padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; transition: all 0.2s; cursor: pointer; }
     .btn-in.active { background: #10b981; color: white; border-color: #10b981; }
     .btn-out.active { background: #ef4444; color: white; border-color: #ef4444; }
-    
+
+    /* Avatar Circle */
+    .avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; letter-spacing: 0.5px; }
+
+    /* Status Badge */
+    .status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-top: 3px; }
+    .status-pending  { background: #fef9c3; color: #854d0e; }
+    .status-in-only  { background: #dcfce7; color: #166534; }
+    .status-complete { background: #e0f2fe; color: #0369a1; }
+
+    /* Circular Camera Modal */
+    .camera-wrapper { position: relative; width: 260px; height: 260px; border-radius: 50%; overflow: hidden; background: #000; margin: 0 auto; border: 4px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+    .camera-wrapper video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    .camera-wrapper canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+    .camera-msg-bar { text-align: center; margin-top: 0.75rem; font-weight: 600; font-size: 0.9rem; color: #1e293b; min-height: 1.4em; }
+
     .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; }
     .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -120,30 +135,62 @@
   function renderUsers(list) {
     const container = document.getElementById("users-list");
     container.innerHTML = "";
-    
+
     list.forEach(u => {
       const card = document.createElement("div");
       card.className = "user-card";
-      
+
       let roleDisplay = "Team Member";
       if (u.role === 'supervisor') roleDisplay = "Supervisor";
       else if (u.role === 'associate-sc') roleDisplay = "SC Associate";
       else if (u.role === 'associate-vol') roleDisplay = "Vol Associate";
-      
+
       const att = attMap[u.name] || {};
       const inActive = att.inTime ? "active" : "";
       const outActive = att.outTime ? "active" : "";
       const cleanName = u.name.replace(/[^a-zA-Z0-9]/g, '_');
-      
-            const isRegistered = !!u.faceDescriptor;
+
+      const isRegistered = !!u.faceDescriptor;
       const regBtnText = isRegistered ? "✅ Re-Register" : "📸 Register Face";
-      const regBtnStyle = isRegistered ? "background: transparent; color: var(--text-muted); font-size: 0.75rem; border: 1px solid var(--border);" : "background: var(--pending-light); color: var(--pending); font-size: 0.75rem; border: 1px solid var(--pending);";
-      
+      const regBtnStyle = isRegistered
+        ? "background:transparent; color:var(--text-muted); font-size:0.7rem; border:1px solid var(--border); padding:1px 5px; border-radius:4px; cursor:pointer;"
+        : "background:#fef3c7; color:#92400e; font-size:0.7rem; border:1px solid #fcd34d; padding:1px 5px; border-radius:4px; cursor:pointer;";
+
+      // Avatar initials — first letter of first and last name
+      const parts = u.name.trim().split(' ');
+      const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+        : u.name.substring(0, 2).toUpperCase();
+
+      // Avatar gradient based on first letter (gives each person a distinct colour)
+      const gradients = [
+        'linear-gradient(135deg,#667eea,#764ba2)',
+        'linear-gradient(135deg,#f093fb,#f5576c)',
+        'linear-gradient(135deg,#4facfe,#00f2fe)',
+        'linear-gradient(135deg,#43e97b,#38f9d7)',
+        'linear-gradient(135deg,#fa709a,#fee140)',
+        'linear-gradient(135deg,#a18cd1,#fbc2eb)',
+        'linear-gradient(135deg,#ffecd2,#fcb69f)',
+        'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
+      ];
+      const gradIdx = u.name.charCodeAt(0) % gradients.length;
+
+      // Status badge
+      let statusBadge = '';
+      if (att.inTime && att.outTime) {
+        statusBadge = `<span class="status-badge status-complete">✅ Complete</span>`;
+      } else if (att.inTime && !att.outTime) {
+        statusBadge = `<span class="status-badge status-in-only">🟢 IN — Pending OUT</span>`;
+      } else {
+        statusBadge = `<span class="status-badge status-pending">⏳ Pending</span>`;
+      }
+
       card.innerHTML = `
+        <div class="avatar-circle" style="background:${gradients[gradIdx]};">${initials}</div>
         <div class="user-info">
           <div class="user-name">${u.name}</div>
-          <div class="user-role">${roleDisplay}</div>
-          <button onclick="window.registerFace('${u.name}')" style="margin-top: 0.25rem; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer; ${regBtnStyle}">${regBtnText}</button>
+          <div class="user-role">${roleDisplay} &nbsp;|&nbsp; ${statusBadge}</div>
+          <button onclick="window.registerFace('${u.name}')" style="${regBtnStyle} margin-top:3px;">${regBtnText}</button>
         </div>
         <div class="btn-group">
           <button id="btn-in-${cleanName}" class="btn-in ${inActive}" onclick="window.punchAttendance('${u.name}', 'IN')">IN</button>
@@ -153,6 +200,7 @@
       container.appendChild(card);
     });
   }
+
 
   window.filterUsers = function() {
     const q = document.getElementById("search-input").value.toLowerCase();
@@ -526,13 +574,13 @@
   };
 </script>
 
-<dialog id="camera-modal" style="border:none; border-radius:12px; padding:1.5rem; max-width:90%; width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2); background:var(--card);">
-  <h3 style="margin-top:0; color:var(--primary); text-align:center;">Face Verification</h3>
-  <div style="position:relative; width:100%; height:300px; background:#000; border-radius:8px; overflow:hidden; display:flex; justify-content:center; align-items:center;">
-    <video id="webcam" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></video>
-    <canvas id="overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1);"></canvas>
-    <div id="camera-msg" style="position:absolute; bottom:10px; left:0; width:100%; text-align:center; color:white; font-weight:bold; text-shadow:0 1px 3px black; z-index:10;">Initializing...</div>
+<dialog id="camera-modal" style="border:none; border-radius:20px; padding:1.5rem 1.5rem 1.25rem; max-width:92%; width:340px; box-shadow:0 12px 32px rgba(0,0,0,0.22); background:var(--card);">
+  <h3 style="margin-top:0; color:var(--primary); text-align:center; font-size:1.1rem;">🔍 Face Verification</h3>
+  <div class="camera-wrapper">
+    <video id="webcam" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
   </div>
+  <div class="camera-msg-bar" id="camera-msg">Initializing...</div>
   <div style="margin-top:1rem; display:flex; gap:0.5rem;">
     <button class="btn btn-outline" style="flex:1;" onclick="window.closeCamera()">Cancel</button>
     <button class="btn btn-primary" style="flex:1; display:none;" id="btn-pin-fallback">Use PIN</button>

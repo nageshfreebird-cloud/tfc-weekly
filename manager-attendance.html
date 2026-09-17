@@ -24,30 +24,51 @@
   </script>
   <style>
     .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
-    .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; }
-    .stat-card h3 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
-    .stat-card p { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+    .stat-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-card h3 { font-size: 1.9rem; color: var(--primary); margin-bottom: 0.25rem; }
+    .stat-card p { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; margin: 0; }
     @media (max-width: 900px) { .stat-cards { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .stat-cards { grid-template-columns: 1fr; } }
-    
-    .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; }
+
+    .panel { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+    /* Filter bar — card styled */
     .filter-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-    .filter-group { display: flex; gap: 0.5rem; flex: 1; min-width: 300px; }
-    .filter-group select, .filter-group input { padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; flex: 1; }
-    
-    .vol-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    .vol-table th, .vol-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
-    .vol-table th { background: var(--bg-alt); font-weight: 600; color: var(--text-muted); }
-    
+    .filter-group { display: flex; gap: 0.5rem; flex: 1; min-width: 300px; align-items: center; }
+    .filter-group select, .filter-group input[type="date"], .filter-group input[type="text"] {
+      padding: 0.55rem 0.75rem; border: 1.5px solid var(--border); border-radius: 8px; flex: 1;
+      font-size: 0.9rem; background: #f8fafc; transition: border-color 0.2s;
+    }
+    .filter-group select:focus, .filter-group input:focus { border-color: #6366f1; outline: none; background: white; }
+
+    /* Attendance table — improved */
+    .vol-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 0.5rem; font-size: 0.9rem; }
+    .vol-table thead { position: sticky; top: 0; z-index: 2; }
+    .vol-table th { background: #1e293b; color: white; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.75rem 1rem; text-align: left; }
+    .vol-table th:first-child { border-radius: 8px 0 0 0; }
+    .vol-table th:last-child  { border-radius: 0 8px 0 0; }
+    .vol-table td { padding: 0.7rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .vol-table tbody tr:nth-child(even) td { background: #f8fafc; }
+    .vol-table tbody tr:hover td { background: #eff6ff; transition: background 0.15s; }
+
+    /* Attendance status badges */
+    .att-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+    .att-present  { background: #dcfce7; color: #166534; }
+    .att-missing  { background: #fee2e2; color: #991b1b; }
+    .att-partial  { background: #fef9c3; color: #854d0e; }
+    .att-absent   { background: #f1f5f9; color: #64748b; }
+    .att-late     { background: #ffedd5; color: #9a3412; }
+
     .badge { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
-    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-active   { background: #dcfce7; color: #166534; }
     .badge-inactive { background: #fee2e2; color: #991b1b; }
-    
+
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-overlay.active { display: flex; }
     .modal { background: var(--bg); padding: 2rem; border-radius: var(--radius-md); width: 100%; max-width: 500px; }
     .modal h2 { margin-top: 0; margin-bottom: 1rem; }
     .form-group { margin-bottom: 1rem; }
+
     .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
     .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; }
   </style>
@@ -138,8 +159,9 @@
       
       <!-- DAILY VIEW -->
       <div id="view-daily" class="card">
-        <div style="margin-bottom:1rem;">
-          <input type="date" id="filter-date" class="form-control" style="max-width:200px;" onchange="renderTable()" />
+        <div class="filter-group" style="margin-bottom:1rem; max-width:280px;">
+          <label style="font-size:0.82rem; font-weight:600; color:#64748b; white-space:nowrap; align-self:center;">📅 Date:</label>
+          <input type="date" id="filter-date" onchange="renderTable()" />
         </div>
         
         <div class="table-responsive">
@@ -331,44 +353,70 @@ window.renderTable = function() {
   const fDate = document.getElementById("filter-date").value;
   const tbody = document.getElementById("att-tbody");
   tbody.innerHTML = "";
-  
+
   const filtered = allAttendance.filter(a => a.date === fDate).sort((a,b) => a.name.localeCompare(b.name));
-  
+
   if (filtered.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:2rem;'>No attendance records found for this date.</td></tr>";
+    tbody.innerHTML = `<tr><td colspan='8' style='text-align:center; padding:2.5rem; color:#94a3b8;'>📭 No attendance records for this date.</td></tr>`;
     return;
   }
-  
-  filtered.forEach(a => {
+
+  filtered.forEach((a, idx) => {
     const tr = document.createElement("tr");
-    
-    const inTimeStr = a.inTime ? new Date(a.inTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
-    const outTimeStr = a.outTime ? new Date(a.outTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
-    
-    const inLoc = a.inLat ? `<a href="https://maps.google.com/?q=${a.inLat},${a.inLng}" target="_blank" style="color:var(--primary);">&#128205; View Map</a>` : "-";
-    const outLoc = a.outLat ? `<a href="https://maps.google.com/?q=${a.outLat},${a.outLng}" target="_blank" style="color:var(--primary);">&#128205; View Map</a>` : "-";
-    
+
+    const inTimeStr  = a.inTime  ? new Date(a.inTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "—";
+    const outTimeStr = a.outTime ? new Date(a.outTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "—";
+
+    const inLoc  = a.inLat  ? `<a href="https://maps.google.com/?q=${a.inLat},${a.inLng}"  target="_blank" style="color:#6366f1; font-weight:600; text-decoration:none;">📍 Map</a>` : "—";
+    const outLoc = a.outLat ? `<a href="https://maps.google.com/?q=${a.outLat},${a.outLng}" target="_blank" style="color:#6366f1; font-weight:600; text-decoration:none;">📍 Map</a>` : "—";
+
     let reasonText = "";
-    if (a.inReason) reasonText += `IN: ${a.inReason} `;
+    if (a.inReason)  reasonText += `IN: ${a.inReason} `;
     if (a.outReason) reasonText += `OUT: ${a.outReason}`;
-    if (!reasonText) reasonText = "-";
-    
+    if (!reasonText) reasonText = "—";
+
+    // Status badge logic
+    let statusBadge = "";
+    if (a.inTime && a.outTime) {
+      statusBadge = `<span class="att-badge att-present">✅ Present</span>`;
+    } else if (a.inTime && !a.outTime) {
+      statusBadge = `<span class="att-badge att-partial">⚠️ Missing OUT</span>`;
+    } else if (!a.inTime && a.outTime) {
+      statusBadge = `<span class="att-badge att-missing">❌ Missing IN</span>`;
+    } else {
+      statusBadge = `<span class="att-badge att-absent">— No Record</span>`;
+    }
+
+    // Late check (IN after 11 AM)
+    if (a.inTime) {
+      const inHour = new Date(a.inTime).getHours();
+      if (inHour >= 11 && a.inTime && a.outTime) {
+        statusBadge += ` <span class="att-badge att-late" style="margin-left:3px;">🕐 Late</span>`;
+      }
+    }
+
     tr.innerHTML = `
-      <td>${a.date}</td>
-      <td style="font-weight:600;">${a.name}</td>
-      <td>${inTimeStr}</td>
+      <td style="color:#64748b; font-size:0.82rem;">${a.date}</td>
+      <td style="font-weight:700; color:#1e293b;">${a.name}</td>
+      <td><strong style="color:#166534;">${inTimeStr}</strong></td>
       <td>${inLoc}</td>
-      <td>${outTimeStr}</td>
+      <td><strong style="color:#dc2626;">${outTimeStr}</strong></td>
       <td>${outLoc}</td>
-      <td style="color:#ef4444; font-size:0.85rem; max-width:150px;">${reasonText}</td>
+      <td style="color:#9a3412; font-size:0.82rem; max-width:140px;">${reasonText}</td>
       <td>
-        <button onclick="window.resetUserBase('${a.name}')" style="background:#fee2e2; color:#b91c1c; border:none; padding:4px 8px; border-radius:4px; font-size:0.8rem; cursor:pointer; margin-bottom:4px; width:100%;">Reset Base</button>
-        <button onclick="window.openEditModal('${a.id}', '${a.name}', '${a.inTime || ''}', '${a.outTime || ''}')" style="background:#e0f2fe; color:#0369a1; border:none; padding:4px 8px; border-radius:4px; font-size:0.8rem; cursor:pointer; width:100%;">&#9998; Edit Time</button>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          ${statusBadge}
+          <div style="display:flex; gap:4px; margin-top:4px;">
+            <button onclick="window.resetUserBase('${a.name}')" style="background:#fee2e2; color:#b91c1c; border:none; padding:3px 7px; border-radius:5px; font-size:0.75rem; cursor:pointer;">Reset Base</button>
+            <button onclick="window.openEditModal('${a.id}','${a.name}','${a.inTime||''}','${a.outTime||''}')" style="background:#e0f2fe; color:#0369a1; border:none; padding:3px 7px; border-radius:5px; font-size:0.75rem; cursor:pointer;">✏️ Edit</button>
+          </div>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
+
 
 window.resetUserBase = async function(name) {
     const ok = await modernConfirm(`Erase ${name}'s permanent Base Location?`, "Yes, Erase", true);
