@@ -171,7 +171,7 @@
     return R * c; // Distance in m
     }
 
-    window.oldPunchAttendance = async function(name, type) {
+    window.oldPunchAttendance = async function(name, type, skipConfirm = false) {
     try {
       if (!navigator.geolocation) {
         Swal.fire("Error", "Geolocation is not supported by your browser.", "error");
@@ -201,13 +201,14 @@
           }
       }
     
-    const result = await Swal.fire({
-      title: `Punch ${type} for ${name}?`,
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Punch ' + type
-    });
-    
-    if(!result.isConfirmed) return;
+    if (!skipConfirm) {
+        const result = await Swal.fire({
+          title: `Punch ${type} for ${name}?`,
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Punch ' + type
+        });
+        if(!result.isConfirmed) return;
+    }
 
     const loader = document.getElementById("loading");
     loader.style.display = "flex";
@@ -223,17 +224,26 @@
             const dist = getDistanceFromLatLonInM(lat, lng, user.baseLat, user.baseLng);
             if (dist > 200) {
                 loader.style.display = "none";
-                const { value: reasonText, isDismissed } = await Swal.fire({
+                const { value: reasonText, isDismissed, isDenied } = await Swal.fire({
                     title: 'Out of Range',
                     text: `You are ${Math.round(dist)} meters away from your assigned base location. Please enter a reason (e.g., Field Work).`,
                     input: 'text',
                     inputPlaceholder: 'Enter reason here...',
                     showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: 'Submit Reason',
+                    denyButtonText: 'Retry Location',
+                    denyButtonColor: '#3b82f6',
+                    cancelButtonText: 'Cancel',
                     inputValidator: (value) => {
                         if (!value) return 'You need to write a reason to check in!'
                     }
                 });
                 
+                if (isDenied) {
+                    loader.style.display = "flex";
+                    return window.oldPunchAttendance(name, type, true);
+                }
                 if (isDismissed || !reasonText) return; // Cancelled punch
                 reason = reasonText;
                 loader.style.display = "flex";
