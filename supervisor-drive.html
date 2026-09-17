@@ -215,9 +215,12 @@
           </div>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-          <p class="text-sm text-muted">Enter student names and marks. You can paste data directly from Excel.</p>
-          <div style="display:flex;gap:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+          <div style="display:flex; gap:0.75rem;">
+            <button class="btn btn-outline btn-sm" onclick="addRow()" style="background:var(--bg); border-color:var(--border); font-weight:600;">+ Add Row</button>
+            <button class="btn btn-outline btn-sm" onclick="deleteSelected()" style="color:var(--danger); border-color:var(--danger); font-weight:600;">🗑️ Delete Selected</button>
+          </div>
+          <div style="display:flex;gap:0.75rem;">
             <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">📥 Download Template</button>
             <button class="btn btn-outline btn-sm" onclick="document.getElementById('upload-excel').click()">📤 Upload Excel</button>
             <input type="file" id="upload-excel" accept=".xlsx" style="display:none;" onchange="handleExcelUpload(event)" />
@@ -237,8 +240,6 @@
         
         <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
           <div style="display:flex; gap:10px;">
-            <button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>
-              <button class="btn btn-outline btn-sm" onclick="deleteSelected()" style="color:var(--danger); border-color:var(--danger);">🗑️ Delete Selected</button>
             <button class="btn btn-primary btn-sm" onclick="downloadAverages()" style="background:var(--secondary); border-color:var(--secondary);"><i class="fas fa-file-excel"></i> Download Report_Averages</button>
           </div>
           <span id="save-status" style="color:var(--text-muted); font-size:0.9rem; font-weight:600;">✓ All changes saved</span>
@@ -611,12 +612,36 @@
       <th style="width:200px;">Student Name</th>`;
     
     currentSchema.forEach(param => {
-      html += `<th>${param.label}<br/>(${param.maxMarks})</th>`;
+      html += `<th>
+        ${param.label}<br/>(${param.maxMarks})
+        <div style="margin-top:4px;"><button onclick="clearColumnData('${param.id}', '${param.label}')" style="background:none; border:none; color:var(--danger); font-size:0.75rem; font-weight:600; cursor:pointer; padding:2px 5px; border-radius:4px; opacity:0.8;" title="Clear all data in this column">🗑️ Clear</button></div>
+      </th>`;
     });
     
     html += `<th>TOTAL (50)</th><th style="width:150px;">Remarks</th></tr>`;
     thead.innerHTML = html;
   }
+
+  window.clearColumnData = async function(colId, colName) {
+    if (!(await modernConfirm(`Are you sure you want to clear all data in the "${colName}" column?`, "Yes, clear column", true))) return;
+    
+    const term = document.getElementById("sel-term").value;
+    let changed = false;
+    currentGridData.forEach(row => {
+      if (row[term] && row[term][colId] !== undefined && row[term][colId] !== "") {
+        row[term][colId] = "";
+        changed = true;
+      }
+    });
+    
+    if (changed) {
+      drawGrid();
+      window.triggerAutoSave();
+      showToast(`Cleared column: ${colName}`);
+    } else {
+      showToast(`Column is already empty.`);
+    }
+  };
 
   window.loadGrid = async function() {
     const term = document.getElementById("sel-term").value;

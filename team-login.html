@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Login — Teach for Change</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  <script>
+    window.togglePassword = function(id) {
+      const input = document.getElementById(id);
+      if (input.type === "password") {
+        input.type = "text";
+      } else {
+        input.type = "password";
+      }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/ui.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta property="og:title" content="Teach for Change - Weekly Review System">
+  <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
+    <span style="font-size:.95rem;">Teach for Change</span>
+  </div>
+  <div class="navbar-datetime">
+    <span class="time-icon">🕐</span>
+    <span id="live-clock">Loading...</span>
+  </div>
+</nav>
+
+<style>
+  .login-wrapper {
+    display: flex;
+    min-height: calc(100vh - 60px);
+    background: #f8fafc;
+  }
+  .login-left {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary), #1e293b);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem;
+  }
+  .login-left h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  .login-left p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    line-height: 1.6;
+    max-width: 400px;
+  }
+  .login-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .login-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 420px;
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 768px) {
+    .login-wrapper { flex-direction: column; }
+    .login-left { padding: 2rem; text-align: center; align-items: center; }
+    .login-left h1 { font-size: 2rem; }
+  }
+</style>
+
+<main class="login-wrapper">
+  <div class="login-left">
+    <img src="logo.png" alt="Teach for Change" style="height:140px; width:auto; object-fit:contain; margin-bottom:2rem; background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 16px;" />
+    <h1>Empowering<br/>Education</h1>
+    <p>Welcome to the Teach for Change Weekly Review System. Manage your teams, track attendance, and monitor student progress seamlessly.</p>
+  </div>
+
+  <div class="login-right">
+        <div class="login-card" style="position: relative;">
+      <div style="text-align:center; margin-bottom:2rem;">
+        <div style="font-size:3rem; margin-bottom:0.5rem;">👨‍🏫</div>
+        <h2 style="font-size:1.5rem; font-weight:800; color:#1e293b; margin-bottom:0.3rem; margin-top:0;">Team Login</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">Select your name to continue</p>
+      </div>
+
+      <!-- Submissions Closed Message -->
+      <div id="closed-msg" class="alert alert-warning hidden" style="margin-bottom:1.5rem; border-radius:12px;">
+        <div class="icon" style="font-size:1.5rem; margin-bottom:0.5rem;">🔒</div>
+        <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem;">Submissions Closed</h3>
+        <p style="margin:0; font-size:0.9rem; color:var(--text-muted);">The manager has not opened submissions yet.<br/>Please wait or contact your manager.</p>
+      </div>
+
+      <!-- Change Password Overlay -->
+      <div id="change-pwd-overlay" class="hidden" style="position:absolute;top:0;left:0;width:100%;height:100%;background:white;z-index:10;border-radius:16px;padding:2.5rem;display:flex;flex-direction:column;justify-content:center;">
+        <div style="text-align:center; margin-bottom:1.5rem;">
+          <h3 style="color:var(--primary);margin-bottom:0.5rem;font-size:1.4rem;">🔐 Secure Your Account</h3>
+          <p class="text-sm text-muted" style="margin-bottom:0;">Please create a new personal password to continue. The default password will no longer work.</p>
+        </div>
+        
+        <div class="form-group" style="text-align:left; margin-bottom: 1rem;">
+          <label class="form-label" style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; display:block;">New Password</label>
+          <div style="position:relative;">
+            <input type="password" id="new-personal-pwd" class="form-control" placeholder="Min 8 chars" minlength="8" style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px;" />
+            <button type="button" onclick="togglePassword('new-personal-pwd')" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;cursor:pointer;">👁️</button>
+          </div>
+        </div>
+        <div class="form-group" style="text-align:left; margin-bottom: 1.5rem;">
+          <label class="form-label" style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; display:block;">Confirm New Password</label>
+          <div style="position:relative;">
+            <input type="password" id="confirm-personal-pwd" class="form-control" placeholder="Repeat new password" minlength="8" style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px;" />
+            <button type="button" onclick="togglePassword('confirm-personal-pwd')" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;cursor:pointer;">👁️</button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="save-new-pwd-btn" onclick="savePersonalPassword()" style="padding:0.75rem; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer;">Save Password & Login</button>
+      </div>
+
+      <!-- Name Select + Continue -->
+      <div id="open-form">
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label" for="member-name" style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; display:block;">Your Name</label>
+          <select class="form-control" id="member-name" style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px; background:white;">
+            <option value="">— Choose your name —</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:1.5rem;">
+          <label class="form-label" for="member-pwd" style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; display:block;">Password</label>
+          <div style="position:relative;">
+            <input type="password" id="member-pwd" class="form-control" placeholder="Enter password" style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px;" />
+            <button type="button" onclick="togglePassword('member-pwd')" style="position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; opacity:0.6;">👁️</button>
+          </div>
+          <div id="pwd-error" class="text-sm hidden" style="color:#ef4444; margin-top:0.4rem; font-size:0.85rem; font-weight:500;">Invalid password. Please ask manager if you forgot.</div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="team-login-btn" onclick="goTeamForm()" style="padding:0.75rem; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:0.5rem; width:100%;">Login ➔</button>
+      </div>
+
+      <div style="text-align:center; margin-top:1.5rem;">
+        <a href="index.html" style="font-size:0.9rem; color:var(--text-muted); text-decoration:none; font-weight:500;">← Back to Home</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { startClock } from "./js/utils.js";
+  import { verifyUserLogin, getUsers, updateUserPassword } from "./js/db.js";
+
+  startClock("live-clock");
+
+  async function loadTeamDropdown() {
+    try {
+      const users = await getUsers();
+      if (!users || users.length === 0) return;
+      
+      const select = document.getElementById("member-name");
+      // Sort alphabetically by role/name or just name
+      users.sort((a,b) => a.name.localeCompare(b.name));
+      
+      users.forEach(u => {
+        // Skip manager roles from the team login dropdown if we want, or include everyone.
+        // Let's include everyone who has a name.
+        if (u.name) {
+          const opt = document.createElement("option");
+          opt.value = u.name;
+          opt.textContent = `${u.name} (${u.role || 'Member'})`;
+          select.appendChild(opt);
+        }
+      });
+    } catch(err) {
+      console.error("Failed to load users", err);
+    }
+  }
+
+  // Check if submissions are open globally (optional depending on settings logic)
+  async function checkSettings() {
+    try {
+      if (window._weekSettings && !window._weekSettings.submissionsOpen) {
+        document.getElementById("open-form").classList.add("hidden");
+        document.getElementById("closed-msg").classList.remove("hidden");
+      }
+    } catch(e) {}
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    await loadTeamDropdown();
+    await checkSettings();
+  });
+
+  window._pendingUser = null;
+
+  window.doLoginRedirect = function(user) {
+    sessionStorage.setItem("tfc_member_name", user.name);
+    sessionStorage.setItem("tfc_member_role", user.role || "Member");
+    if (user.district) {
+      sessionStorage.setItem("tfc_member_district", user.district);
+    }
+    
+    // Redirect based on role
+    if (user.role === "manager") {
+      window.location.href = "dashboard.html";
+    } else if (user.role === "supervisor") {
+      window.location.href = "supervisor.html";
+    } else {
+      window.location.href = "form.html";
+    }
+  };
+
+  window.goTeamForm = async function() {
+    const name = document.getElementById("member-name").value;
+    const pwd = document.getElementById("member-pwd").value;
+    if (!name) { alert("Please select your name."); return; }
+    if (!pwd) { alert("Please enter your password."); return; }
+
+    const err = document.getElementById("pwd-error");
+    err.classList.add("hidden");
+    
+    const btn = document.getElementById("team-login-btn");
+    btn.textContent = "Verifying...";
+    btn.disabled = true;
+
+    try {
+      const user = await verifyUserLogin(name, pwd);
+      if (user) {
+        if (window._weekSettings && !window._weekSettings.submissionsOpen) {
+          alert("Submissions are currently closed. Please contact your manager.");
+          btn.textContent = "Login ➔";
+          btn.disabled = false;
+          return;
+        }
+        
+        if (user.password === 'tfc@2014') {
+          // Show password reset overlay
+          window._pendingUser = user;
+          document.getElementById("open-form").classList.add("hidden");
+          document.getElementById("change-pwd-overlay").classList.remove("hidden");
+          return;
+        }
+
+        window.doLoginRedirect(user);
+      } else {
+        err.classList.remove("hidden");
+        btn.textContent = "Login ➔";
+        btn.disabled = false;
+      }
+    } catch(e) {
+      alert("Login error: " + e.message);
+      btn.textContent = "Login ➔";
+      btn.disabled = false;
+    }
+  };
+
+  window.savePersonalPassword = async function() {
+    if (!window._pendingUser) return;
+    const p1 = document.getElementById("new-personal-pwd").value;
+    const p2 = document.getElementById("confirm-personal-pwd").value;
+    if (p1.length < 8) {
+      alert("Password must be at least 8 characters.");
+      return;
+    }
+    if (p1 !== p2) {
+      alert("Passwords do not match.");
+      return;
+    }
+
+    const btn = document.getElementById("save-new-pwd-btn");
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+
+    try {
+      await updateUserPassword(window._pendingUser.id, p1);
+      alert("Password updated successfully! Welcome.");
+      window.doLoginRedirect(window._pendingUser);
+    } catch(err) {
+      alert("Failed to update password. Try again.");
+      btn.textContent = "Save Password & Login";
+      btn.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

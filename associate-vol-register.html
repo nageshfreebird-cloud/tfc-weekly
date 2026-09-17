@@ -192,7 +192,7 @@
         <h2>Manage Registered Volunteers</h2>
       </div>
       <div class="table-responsive">
-        <table class="vol-table" id="manage-table">
+        <table class="data-table" id="manage-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -273,7 +273,7 @@
     const tbody = document.querySelector("#manage-table tbody");
     tbody.innerHTML = "";
     if (allVolunteers.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">No volunteers found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Novolunteers found.</div></div></div></div></td></tr>`;
       return;
     }
     allVolunteers.forEach(v => {

@@ -169,7 +169,7 @@
     container.innerHTML = "";
     
     if (allSupervisors.length === 0) {
-      container.innerHTML = `<div class="text-muted">No supervisors found in the system.</div>`;
+      container.innerHTML = `<div class="text-muted"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nosupervisors found in the system.</div></div></div>`;
       return;
     }
 

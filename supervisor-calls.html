@@ -266,7 +266,7 @@ window.doLogout = function() {
     savedData = window.allCallsData[currentPeriod.label] || {};
 
     if (currentSchools.length === 0) {
-      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found in ${dist} for ${level}.</div>`;
+      container.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Noschools found in ${dist} for ${level}.</div></div></div>`;
       return;
     }
 

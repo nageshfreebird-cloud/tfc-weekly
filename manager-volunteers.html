@@ -213,7 +213,7 @@
           <button class="btn btn-outline btn-sm" onclick="exportToExcel('normal')">📥 Export Normal Volunteers</button>
         </div>
         <div class="table-responsive">
-          <table class="vol-table" id="master-table">
+          <table class="data-table" id="master-table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -255,7 +255,7 @@
           <button class="btn btn-outline btn-sm" style="border-color:#1d4ed8; color:#1d4ed8;" onclick="exportToExcel('student')">📥 Export Student Volunteers</button>
         </div>
         <div class="table-responsive">
-          <table class="vol-table" id="student-table">
+          <table class="data-table" id="student-table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -482,7 +482,7 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">No normal volunteers found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nonormal volunteers found.</div></div></div></div></td></tr>`;
       return;
     }
     filtered.sort((a,b) => a.name.localeCompare(b.name));
@@ -534,7 +534,7 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="12" class="text-center text-muted">No student volunteers found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="12" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nostudent volunteers found.</div></div></div></div></td></tr>`;
       return;
     }
     filtered.sort((a,b) => a.name.localeCompare(b.name));

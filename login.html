@@ -45,36 +45,86 @@
   </div>
 </nav>
 
-<main class="page" style="display:flex;align-items:center;min-height:calc(100vh - 60px);">
-  <div class="container" style="width:100%;">
+<style>
+  .login-wrapper {
+    display: flex;
+    min-height: calc(100vh - 60px);
+    background: #f8fafc;
+  }
+  .login-left {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary), #1e293b);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem;
+  }
+  .login-left h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  .login-left p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    line-height: 1.6;
+    max-width: 400px;
+  }
+  .login-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .login-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 420px;
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 768px) {
+    .login-wrapper { flex-direction: column; }
+    .login-left { padding: 2rem; text-align: center; align-items: center; }
+    .login-left h1 { font-size: 2rem; }
+  }
+</style>
 
-    <div style="text-align:center;margin-bottom:1.75rem;">
-      <div style="font-size:3rem;margin-bottom:0.5rem;">🔐</div>
-      <h1 style="font-size:1.5rem;font-weight:800;color:var(--primary);margin-bottom:0.3rem;">Manager Login</h1>
-      <p style="color:var(--text-muted);font-size:0.9rem;">Teach for Change — Weekly Review System</p>
-    </div>
+<main class="login-wrapper">
+  <div class="login-left">
+    <img src="logo.png" alt="Teach for Change" style="height:140px; width:auto; object-fit:contain; margin-bottom:2rem; background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 16px;" />
+    <h1>Empowering<br/>Education</h1>
+    <p>Welcome to the Teach for Change Weekly Review System. Manage your teams, track attendance, and monitor student progress seamlessly.</p>
+  </div>
 
-    <div class="card" style="max-width:400px;margin:0 auto;">
+  <div class="login-right">
+    <div class="login-card">
+      <div style="text-align:center; margin-bottom:2rem;">
+        <div style="font-size:3rem; margin-bottom:0.5rem;">🔐</div>
+        <h2 style="font-size:1.5rem; font-weight:800; color:#1e293b; margin-bottom:0.3rem; margin-top:0;">Manager Login</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">Secure portal access</p>
+      </div>
 
-      <div id="error-msg" class="alert alert-danger hidden">
+      <div id="error-msg" class="alert alert-danger hidden" style="margin-bottom:1rem;">
         <span>❌</span><span id="error-text">Invalid User ID or Password.</span>
       </div>
 
       <button type="button" id="login-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;" onclick="doGoogleLogin()" disabled>
-          <svg style="width:20px;height:20px;" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1V11.1Z" />
-          </svg>
-          Sign in with Google
-        </button>
-        <div id="error-msg" class="alert alert-danger hidden" style="margin-top:1rem;text-align:left;">
-          ⚠️ <span id="error-text">Unauthorized Email.</span>
-        </div>
+        <svg style="width:20px;height:20px;" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1V11.1Z" />
+        </svg>
+        Sign in with Google
+      </button>
 
-      <div style="text-align:center;margin-top:1rem;">
-        <a href="index.html" style="font-size:0.85rem;color:var(--text-muted);">← Back to Home</a>
+      <div style="text-align:center; margin-top:1.5rem;">
+        <a href="index.html" style="font-size:0.9rem; color:var(--text-muted); text-decoration:none; font-weight:500;">← Back to Home</a>
       </div>
     </div>
-
   </div>
 </main>
 

@@ -520,7 +520,7 @@ window.changeViewingYear = function(year) {
     const dlKeys = Object.keys(supeData);
     
     if (dlKeys.length === 0) {
-      container.innerHTML = `<div class="text-muted">No districts/levels found for this supervisor.</div>`;
+      container.innerHTML = `<div class="text-muted"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nodistricts/levels found for this supervisor.</div></div></div>`;
     }
     
     dlKeys.forEach((dl, idx) => {

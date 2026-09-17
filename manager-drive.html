@@ -157,19 +157,28 @@
         </div>
 
         <!-- KPI RIBBON -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1rem;">
-           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1.5rem; text-align:center;">
-              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Total Assessed</div>
-              <div id="kpi-assessed" style="font-size:2rem; font-weight:700; color:var(--primary);">0</div>
-              <div id="kpi-enrollment" style="font-size:0.8rem; color:var(--muted); margin-top:0.25rem;">0 Enrolled</div>
+        <div class="stat-cards" style="margin-bottom: 1.5rem;">
+           <div class="stat-card sc-blue">
+              <div class="stat-icon">📝</div>
+              <div class="stat-content">
+                <div class="stat-value" id="kpi-assessed">0</div>
+                <div class="stat-label">Total Assessed</div>
+                <div id="kpi-enrollment" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">0 Enrolled</div>
+              </div>
            </div>
-           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1.5rem; text-align:center;">
-              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Absenteeism Rate</div>
-              <div id="kpi-absent" style="font-size:2rem; font-weight:700; color:var(--danger);">0%</div>
+           <div class="stat-card sc-red">
+              <div class="stat-icon">📉</div>
+              <div class="stat-content">
+                <div class="stat-value" id="kpi-absent">0%</div>
+                <div class="stat-label">Absenteeism Rate</div>
+              </div>
            </div>
-           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1.5rem; text-align:center;">
-              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Overall Average</div>
-              <div id="kpi-avg" style="font-size:2rem; font-weight:700; color:var(--success);">0%</div>
+           <div class="stat-card sc-green">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-content">
+                <div class="stat-value" id="kpi-avg">0%</div>
+                <div class="stat-label">Overall Average</div>
+              </div>
            </div>
         </div>
 
@@ -223,7 +232,7 @@
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
                <h3 style="font-size:1rem; margin:0 0 1rem 0;">Top 3 & Bottom 3 Students</h3>
                <div class="table-responsive">
-                   <table class="table" style="width:100%; font-size:0.85rem;">
+                   <table class="data-table" style="width:100%; font-size:0.85rem;">
                      <thead><tr><th>Name</th><th>School</th><th>Class</th><th>Score</th></tr></thead>
                      <tbody id="leaderboard-body"></tbody>
                    </table>
@@ -234,7 +243,7 @@
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
                <h3 style="font-size:1rem; margin:0 0 1rem 0; color:var(--danger);">Data Quality Exceptions</h3>
                <div class="table-responsive">
-                   <table class="table" style="width:100%; font-size:0.85rem;">
+                   <table class="data-table" style="width:100%; font-size:0.85rem;">
                      <thead><tr><th>Student</th><th>School</th><th>Issue</th></tr></thead>
                      <tbody id="dq-body"></tbody>
                    </table>
@@ -649,7 +658,7 @@ window.renderAnalytics = function() {
     
     const dqBody = document.getElementById("dq-body");
     dqBody.innerHTML = results.dataQuality.map(d => `<tr><td>${d.student}</td><td>${d.school}</td><td style="color:var(--danger);">${d.issue}</td></tr>`).join('');
-    if(results.dataQuality.length === 0) dqBody.innerHTML = '<tr><td colspan="3" class="text-muted text-center text-success">No data exceptions found!</td></tr>';
+    if(results.dataQuality.length === 0) dqBody.innerHTML = '<tr><td colspan="3" class="text-muted text-center text-success"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nodata exceptions found!.</div></div></div></div></td></tr>';
 };
 
 function renderChart(canvasId, type, labels, datasets, extraOptions = {}) {

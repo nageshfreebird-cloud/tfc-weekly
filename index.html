@@ -51,144 +51,171 @@
 
 <!-- Home Page -->
 <main class="page">
-  <div class="container-wide" style="max-width: 1000px; margin: 0 auto; padding: 0 1rem;">
+      <!-- Hero Slider (Full Width) -->
+  <style>
+    .hero-slider {
+      position: relative;
+      width: 100%;
+      min-height: 400px;
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+      background: var(--bg-alt);
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-slide {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+      transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+      display: flex;
+      transform: translateX(20px);
+    }
+    .hero-slide.active {
+      opacity: 1;
+      z-index: 1;
+      transform: translateX(0);
+    }
+    .slide-content {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3rem;
+      align-items: center;
+      height: 100%;
+      width: 100%;
+    }
+    .slider-dots {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      gap: 12px;
+    }
+    .slider-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .slider-dot.active {
+      background: var(--primary);
+      transform: scale(1.2);
+    }
+    @media (max-width: 768px) {
+      .slide-content { flex-direction: column; text-align: center; padding: 2rem 1rem 4rem; }
+      .hero-slider { min-height: 600px; }
+    }
+  </style>
 
-    <!-- Hero Section: Logo + Lakshmi Manchu Bio -->
-    <style>
-      .hero-wrap {
-        display: flex; align-items: center; justify-content: center; gap: 2.5rem;
-        margin-top: 1rem; margin-bottom: 1.5rem; background: white;
-        padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      }
-      .hero-img { flex: 0 0 180px; width: 180px; height: 180px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 4px solid white; }
-      .hero-logo { flex: 0 0 180px; width: 180px; height: 180px; object-fit: contain; }
-      .hero-content { flex: 1; display: flex; flex-direction: column; gap: 1rem; text-align: center; }
-      .hero-text { font-size: 0.95rem; line-height: 1.6; color: #475569; text-align: justify; }
-      
-      @media (max-width: 900px) {
-        .hero-wrap { flex-direction: column; gap: 1.5rem; padding: 1.25rem; }
-        .hero-content h2 { line-height: 1.4; }
-        .hero-content h2 span { display: block; margin-top: 0.25rem; }
-        .hero-img, .hero-logo { margin: 0 auto; }
-      }
-    </style>
-    <div class="hero-wrap">
-      
-      <!-- Left: Lakshmi Photo -->
-      <img src="lakshmi.png" alt="Lakshmi Manchu" class="hero-img" width="180" height="180" fetchpriority="high" loading="lazy" onerror="this.src='https://via.placeholder.com/130?text=Photo'" />
-
-      <!-- Middle: Bio -->
-      <div class="hero-content">
-        <h2 style="color:#1e293b; font-size:1.2rem; margin:0;">Ms. Lakshmi Manchu <br/><span style="color:#ef4444;font-weight:600;font-size:0.95rem;display:inline-block;margin-top:0.4rem;">Chairperson & Managing Trustee</span></h2>
-        
-        <div class="hero-text">
-          <p style="margin-bottom:0.75rem;">Teach For Change is a non-profit organisation working to improve the quality of education in government schools in India. Established in 2014, the organisation runs two programs that address the foundational challenges faced by our government schools.</p>
-          <p style="margin:0;">The flagship volunteer program provides volunteer teachers to government schools which are understaffed and face a lack of leadership. The Smart Classroom program addresses the need to improve the foundational literacy and numeracy among children from low-income communities studying in government schools.</p>
+  <div class="hero-slider" id="mainSlider">
+    <!-- Slide 1: Teach For Change -->
+    <div class="hero-slide active">
+      <div class="slide-content">
+        <div style="flex:0 0 auto; background:var(--card); padding:2rem; border-radius:24px; box-shadow:0 10px 30px rgba(0,0,0,0.05); margin:0 auto;">
+          <img src="logo.png" alt="Teach For Change" style="width:200px; height:auto; object-fit:contain;" />
+        </div>
+        <div style="flex:1; min-width:300px;">
+          <h2 style="font-size: clamp(2rem, 3vw, 2.75rem); color:var(--foreground); margin:0 0 0.5rem 0; font-weight:800; line-height:1.2;">Teach For Change</h2>
+          <h3 style="font-size:1.25rem; color:var(--primary); font-weight:600; margin:0 0 1.5rem 0;">Non-Profit Organisation</h3>
+          <p style="font-size:1.05rem; line-height:1.7; color:var(--text-muted); margin-bottom:1rem; text-align:justify;">
+            Teach For Change is a non-profit organisation working to improve the quality of education in government schools in India. Established in 2014, the organisation runs two programs that address the foundational challenges faced by our government schools.
+          </p>
+          <p style="font-size:1.05rem; line-height:1.7; color:var(--text-muted); margin:0; text-align:justify;">
+            The flagship volunteer program provides volunteer teachers to government schools which are understaffed and face a lack of leadership. The Smart Classroom program addresses the need to improve the foundational literacy and numeracy among children from low-income communities studying in government schools.
+          </p>
         </div>
       </div>
-      
-      <!-- Right: Logo -->
-      <img src="logo.png" alt="Teach for Change Logo" class="hero-logo" width="180" height="180" loading="lazy" />
-
     </div>
+    
+    <!-- Slide 2: Lakshmi Manchu -->
+    <div class="hero-slide">
+      <div class="slide-content">
+        <div style="flex:0 0 auto; margin:0 auto;">
+          <img src="lakshmi.png" alt="Lakshmi Manchu" style="width:250px; height:250px; border-radius:50%; object-fit:cover; border:8px solid var(--card); box-shadow:0 10px 30px rgba(0,0,0,0.08);" onerror="this.src='https://via.placeholder.com/250?text=Photo'" />
+        </div>
+        <div style="flex:1; min-width:300px;">
+          <h2 style="font-size: clamp(2rem, 3vw, 2.75rem); color:var(--foreground); margin:0 0 0.5rem 0; font-weight:800; line-height:1.2;">Ms. Lakshmi Manchu</h2>
+          <h3 style="font-size:1.25rem; color:#ef4444; font-weight:600; margin:0 0 1.5rem 0;">Chairperson and Managing Trustee</h3>
+          <p style="font-size:1.05rem; line-height:1.7; color:var(--text-muted); margin-bottom:1rem; text-align:justify;">
+            Lakshmi Manchu, is an Actor, Producer and a Humanitarian. As a Television Presenter, she is known for her works in American Television. Lakshmi is very active in social and political movements across the country. She has been advocating for various causes like reforms in Primary Education, Cancer Awareness, and Women empowerment.
+          </p>
+          <p style="font-size:1.05rem; line-height:1.7; color:var(--text-muted); margin:0; text-align:justify;">
+            The Government of India nominated her as the Swachh Bharat Ambassador for the state of Telangana. She has been actively promoting the cause of Clean India through her video series and events.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slider-dots">
+      <div class="slider-dot active" onclick="goToSlide(0)"></div>
+      <div class="slider-dot" onclick="goToSlide(1)"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    window.goToSlide = function(n) {
+      const slides = document.querySelectorAll('.hero-slide');
+      const dots = document.querySelectorAll('.slider-dot');
+      if(slides.length === 0) return;
+      slides[currentSlide].classList.remove('active');
+      dots[currentSlide].classList.remove('active');
+      currentSlide = n;
+      slides[currentSlide].classList.add('active');
+      dots[currentSlide].classList.add('active');
+    };
+    setInterval(() => {
+      const slides = document.querySelectorAll('.hero-slide');
+      if(slides.length > 0) {
+        let next = (currentSlide + 1) % slides.length;
+        window.goToSlide(next);
+      }
+    }, 6000);
+  </script>
+
+  <div class="container-wide" style="max-width: 1000px; margin: 0 auto; padding: 0 1rem;">
 
 
 
     <!-- Team Note (if any) -->
-    <div id="team-note-wrap" class="alert alert-warning hidden">
+    <div id="team-note-wrap" class="alert alert-warning hidden" style="margin-bottom: 1.5rem; border-radius:12px;">
       <span>📢</span>
       <span id="team-note-text"></span>
     </div>
 
     <!-- Role Selection -->
-          <div class="choice-grid">
-        <div class="choice-card" role="button" tabindex="0" onclick="showToast('This feature will come soon')">
-          <div class="choice-icon">&#128188;</div>
-          <div class="choice-title">Founder Dashboard</div>
-          <div class="choice-sub">Login to dashboard</div>
-        </div>
-        <div class="choice-card" role="button" tabindex="0" onclick="window.location.href='attendance.html'">
-          <div class="choice-icon">&#128205;</div>
-          <div class="choice-title">Attendance</div>
-          <div class="choice-sub">Mobile check-in</div>
-        </div>
-        <div class="choice-card" role="button" tabindex="0" id="manager-card" onclick="goManager()">
-          <div class="choice-icon">&#128100;</div>
-          <div class="choice-title">Manager</div>
-          <div class="choice-sub">Login to dashboard</div>
-        </div>
-        <div class="choice-card" role="button" tabindex="0" id="team-card" onclick="showTeamDrop()">
-          <div class="choice-icon">&#128101;</div>
-          <div class="choice-title">Team Member</div>
-          <div class="choice-sub">Login to dashboard</div>
-        </div>
+    <div class="choice-grid">
+      <div class="choice-card c-blue" role="button" tabindex="0" onclick="showToast('This feature will come soon')">
+        <div class="icon-wrap">💼</div>
+        <div class="choice-title">Founder</div>
+        <div class="choice-sub">Executive Dashboard</div>
       </div>
-
-    <!-- Team Member Name Drop (hidden until clicked) -->
-    <div id="team-section" class="card hidden animate-in" style="position: relative;">
-      <div class="card-header">
-        <span class="icon">👥</span>
-        <h2>Select Your Name</h2>
+      <div class="choice-card c-amber" role="button" tabindex="0" id="manager-card" onclick="goManager()">
+        <div class="icon-wrap">👤</div>
+        <div class="choice-title">Manager</div>
+        <div class="choice-sub">Login to dashboard</div>
       </div>
-
-      <!-- Submissions Closed Message -->
-      <div id="closed-msg" class="submissions-closed hidden">
-        <div class="icon">🔒</div>
-        <h2>Submissions Closed</h2>
-        <p>The manager has not opened submissions yet.<br/>Please wait or contact your manager.</p>
+      <div class="choice-card c-purple" role="button" tabindex="0" id="team-card" onclick="window.location.href='team-login.html'">
+        <div class="icon-wrap">👥</div>
+        <div class="choice-title">Team Member</div>
+        <div class="choice-sub">Weekly updates</div>
       </div>
-
-      <!-- Change Password Overlay -->
-      <div id="change-pwd-overlay" class="hidden" style="position:absolute;top:0;left:0;width:100%;height:100%;background:var(--card-bg);z-index:10;border-radius:var(--radius);padding:1.5rem;display:flex;flex-direction:column;justify-content:center;">
-        <h3 style="color:var(--primary);margin-bottom:0.5rem;">🔒 Secure Your Account</h3>
-        <p class="text-sm text-muted" style="margin-bottom:1rem;">Please create a new personal password to continue. The default password will no longer work.</p>
-        
-        <div class="form-group" style="text-align:left; margin-bottom: 1rem;">
-          <label class="form-label">New Password</label>
-          <div style="position:relative;">
-            <input type="password" id="new-personal-pwd" class="form-control" placeholder="Min 8 chars" minlength="8" />
-            <button type="button" onclick="togglePassword('new-personal-pwd')" style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;cursor:pointer;">👁️</button>
-          </div>
-        </div>
-        <div class="form-group" style="text-align:left; margin-bottom: 1.5rem;">
-          <label class="form-label">Confirm New Password</label>
-          <div style="position:relative;">
-            <input type="password" id="confirm-personal-pwd" class="form-control" placeholder="Repeat new password" minlength="8" />
-            <button type="button" onclick="togglePassword('confirm-personal-pwd')" style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;cursor:pointer;">👁️</button>
-          </div>
-        </div>
-
-        <button class="btn btn-primary btn-block" id="save-new-pwd-btn" onclick="savePersonalPassword()">Save Password & Login</button>
-      </div>
-
-      <!-- Name Select + Continue -->
-      <div id="open-form">
-        <div class="form-group">
-          <label class="form-label" for="member-name">Your Name</label>
-          <select class="form-control" id="member-name">
-            <option value="">— Choose your name —</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="member-pwd">Password</label>
-          <div style="position:relative;">
-            <input type="password" id="member-pwd" class="form-control" placeholder="Enter password" />
-            <button type="button" onclick="togglePassword('member-pwd')" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; opacity:0.6;">👁️</button>
-          </div>
-          <div id="pwd-error" class="text-sm hidden" style="color:var(--danger);margin-top:0.3rem;">Invalid password. Please ask manager if you forgot.</div>
-        </div>
-        
-          <div style="text-align:right; margin-bottom:1rem; margin-top:-0.5rem;">
-            <a href="#" onclick="doForgotPassword(event)" style="font-size:0.85rem; color:var(--primary); text-decoration:none; font-weight:600;">Forgot Password?</a>
-          </div>
-<button class="btn btn-primary btn-block btn-lg" id="team-login-btn" onclick="goTeamForm()">
-          Login →
-        </button>
+      <div class="choice-card c-green" role="button" tabindex="0" onclick="window.location.href='attendance.html'">
+        <div class="icon-wrap">📍</div>
+        <div class="choice-title">Attendance</div>
+        <div class="choice-sub">Mobile check-in</div>
       </div>
     </div>
 
-  </div>
-</main>
+    <!-- Team Member Name Drop (hidden until clicked) -->
+    </main>
 
 <script type="module">
   import { startClock, formatWeekRange, formatFullDate } from "./js/utils.js";

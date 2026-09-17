@@ -133,7 +133,7 @@ window.addEventListener("unhandledrejection", function(e) {
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-      <a href="gateway.html" style="background:#4f46e5; color:white;">&#8592; Back to Gateway</a>
+      <a href="gateway.html" style="color:var(--primary); font-weight:700;">&#8592; Back to Gateway</a>
       <a href="supervisor.html" class="active">&#127968; Dashboard</a>
       <a href="team.html">&#128203; Weekly Tasks</a>
       <a href="supervisor-calls.html">&#128222; 15-Days Teacher Calls</a>
@@ -247,54 +247,73 @@ window.addEventListener("unhandledrejection", function(e) {
         <div class="setup-panel" style="display:flex; flex-direction:column; gap:1rem; height:100%;">
           <h2 style="margin-top:0; margin-bottom:0; font-size:1.2rem; color:var(--primary); padding-bottom:0.5rem; border-bottom:1px solid var(--border);">📊 Analytics Filters</h2>
           <!-- FILTERS -->
-        <div class="filter-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
-          <select id="filt-term" class="form-control" onchange="renderAnalytics()">
-            <option value="baseline">Baseline</option>
-            <option value="midline">Midline</option>
-            <option value="endline">Endline</option>
-          </select>
-          <select id="filt-state" style="display:none;" class="form-control" onchange="updateDistricts(); renderAnalytics()">
-            <option value="">All States</option>
-          </select>
-          <select id="filt-dist" class="form-control" onchange="updateMandals(); renderAnalytics()">
-            <option value="">All Districts</option>
-          </select>
-          <select id="filt-mandal" class="form-control" onchange="updateSchools(); renderAnalytics()">
-            <option value="">All Mandals</option>
-          </select>
-          <select id="filt-school" class="form-control" onchange="renderAnalytics()">
-            <option value="">All Schools</option>
-          </select>
-          <select id="filt-class" class="form-control" onchange="renderAnalytics()">
-            <option value="">All Classes</option>
-            <option value="3rd class">3rd Class</option>
-            <option value="4th class">4th Class</option>
-            <option value="5th class">5th Class</option>
-          </select>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <select id="filt-term" onchange="renderAnalytics()">
+              <option value="baseline">Baseline</option>
+              <option value="midline">Midline</option>
+              <option value="endline">Endline</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <select id="filt-state" style="display:none;" onchange="updateDistricts(); renderAnalytics()">
+              <option value="">All States</option>
+            </select>
+            <select id="filt-dist" onchange="updateMandals(); renderAnalytics()">
+              <option value="">All Districts</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <select id="filt-mandal" onchange="updateSchools(); renderAnalytics()">
+              <option value="">All Mandals</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <select id="filt-school" onchange="renderAnalytics()">
+              <option value="">All Schools</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <select id="filt-class" onchange="renderAnalytics()">
+              <option value="">All Classes</option>
+              <option value="3rd class">3rd Class</option>
+              <option value="4th class">4th Class</option>
+              <option value="5th class">5th Class</option>
+            </select>
+          </div>
         </div>
 
         <!-- KPI RIBBON -->
-        <div style="display:grid; grid-template-columns: 1fr; gap:1rem; margin-bottom:1rem;">
-           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; text-align:center;">
-              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Total Assessed</div>
-              <div id="kpi-assessed" style="font-size:2rem; font-weight:700; color:var(--primary);">0</div>
-              <div id="kpi-enrollment" style="font-size:0.8rem; color:var(--muted); margin-top:0.25rem;">0 Enrolled</div>
+        <div class="stat-cards">
+           <div class="stat-card sc-blue">
+              <div class="stat-icon">📝</div>
+              <div class="stat-content">
+                <div class="stat-value" id="kpi-assessed">0</div>
+                <div class="stat-label">Total Assessed</div>
+                <div id="kpi-enrollment" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">0 Enrolled</div>
+              </div>
            </div>
-           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; text-align:center;">
-              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Absenteeism Rate</div>
-              <div id="kpi-absent" style="font-size:2rem; font-weight:700; color:var(--danger);">0%</div>
+           <div class="stat-card sc-red">
+              <div class="stat-icon">📉</div>
+              <div class="stat-content">
+                <div class="stat-value" id="kpi-absent">0%</div>
+                <div class="stat-label">Absenteeism Rate</div>
+              </div>
            </div>
-           <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; text-align:center;">
-              <div style="font-size:0.85rem; color:var(--muted); text-transform:uppercase; font-weight:600; margin-bottom:0.5rem;">Overall Average</div>
-              <div id="kpi-avg" style="font-size:2rem; font-weight:700; color:var(--success);">0%</div>
+           <div class="stat-card sc-green">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-content">
+                <div class="stat-value" id="kpi-avg">0%</div>
+                <div class="stat-label">Overall Average</div>
+              </div>
            </div>
         </div>
-
         
         </div>
 
 </div>
-<div class="setup-panel" id="analytics-container"<div class="setup-panel" id="analytics-container" style="display:flex; flex-direction:column; gap:1.5rem; margin-top:2rem;">
+
+<div class="setup-panel" id="analytics-container" style="display:flex; flex-direction:column; gap:1.5rem; margin-top:2rem;">
         <h2 style="margin-top:0; font-size:1.3rem;">Performance Analytics</h2>
         
         <!-- CHART GRID -->
@@ -347,7 +366,7 @@ window.addEventListener("unhandledrejection", function(e) {
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
                <h3 style="font-size:1rem; margin:0 0 1rem 0;">Top 3 & Bottom 3 Students</h3>
                <div class="table-responsive">
-                   <table class="table" style="width:100%; font-size:0.85rem;">
+                   <table class="data-table">
                      <thead><tr><th>Name</th><th>School</th><th>Class</th><th>Score</th></tr></thead>
                      <tbody id="leaderboard-body"></tbody>
                    </table>
@@ -358,7 +377,7 @@ window.addEventListener("unhandledrejection", function(e) {
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:hidden;">
                <h3 style="font-size:1rem; margin:0 0 1rem 0; color:var(--danger);">Data Quality Exceptions</h3>
                <div class="table-responsive">
-                   <table class="table" style="width:100%; font-size:0.85rem;">
+                   <table class="data-table">
                      <thead><tr><th>Student</th><th>School</th><th>Issue</th></tr></thead>
                      <tbody id="dq-body"></tbody>
                    </table>
@@ -630,7 +649,14 @@ window.addEventListener("unhandledrejection", function(e) {
     const lvl = document.getElementById("view-school-level").value;
     const listEl = document.getElementById("school-view-list");
     
-    listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">Loading...</div>`;
+    listEl.innerHTML = `
+<div style="padding:1.5rem;">
+  <div class="skeleton skeleton-title"></div>
+  <div class="skeleton skeleton-text" style="width:100%;"></div>
+  <div class="skeleton skeleton-text" style="width:80%;"></div>
+  <div class="skeleton skeleton-text" style="width:60%;"></div>
+</div>
+`;
     
 
     let schools = [];
@@ -666,7 +692,7 @@ window.addEventListener("unhandledrejection", function(e) {
     if (lvl) schools = schools.filter(s => s.Level === lvl);
 
     if (schools.length === 0) {
-      listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;">No schools found.</div>`;
+      listEl.innerHTML = `<div class="text-muted text-center" style="margin-top:2rem;"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Noschools found.</div></div></div>`;
       return;
     }
 
@@ -1025,18 +1051,24 @@ window.renderAnalytics = function() {
             return `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); background:var(--border); padding:2px;">---</td></tr>`;
         }
         
-        // Color code based on if they are in top 3 or bottom 3
-        const isTop = sortedStudents.indexOf(s) < 3;
+        const idx = sortedStudents.indexOf(s);
+        const isTop = idx < 3;
         const color = isTop ? "var(--success)" : "var(--danger)";
         
-        return `<tr><td>${s.name} <span style="font-size:0.75rem; color:#64748b;">(${s.district})</span></td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:${color};">${Math.round(s.score)}%</td></tr>`;
+        let rankBadge = '';
+        if (idx === 0) rankBadge = '🥇 ';
+        else if (idx === 1) rankBadge = '🥈 ';
+        else if (idx === 2) rankBadge = '🥉 ';
+        else if (!isTop && sortedStudents.length > 6) rankBadge = '🔴 ';
+        
+        return `<tr><td>${rankBadge}${s.name} <span style="font-size:0.75rem; color:#64748b;">(${s.district})</span></td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:${color};">${Math.round(s.score)}%</td></tr>`;
     }).join('');
     
     if(results.topStudents.length === 0) lBody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No students assessed in this term.</td></tr>';
     
     const dqBody = document.getElementById("dq-body");
     dqBody.innerHTML = results.dataQuality.map(d => `<tr><td>${d.student}</td><td>${d.school}</td><td style="color:var(--danger);">${d.issue}</td></tr>`).join('');
-    if(results.dataQuality.length === 0) dqBody.innerHTML = '<tr><td colspan="3" class="text-muted text-center text-success">No data exceptions found!</td></tr>';
+    if(results.dataQuality.length === 0) dqBody.innerHTML = '<tr><td colspan="3" class="text-muted text-center text-success"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nodata exceptions found!.</div></div></div></div></td></tr>';
 };
 
 function renderChart(canvasId, type, labels, datasets, extraOptions = {}) {

@@ -116,7 +116,7 @@
     const list = document.getElementById("links-list");
     
     if (supervisors.length === 0) {
-      list.innerHTML = `<div class="text-muted text-center" style="padding:2rem;">No supervisors found. Please create a team member first.</div>`;
+      list.innerHTML = `<div class="text-muted text-center" style="padding:2rem;"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nosupervisors found. Please create a team member first.</div></div></div>`;
       return;
     }
     

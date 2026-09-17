@@ -115,7 +115,7 @@
       </div>
 
       <div class="table-responsive">
-        <table class="vol-table" id="vol-table">
+        <table class="data-table" id="vol-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -199,7 +199,7 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No volunteers found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Novolunteers found.</div></div></div></div></td></tr>`;
       return;
     }
 

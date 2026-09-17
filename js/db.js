@@ -423,6 +423,8 @@ export async function saveTeamMembers(members) {
 // ============================================
 let _usersCache = null;
 export async function getUsers() {
+  const cached = sessionStorage.getItem("tfc_users");
+  if (cached) { _usersCache = JSON.parse(cached); return _usersCache; }
   if (_usersCache) return JSON.parse(JSON.stringify(_usersCache));
   let dbUsers = [];
   try {
@@ -481,10 +483,12 @@ export async function getUsers() {
   } catch(e) {}
   
   _usersCache = JSON.parse(JSON.stringify(dbUsers));
+  sessionStorage.setItem("tfc_users", JSON.stringify(dbUsers));
   return dbUsers;
 }
 
 export async function saveUsers(users) {
+  sessionStorage.removeItem("tfc_users");
   markPendingWrite(); await setDoc(doc(db, "settings", "users"), {
     users,
     updatedAt: new Date().toISOString()
@@ -518,6 +522,8 @@ export async function updateUserPassword(name, newPassword) {
 // ============================================
 let _districtsCache = null;
 export async function getDistricts() {
+  const cached = sessionStorage.getItem("tfc_districts");
+  if (cached) { _districtsCache = JSON.parse(cached); return _districtsCache; }
   if (_districtsCache) return JSON.parse(JSON.stringify(_districtsCache));
   const defaultStates = { "Telangana": [], "Andhra Pradesh": [], "Karnataka": [] };
   let result = defaultStates;
@@ -536,10 +542,12 @@ export async function getDistricts() {
     }
   } catch(e) {}
   _districtsCache = JSON.parse(JSON.stringify(result));
+  sessionStorage.setItem("tfc_districts", JSON.stringify(result));
   return result;
 }
 
 export async function saveDistricts(districts) {
+  sessionStorage.removeItem("tfc_districts");
   markPendingWrite(); await setDoc(doc(db, "settings", "districts"), {
     districts,
     updatedAt: new Date().toISOString()
@@ -557,6 +565,12 @@ let _allSchoolsFetched = false;
 export async function getSchools(districtName) {
   try {
     if (!districtName) {
+      const cached = sessionStorage.getItem("tfc_all_schools");
+      if (cached) {
+         _allSchoolsFetched = true;
+         return JSON.parse(cached);
+      }
+      
       if (_allSchoolsFetched) {
          let all = [];
          Object.values(_schoolsCache).forEach(list => all = all.concat(list));
@@ -576,22 +590,30 @@ export async function getSchools(districtName) {
         }
       });
       _allSchoolsFetched = true;
+      sessionStorage.setItem("tfc_all_schools", JSON.stringify(all));
       return JSON.parse(JSON.stringify(all));
     }
     
     if (_schoolsCache[districtName]) {
         return JSON.parse(JSON.stringify(_schoolsCache[districtName]));
     }
+    const cachedDist = sessionStorage.getItem("tfc_schools_" + districtName);
+    if (cachedDist) {
+        _schoolsCache[districtName] = JSON.parse(cachedDist);
+        return JSON.parse(JSON.stringify(_schoolsCache[districtName]));
+    }
     
     const snap = await getDoc(doc(db, "schools", districtName));
+    let list = [];
     if (snap.exists() && snap.data().list) {
-      const list = snap.data().list.map(s => {
+      list = snap.data().list.map(s => {
         if(!s.District) s.District = districtName;
         return s;
       });
-      _schoolsCache[districtName] = list;
-      return JSON.parse(JSON.stringify(list));
     }
+    _schoolsCache[districtName] = list;
+    sessionStorage.setItem("tfc_schools_" + districtName, JSON.stringify(list));
+    return JSON.parse(JSON.stringify(list));
   } catch (e) {
     console.error("Error fetching schools", e);
   }
@@ -600,6 +622,8 @@ export async function getSchools(districtName) {
 
 export async function saveSchools(districtName, schools) {
   _schoolsCache[districtName] = JSON.parse(JSON.stringify(schools));
+  sessionStorage.removeItem("tfc_all_schools");
+  sessionStorage.removeItem("tfc_schools_" + districtName);
 
   markPendingWrite(); await setDoc(doc(db, "schools", districtName), {
     list: schools,
@@ -644,20 +668,29 @@ export async function saveYearPlan(supervisorName, plan) {
 // ============================================
 
 export async function saveSheetLinks(userName, linksArray) {
+  sessionStorage.removeItem("tfc_sheets_" + userName);
+  sessionStorage.removeItem("tfc_all_sheets");
   markPendingWrite(); await setDoc(doc(db, "google_sheets", userName), { links: linksArray, updatedAt: Date.now() });
 }
 
 export async function getSheetLinks(userName) {
+  const cached = sessionStorage.getItem("tfc_sheets_" + userName);
+  if (cached) return JSON.parse(cached);
   const snap = await getDoc(doc(db, "google_sheets", userName));
-  return snap.exists() && snap.data().links ? snap.data().links : [];
+  const res = snap.exists() && snap.data().links ? snap.data().links : [];
+  sessionStorage.setItem("tfc_sheets_" + userName, JSON.stringify(res));
+  return res;
 }
 
 export async function getAllSheetLinks() {
+  const cached = sessionStorage.getItem("tfc_all_sheets");
+  if (cached) return JSON.parse(cached);
   const snap = await getDocs(collection(db, "google_sheets"));
   let allLinks = {};
   snap.forEach(d => {
     allLinks[d.id] = d.data().links || [];
   });
+  sessionStorage.setItem("tfc_all_sheets", JSON.stringify(allLinks));
   return allLinks;
 }
 
@@ -974,10 +1007,14 @@ export async function getAllStudentAssessments() {
 
 
 export async function getAssessmentsForDistricts(districts) {
+  if (!districts || districts.length === 0) return {};
+  
+  const cacheKey = "tfc_assessments_" + districts.join("_");
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) return JSON.parse(cached);
+
   const colRef = await getScopedCollection("student_assessments");
   let allData = {};
-  
-  if (!districts || districts.length === 0) return allData;
   
   const promises = districts.map(async (dist) => {
       const q = query(
@@ -990,6 +1027,7 @@ export async function getAssessmentsForDistricts(districts) {
   });
   
   await Promise.all(promises);
+  sessionStorage.setItem("tfc_assessments_" + districts.join("_"), JSON.stringify(allData));
   return allData;
 }
 
