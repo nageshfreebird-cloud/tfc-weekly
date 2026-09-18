@@ -41,7 +41,6 @@
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script defer src="./js/ui.min.js"></script>
-  <script defer src="js/face-api.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -354,16 +353,37 @@
 
   init();
 
-  
-  let modelsLoaded = false;
-  function showLoading(msg) {
-      if (typeof Swal !== "undefined") Swal.fire({title: msg, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    let modelsLoaded = false;
+    let faceApiLoaded = false;
+    
+    function showLoading(msg) {
+        if (typeof Swal !== "undefined") Swal.fire({title: msg, allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     }
 
+    async function ensureFaceApi() {
+        if (faceApiLoaded) return;
+        if (window.faceapi) {
+            faceApiLoaded = true;
+            return;
+        }
+        return new Promise((resolve, reject) => {
+            showLoading("Initializing Camera System...");
+            const script = document.createElement('script');
+            script.src = 'js/face-api.min.js';
+            script.onload = () => {
+                faceApiLoaded = true;
+                resolve();
+            };
+            script.onerror = () => reject(new Error("Failed to load face-api script"));
+            document.body.appendChild(script);
+        });
+    }
+  
     async function loadModels(silent = false) {
-    if(modelsLoaded) return;
-    try {
-      if (!silent) showLoading("Loading AI Models...");
+      if(modelsLoaded) return;
+      try {
+        await ensureFaceApi();
+        if (!silent) showLoading("Loading AI Models...");
       await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
       await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
       await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
