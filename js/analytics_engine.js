@@ -97,7 +97,29 @@ export class AnalyticsEngine {
           });
 
           // Focus on the specific active term for the rest of the analytics
-          const activeTermData = student[term];
+          let activeTermData = null;
+          if (term === 'all') {
+              const termsPresent = ['baseline', 'midline', 'endline'].filter(t => student[t]);
+              if (termsPresent.length > 0) {
+                  activeTermData = {};
+                  schema.forEach(p => {
+                      let sum = 0, count = 0, hasAbsent = false;
+                      termsPresent.forEach(t => {
+                          const rawVal = student[t][p.id];
+                          const normVal = AnalyticsEngine.normalizeScore(rawVal, p.maxMarks);
+                          if (normVal === "ABSENT") hasAbsent = true;
+                          else if (normVal !== "INVALID" && normVal !== null) {
+                              sum += Number(rawVal);
+                              count++;
+                          }
+                      });
+                      if (count > 0) activeTermData[p.id] = (sum / count).toFixed(1);
+                      else if (hasAbsent) activeTermData[p.id] = "A";
+                  });
+              }
+          } else {
+              activeTermData = student[term];
+          }
           if (!activeTermData) return; // Student has no data for the selected term
           
                       let studentRawSum = 0;
@@ -181,18 +203,25 @@ export class AnalyticsEngine {
        results.kpi.avgScore = (results.kpi.totalParamScoreSum / results.kpi.totalValidParamScores) * 100;
     }
 
-    // Finalize Skill Perf Chart
-    Object.keys(paramSums).forEach(label => {
-       results.chartSkillPerf.labels.push(label);
-       results.chartSkillPerf.data.push(paramSums[label] / paramCounts[label]);
-    });
+      // Finalize Skill Perf Chart
+      const combinedSchemas = [...SCHEMA_L3_L4, ...SCHEMA_L1_L2];
+      combinedSchemas.forEach(p => {
+         const label = p.label;
+         if (paramCounts[label] > 0) {
+            results.chartSkillPerf.labels.push(label);
+            results.chartSkillPerf.data.push(paramSums[label] / paramCounts[label]);
+         } else {
+            results.chartSkillPerf.labels.push(label);
+            results.chartSkillPerf.data.push(0);
+         }
+      });
 
     // Finalize Term Growth
     if (termSums.baseline.count > 0) results.chartTermGrowth.baseline = (termSums.baseline.sum / termSums.baseline.max) * 100;
     if (termSums.midline.count > 0) results.chartTermGrowth.midline = (termSums.midline.sum / termSums.midline.max) * 100;
     if (termSums.endline.count > 0) results.chartTermGrowth.endline = (termSums.endline.sum / termSums.endline.max) * 100;
 
-    // Finalize Geo Ranking (convert to averages and sort)
+    // Finalize Geo Ranking (convert to averages and sort alphabetically)
     let rankedArr = [];
     Object.keys(results.chartGeoRanking).forEach(geo => {
        const stat = results.chartGeoRanking[geo];
@@ -200,7 +229,7 @@ export class AnalyticsEngine {
           rankedArr.push({ label: geo, avg: stat.sum / stat.count });
        }
     });
-    rankedArr.sort((a,b) => b.avg - a.avg);
+    rankedArr.sort((a, b) => a.label.localeCompare(b.label));
     results.chartGeoRanking = rankedArr; // Replace map with sorted array
 
     // Sort top students

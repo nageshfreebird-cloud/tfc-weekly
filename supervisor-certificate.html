@@ -13,12 +13,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap"></noscript>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.min.css" />
   
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
   
 </script>
-  <script src="./js/ui.js"></script>
+  <script src="./js/ui.min.js"></script>
   
   <style>
     #cert-canvas {
@@ -29,11 +29,11 @@
   <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="logo.png">
-  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.webp">
+  <link rel="icon" type="image/png" href="logo.webp">
   <meta property="og:title" content="Teach for Change - Weekly Review System">
   <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
-  <meta property="og:image" content="logo.png">
+  <meta property="og:image" content="logo.webp">
   <meta property="og:type" content="website">
 </head>
 <body>
@@ -41,7 +41,7 @@
 <nav class="navbar">
   <div class="navbar-brand">
     <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
+    <img src="logo.webp" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
@@ -64,7 +64,7 @@
     <div class="sidebar" id="sidebar">
       <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
       <div class="sidebar-header">
-        <img src="logo.png" alt="Logo" />
+        <img src="logo.webp" alt="Logo" />
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
@@ -225,8 +225,8 @@
 
 
 <script type="module">
-import { startClock } from "./js/utils.js";
-import { getUsers, getSchools, getDistricts, getGlobalAcademicYear } from "./js/db.js?v=4";
+import { startClock } from "./js/utils.min.js";
+import { getUsers, getSchools, getDistricts, getGlobalAcademicYear } from "./js/db.min.js?v=4";
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');

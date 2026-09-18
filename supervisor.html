@@ -41,7 +41,7 @@ window.addEventListener("unhandledrejection", function(e) {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.min.css" />
   <style>
     .grid-3 {
       display: grid;
@@ -67,17 +67,17 @@ window.addEventListener("unhandledrejection", function(e) {
     }
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="./js/ui.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/ui.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="logo.png">
-  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.webp">
+  <link rel="icon" type="image/png" href="logo.webp">
   <meta property="og:title" content="Teach for Change - Weekly Review System">
   <meta property="og:description" content="Team Attendance, Assessments & Weekly Tasks">
-  <meta property="og:image" content="logo.png">
+  <meta property="og:image" content="logo.webp">
   <meta property="og:type" content="website">
 </head>
 <body>
@@ -85,7 +85,7 @@ window.addEventListener("unhandledrejection", function(e) {
 <nav class="navbar">
   <div class="navbar-brand">
     <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
-    <img src="logo.png" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
+    <img src="logo.webp" alt="Teach for Change" style="height:36px;width:auto;object-fit:contain;" width="72" height="36" loading="lazy" />
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime" style="display:flex; align-items:center; gap:1rem;">
@@ -129,11 +129,11 @@ window.addEventListener("unhandledrejection", function(e) {
     <div class="sidebar" id="sidebar">
       <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
       <div class="sidebar-header">
-        <img src="logo.png" alt="Logo" />
+        <img src="logo.webp" alt="Logo" />
         <h2>Teach for Change</h2>
       </div>
       <div class="sidebar-nav">
-      <a href="gateway.html" style="color:var(--primary); font-weight:700;">&#8592; Back to Gateway</a>
+      <a href="gateway.html" style="background:#4f46e5; color:white; font-weight:700;">&#8592; Back to Gateway</a>
       <a href="supervisor.html" class="active">&#127968; Dashboard</a>
       <a href="team.html">&#128203; Weekly Tasks</a>
       <a href="supervisor-calls.html">&#128222; 15-Days Teacher Calls</a>
@@ -390,9 +390,9 @@ window.addEventListener("unhandledrejection", function(e) {
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
-  import { startClock } from "./js/utils.js";
+  import { startClock } from "./js/utils.min.js";
   import { AnalyticsEngine } from "./js/analytics_engine.js?v=4";
-  import { getAllStudentAssessments, getUsers, getDistricts, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, getAssessmentsForDistricts, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.js?v=4";
+  import { getAllStudentAssessments, getUsers, getDistricts, getSchools, saveSchools, getSyllabus, saveSyllabus, getYearPlan, saveYearPlan, getGlobalAcademicYear, getSheetLinks, getStudentAssessments, getAssessmentsForDistricts, SCHEMA_L1_L2, SCHEMA_L3_L4 } from "./js/db.min.js?v=4";
 
   const userName = sessionStorage.getItem("tfc_member_name");
   const userRole = sessionStorage.getItem("tfc_member_role");
@@ -976,20 +976,37 @@ window.renderAnalytics = function() {
     document.getElementById("kpi-absent").textContent = (results.kpi.totalEnrolled > 0) ? Math.round((results.kpi.absent / results.kpi.totalEnrolled) * 100) + '%' : '0%';
     document.getElementById("kpi-avg").textContent = Math.round(results.kpi.avgScore) + '%';
     
+    // Helpers for Beautiful Charts
+    const getGradient = (canvasId, colorStart, colorEnd) => {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+        gradient.addColorStop(0, colorStart);
+        gradient.addColorStop(1, colorEnd);
+        return gradient;
+    };
+    
     // RENDER CHARTS
     renderChart('chart-skill', 'bar', results.chartSkillPerf.labels, [{
         label: 'Average Score (%)',
         data: results.chartSkillPerf.data,
-        backgroundColor: '#4e73df'
-    }], { scales: { y: { max: 100 } }});
+        backgroundColor: getGradient('chart-skill', '#8b5cf6', '#ec4899'),
+        borderRadius: 8,
+        borderSkipped: false
+    }], { scales: { y: { max: 100 } } });
     
     renderChart('chart-growth', 'line', ['Baseline', 'Midline', 'Endline'], [{
         label: 'Growth Trajectory (%)',
         data: [results.chartTermGrowth.baseline, results.chartTermGrowth.midline, results.chartTermGrowth.endline],
-        borderColor: '#1cc88a',
-        fill: false,
-        tension: 0.1
-    }], { scales: { y: { min: 0, max: 100 } }});
+        borderColor: '#10b981',
+        backgroundColor: getGradient('chart-growth', 'rgba(16, 185, 129, 0.5)', 'rgba(16, 185, 129, 0.0)'),
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#10b981',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6
+    }], { scales: { y: { min: 0, max: 100 } } });
     
     // Dynamic Geo Title
     let geoLabel = 'District Ranking';
@@ -1001,8 +1018,10 @@ window.renderAnalytics = function() {
     renderChart('chart-geo', 'bar', results.chartGeoRanking.map(x => x.label), [{
         label: 'Average Score (%)',
         data: results.chartGeoRanking.map(x => x.avg),
-        backgroundColor: '#36b9cc'
-    }], { scales: { y: { max: 100 } }});
+        backgroundColor: getGradient('chart-geo', '#3b82f6', '#06b6d4'),
+        borderRadius: 8,
+        borderSkipped: false
+    }], { scales: { y: { max: 100 } } });
     
     const pDist = document.getElementById("filt-param-dist").value;
     let distLabels = ["0-20%", "21-40%", "41-60%", "61-80%", "81-100%"];
@@ -1016,19 +1035,25 @@ window.renderAnalytics = function() {
         distLabels = ["0-2.5 Marks", "2.6-5 Marks", "5.1-7 Marks", "7.1-9.5 Marks", "9.6-12 Marks"];
     }
 
-    renderChart('chart-dist', 'bar', distLabels, [{
+    renderChart('chart-dist', 'doughnut', distLabels, [{
         label: 'Number of Students',
         data: Object.values(results.chartDistribution),
-        backgroundColor: '#f6c23e'
-    }]);
+        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'],
+        borderWidth: 0,
+        hoverOffset: 15
+    }], { cutout: '75%', plugins: { legend: { position: 'right' } } });
     
     renderChart('chart-radar', 'radar', results.chartSkillPerf.labels, [{
         label: 'Skill Profile',
         data: results.chartSkillPerf.data,
-        backgroundColor: 'rgba(78, 115, 223, 0.2)',
-        borderColor: 'rgba(78, 115, 223, 1)',
-        pointBackgroundColor: 'rgba(78, 115, 223, 1)'
-    }], { scales: { r: { min: 0, max: 100 } }});
+        backgroundColor: 'rgba(99, 102, 241, 0.25)',
+        borderColor: '#6366f1',
+        pointBackgroundColor: '#6366f1',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#6366f1',
+        tension: 0.4
+    }], { scales: { r: { min: 0, max: 100, ticks: { display: false } } } });
     
     // UPDATE TABLES
     const lBody = document.getElementById("leaderboard-body");
@@ -1051,17 +1076,10 @@ window.renderAnalytics = function() {
             return `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); background:var(--border); padding:2px;">---</td></tr>`;
         }
         
-        const idx = sortedStudents.indexOf(s);
-        const isTop = idx < 3;
+        const isTop = sortedStudents.indexOf(s) < 3;
         const color = isTop ? "var(--success)" : "var(--danger)";
         
-        let rankBadge = '';
-        if (idx === 0) rankBadge = '🥇 ';
-        else if (idx === 1) rankBadge = '🥈 ';
-        else if (idx === 2) rankBadge = '🥉 ';
-        else if (!isTop && sortedStudents.length > 6) rankBadge = '🔴 ';
-        
-        return `<tr><td>${rankBadge}${s.name} <span style="font-size:0.75rem; color:#64748b;">(${s.district})</span></td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:${color};">${Math.round(s.score)}%</td></tr>`;
+        return `<tr><td>${s.name} <span style="font-size:0.75rem; color:#64748b;">(${s.district})</span></td><td>${s.school}</td><td>${s.class}</td><td style="font-weight:bold; color:${color};">${Math.round(s.score)}%</td></tr>`;
     }).join('');
     
     if(results.topStudents.length === 0) lBody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No students assessed in this term.</td></tr>';
@@ -1076,14 +1094,68 @@ function renderChart(canvasId, type, labels, datasets, extraOptions = {}) {
         activeCharts[canvasId].destroy();
     }
     const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    const animationConfig = {
+        duration: 2000,
+        easing: 'easeOutQuart',
+        delay: (context) => {
+            let delay = 0;
+            if (context.type === 'data' && context.mode === 'default' && !context.chart.isAnimated) {
+                delay = context.dataIndex * 150 + context.datasetIndex * 100;
+            }
+            return delay;
+        }
+    };
+
     activeCharts[canvasId] = new Chart(ctx, {
         type: type,
         data: { labels: labels, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: animationConfig,
             ...extraOptions
-        }
+        },
+        plugins: [
+            {
+                id: 'customAnimationFlag',
+                afterDraw: (chart) => {
+                    chart.isAnimated = true;
+                }
+            },
+            {
+                id: 'skillDivider',
+                afterDraw: (chart) => {
+                    if (chart.canvas.id === 'chart-skill' && chart.scales.x.ticks.length === 10) {
+                        const ctx = chart.ctx;
+                        const xAxis = chart.scales.x;
+                        const yAxis = chart.scales.y;
+                        
+                        // The boundary is between index 4 and index 5
+                        const leftPixel = xAxis.getPixelForTick(4);
+                        const rightPixel = xAxis.getPixelForTick(5);
+                        const xPos = (leftPixel + rightPixel) / 2;
+                        
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(xPos, yAxis.top);
+                        ctx.lineTo(xPos, yAxis.bottom);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'rgba(100, 116, 139, 0.5)';
+                        ctx.setLineDash([5, 5]);
+                        ctx.stroke();
+                        
+                        // Draw Labels
+                        ctx.fillStyle = '#64748b';
+                        ctx.font = 'bold 12px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('← Level 3 & 4', xPos - 50, yAxis.top + 15);
+                        ctx.fillText('Level 1 & 2 →', xPos + 50, yAxis.top + 15);
+                        ctx.restore();
+                    }
+                }
+            }
+        ]
     });
 }
 
