@@ -18,6 +18,7 @@
     .btn-in, .btn-out { background: white; color: #475569; border: 1.5px solid #cbd5e1; padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; transition: all 0.2s; cursor: pointer; }
     .btn-in.active { background: #10b981; color: white; border-color: #10b981; }
     .btn-out.active { background: #ef4444; color: white; border-color: #ef4444; }
+    .btn-in:disabled, .btn-out:disabled { cursor: not-allowed; opacity: 0.8; }
 
     /* Avatar Circle */
     .avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; letter-spacing: 0.5px; }
@@ -148,6 +149,8 @@
       const att = attMap[u.name] || {};
       const inActive = att.inTime ? "active" : "";
       const outActive = att.outTime ? "active" : "";
+      const inDisabled = att.inTime ? "disabled" : "";
+      const outDisabled = att.outTime ? "disabled" : "";
       const cleanName = u.name.replace(/[^a-zA-Z0-9]/g, '_');
 
       const isRegistered = !!u.faceDescriptor;
@@ -193,8 +196,8 @@
           <button onclick="window.registerFace('${u.name}')" style="${regBtnStyle} margin-top:3px;">${regBtnText}</button>
         </div>
         <div class="btn-group">
-          <button id="btn-in-${cleanName}" class="btn-in ${inActive}" onclick="window.punchAttendance('${u.name}', 'IN')">IN</button>
-          <button id="btn-out-${cleanName}" class="btn-out ${outActive}" onclick="window.punchAttendance('${u.name}', 'OUT')">OUT</button>
+          <button id="btn-in-${cleanName}" class="btn-in ${inActive}" ${inDisabled} onclick="window.punchAttendance('${u.name}', 'IN')">IN</button>
+          <button id="btn-out-${cleanName}" class="btn-out ${outActive}" ${outDisabled} onclick="window.punchAttendance('${u.name}', 'OUT')">OUT</button>
         </div>
       `;
       container.appendChild(card);
@@ -332,7 +335,7 @@
         if (type === 'IN') attMap[name].inTime = true;
         if (type === 'OUT') attMap[name].outTime = true;
         
-        window.renderTeam();
+        window.filterUsers();
       } catch (err) {
         loader.style.display = "none";
         Swal.fire("Error", "Error logging attendance: " + err.message, "error");

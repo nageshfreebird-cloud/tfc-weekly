@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tfc-v3';
+const CACHE_NAME = 'tfc-v4';
 const ASSETS = ['/', '/index.html', '/css/style.css', '/js/ui.js', '/logo.webp'];
 
 self.addEventListener('install', e => {
