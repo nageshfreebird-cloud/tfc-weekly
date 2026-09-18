@@ -1203,22 +1203,6 @@ div[style*="overflow-x:auto"] {
   0% { transform: scale(1); }
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
-}
-.stat-counted {
-  animation: countPulse 0.3s ease-out;
-}
-
-/* #3 Button Press & Hover */
-button, .btn, .btn-in, .btn-out, .btn-primary, .btn-secondary, .btn-ghost, .btn-outline {
-  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease !important;
-}
-button:active, .btn:active, .btn-in:active, .btn-out:active {
-  transform: scale(0.95) !important;
-}
-.btn-in:hover, .btn-out:hover {
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
-}
-@keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
   50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
 }
@@ -1407,7 +1391,233 @@ button:active, .btn:active, .btn-in:active, .btn-out:active {
   border-radius: var(--radius-sm);
   min-height: 1rem;
 }
+.stagger > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* #2 Stat Counter - handled by JS, this is the pulse on complete */
+@keyframes countPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+}
+.btn-in.active {
+  animation: pulse-green 2s infinite;
+}
+
+/* #4 Sidebar Link Hover Slide */
+.sidebar-nav a {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background 0.3s ease !important;
+  border-radius: 8px !important;
+  margin: 0.4rem 0.8rem !important;
+  z-index: 1;
+  overflow: hidden;
+}
+.sidebar-nav a::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--primary);
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+}
+
+.sidebar-nav a:hover::before {
+  display: none !important;
+}
+.sidebar-nav a:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.25), inset 0 2px 2px rgba(255,255,255,0.4) !important;
+  background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+  color: white !important;
+  padding-left: 1.25rem !important; 
+  border-left: none !important;
+}
+.sidebar-nav a.active {
+  background: rgba(255,255,255,0.9) !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  box-shadow: inset 5px 0 0 0 #2563eb !important;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.shadcn-toast {
+  animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* #6 Table Row Load Animation */
+@keyframes rowSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Only animate the first 20 rows to prevent massive CPU lag on large dashboards */
+.vol-table tbody tr:nth-child(-n+20), .table tbody tr:nth-child(-n+20) {
+  animation: rowSlideIn 0.3s ease-out forwards;
+  opacity: 0;
+}
+.vol-table tbody tr:nth-child(1), .table tbody tr:nth-child(1) { animation-delay: 0.02s; }
+.vol-table tbody tr:nth-child(2), .table tbody tr:nth-child(2) { animation-delay: 0.04s; }
+.vol-table tbody tr:nth-child(3), .table tbody tr:nth-child(3) { animation-delay: 0.06s; }
+.vol-table tbody tr:nth-child(4), .table tbody tr:nth-child(4) { animation-delay: 0.08s; }
+.vol-table tbody tr:nth-child(5), .table tbody tr:nth-child(5) { animation-delay: 0.10s; }
+.vol-table tbody tr:nth-child(6), .table tbody tr:nth-child(6) { animation-delay: 0.12s; }
+.vol-table tbody tr:nth-child(7), .table tbody tr:nth-child(7) { animation-delay: 0.14s; }
+.vol-table tbody tr:nth-child(8), .table tbody tr:nth-child(8) { animation-delay: 0.16s; }
+.vol-table tbody tr:nth-child(n+9), .table tbody tr:nth-child(n+9) { animation-delay: 0.18s; }
+
+/* #7 Card Hover Lift */
+.card, .user-card, .choice-card, .gateway-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+.card:hover, .choice-card:hover, .gateway-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.user-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+/* #8 Face Recognition Scanner */
+@keyframes scanLine {
+  0% { top: 0; }
+  50% { top: calc(100% - 3px); }
+  100% { top: 0; }
+}
+.scan-line {
+  position: absolute;
+  left: 5%;
+  width: 90%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #10b981, transparent);
+  z-index: 20;
+  animation: scanLine 2s ease-in-out infinite;
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+@keyframes checkDraw {
+  0% { stroke-dashoffset: 50; }
+  100% { stroke-dashoffset: 0; }
+}
+.verified-check {
+  stroke-dasharray: 50;
+  animation: checkDraw 0.6s ease-out forwards;
+}
+
+/* #12 Dark Mode */
+[data-theme="dark"] {
+  --bg:             #09090b;
+  --background:     #0f172a;
+  --foreground:     #f8fafc;
+  --card:           #1e293b;
+  --popover:        #1e293b;
+  --primary:        #f8fafc;
+  --primary-light:  #94a3b8;
+  --secondary:      #334155;
+  --secondary-light:#1e293b;
+  --success:        #10b981;
+  --warning:        #f59e0b;
+  --danger:         #ef4444;
+  --info:           #3b82f6;
+  
+  --text:           #f8fafc;
+  --text-muted:     #94a3b8;
+  --border:         #334155;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+[data-theme="dark"] .navbar {
+  background: #18181b;
+}
+[data-theme="dark"] .sidebar {
+  background: #18181b;
+}
+[data-theme="dark"] body {
+  background: #09090b;
+}
+[data-theme="dark"] .header {
+  background: #18181b;
+}
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+  background: #27272a;
+  color: #fafafa;
+  border-color: #3f3f46;
+}
+[data-theme="dark"] .user-card {
+  background: #1c1c1e;
+  border-color: #27272a;
+}
+[data-theme="dark"] .search-box {
+  background: #1c1c1e;
+  color: #fafafa;
+  border-color: #3f3f46;
+}
+
+/* Dark mode toggle button */
+.theme-toggle {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+.theme-toggle:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* #11 Skeleton Loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--accent) 25%, var(--border) 50%, var(--accent) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  min-height: 1rem;
+}
 .skeleton-text { height: 1rem; margin-bottom: 0.5rem; width: 80%; }
 .skeleton-title { height: 1.5rem; margin-bottom: 0.75rem; width: 50%; }
 .skeleton-card { height: 100px; margin-bottom: 1rem; border-radius: var(--radius); }
 .skeleton-avatar { width: 40px; height: 40px; border-radius: 50%; }
+
+
+/* Add 3D Hover Effect to all standard UI Buttons */
+button:hover:not(:disabled), .btn:hover:not(:disabled), .compact-btn:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06) !important;
+}
+
+
+/* #3 Button Press & Hover */
+button, .btn, .btn-in, .btn-out, .btn-primary, .btn-secondary, .btn-ghost, .btn-outline {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, background 0.2s ease !important;
+}
+button:active:not(:disabled), .btn:active:not(:disabled), .btn-in:active:not(:disabled), .btn-out:active:not(:disabled) {
+  transform: scale(0.95) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+.btn-in:hover, .btn-out:hover {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+
+.stat-counted {
+  animation: countPulse 0.3s ease-out;
+}
+

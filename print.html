@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meeting Report — Teach for Change</title>
+  <title>Meeting Report � Teach for Change</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -43,7 +43,7 @@
     <span style="font-size:.95rem;">Teach for Change</span>
   </div>
   <div class="navbar-datetime">
-    <span class="time-icon">🕐</span>
+    <span class="time-icon">??</span>
     <span id="live-clock">Loading...</span>
   </div>
 </nav>
@@ -51,14 +51,14 @@
 <!-- Action Bar -->
 <div class="no-print" style="background:white;border-bottom:1.5px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;">
   <div style="display:flex;align-items:center;gap:1rem;">
-    <a href="summary.html" class="btn btn-ghost btn-sm">← Edit Summary</a>
+    <a href="summary.html" class="btn btn-ghost btn-sm">? Edit Summary</a>
     <select id="past-weeks-select" class="form-control" style="width:200px;font-size:0.85rem;" onchange="loadSelectedWeek()">
       <option value="">Loading past weeks...</option>
     </select>
   </div>
   <div style="display:flex;gap:.6rem;">
-    <a href="dashboard.html" class="btn btn-outline btn-sm">⚙️ Dashboard</a>
-    <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <a href="dashboard.html" class="btn btn-outline btn-sm">?? Dashboard</a>
+    <button class="btn btn-primary" onclick="window.print()">??? Print / Save as PDF</button>
   </div>
 </div>
 
@@ -92,7 +92,7 @@
 
     <!-- Footer -->
     <div id="print-footer" class="hidden" style="text-align:center;padding:1.5rem 0 0.5rem;border-top:1.5px solid var(--border);margin-top:1.5rem;font-size:.78rem;color:var(--text-muted);">
-      Teach for Change NGO — Weekly Review System
+      Teach for Change NGO � Weekly Review System
     </div>
 
   </div>
@@ -156,7 +156,7 @@
     const weekEnd = toYMD(d);
 
     // Header
-    document.getElementById("print-week").textContent = `📅 ${formatWeekRange(weekStart, weekEnd)}`;
+    document.getElementById("print-week").textContent = `?? ${formatWeekRange(weekStart, weekEnd)}`;
     
     if (wsObject) {
       document.getElementById("print-meeting").textContent = 
@@ -217,14 +217,14 @@
       body.className = "print-member-body";
 
       if (!d) {
-        body.innerHTML = `<p style="color:var(--text-muted);font-size:.87rem;font-style:italic;">⏳ Did not submit this week.</p>`;
+        body.innerHTML = `<p style="color:var(--text-muted);font-size:.87rem;font-style:italic;">? Did not submit this week.</p>`;
       } else {
         // This week tasks
         if (d.thisWeekTasks && d.thisWeekTasks.length > 0) {
           const completedArr = d.thisWeekCompleted || [];
           d.thisWeekTasks.forEach((t, i) => {
             const isDone = completedArr[i] === true;
-            const icon = isDone ? '✅ ' : '• ';
+            const icon = isDone ? '? ' : '� ';
             const p = document.createElement("div");
             p.className = "print-task";
             if (isDone) p.style.cssText = "color:#666;";
@@ -239,7 +239,7 @@
         if (d.supportNeeded) {
           const sup = document.createElement("div");
           sup.style.cssText = "margin-top:.6rem;font-size:.82rem;color:var(--danger);";
-          sup.innerHTML = `🆘 <strong>Support needed:</strong> ${escHtml(d.supportNeeded)}`;
+          sup.innerHTML = `?? <strong>Support needed:</strong> ${escHtml(d.supportNeeded)}`;
           body.appendChild(sup);
         }
       }
@@ -270,7 +270,7 @@
       body.className = "print-member-body";
 
       d.lastWeekReview.forEach(r => {
-        const icon = r.status === "completed" ? "✅" : "🔄";
+        const icon = r.status === "completed" ? "?" : "??";
         const p = document.createElement("div");
         p.className = "print-task";
         p.innerHTML = `${icon} ${escHtml(r.task)}`;
@@ -278,7 +278,7 @@
         if (r.status === "pending" && r.reason) {
           const rp = document.createElement("div");
           rp.className = "print-pending-reason";
-          rp.textContent = `📌 Pending reason: ${r.reason}`;
+          rp.textContent = `?? Pending reason: ${r.reason}`;
           body.appendChild(rp);
         }
       });

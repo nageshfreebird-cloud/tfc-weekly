@@ -159,7 +159,11 @@
           <div id="pwd-error" class="text-sm hidden" style="color:#ef4444; margin-top:0.4rem; font-size:0.85rem; font-weight:500;">Invalid password. Please ask manager if you forgot.</div>
         </div>
 
-        <button class="btn btn-primary btn-block" id="team-login-btn" onclick="goTeamForm()" style="padding:0.75rem; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:0.5rem; width:100%;">Login ➔</button>
+        <button class="btn btn-primary btn-block" id="team-login-btn" onclick="goTeamForm()" style="padding:0.75rem; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:0.5rem; width:100%;">Login 🚀</button>
+        
+        <div style="text-align:center; margin-top:1rem;">
+          <a href="#" onclick="doForgotPassword(event)" style="font-size:0.85rem; color:var(--info); text-decoration:none; font-weight:500;">Forgot Password?</a>
+        </div>
       </div>
 
       <div style="text-align:center; margin-top:1.5rem;">
@@ -171,7 +175,7 @@
 
 <script type="module">
   import { startClock } from "./js/utils.min.js";
-  import { verifyUserLogin, getUsers, updateUserPassword } from "./js/db.min.js";
+  import { verifyUserLogin, getUsers, updateUserPassword, requestPasswordReset } from "./js/db.min.js";
 
   startClock("live-clock");
 
@@ -272,6 +276,39 @@
       alert("Login error: " + e.message);
       btn.textContent = "Login ➔";
       btn.disabled = false;
+    }
+  };
+
+  window.doForgotPassword = async function(e) {
+    e.preventDefault();
+    const sel = document.getElementById("member-name");
+    const name = sel.value;
+    if (!name) {
+      if(typeof Swal !== 'undefined') Swal.fire('Error', 'Please select your name first.', 'error');
+      else alert("Please select your name first.");
+      return;
+    }
+    
+    if (typeof Swal !== 'undefined') {
+      const result = await Swal.fire({
+        title: 'Reset Password?',
+        text: `Send a password reset request to the Manager for ${name}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Send Request'
+      });
+      if (!result.isConfirmed) return;
+    } else {
+      if (!confirm(`Send a password reset request to the Manager for ${name}?`)) return;
+    }
+
+    try {
+      await requestPasswordReset(name);
+      if(typeof Swal !== 'undefined') Swal.fire('Request Sent', 'Please wait for your manager to reset it.', 'success');
+      else alert("Request sent successfully.");
+    } catch(err) {
+      if(typeof Swal !== 'undefined') Swal.fire('Error', err.message, 'error');
+      else alert("Error: " + err.message);
     }
   };
 

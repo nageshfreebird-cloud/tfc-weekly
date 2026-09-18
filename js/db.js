@@ -804,9 +804,13 @@ export async function saveVolunteerAssessment(id, data) {
 }
 
 
-export async function getTeamAttendance() {
+export async function getTeamAttendance(dateStr = null) {
   const colRef = await getScopedCollection("team_attendance");
-  const snap = await getDocs(colRef);
+  let qry = colRef;
+  if (dateStr) {
+    qry = query(colRef, where("date", "==", dateStr));
+  }
+  const snap = await getDocs(qry);
   let res = [];
   snap.forEach(d => res.push({ id: d.id, ...d.data() }));
   return res;

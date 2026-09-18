@@ -123,8 +123,8 @@
         <div class="nav-group">
           <div class="nav-group-label">Academics</div>
           <a href="manager-calls.html" id="nav-calls">&#128222; 15-Days Teacher Calls</a>
-          <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
-          <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
+          <a href="manager-assessments.html" id="nav-assessments" class="tab-3d">&#128197; Assessments Received</a>
+          <a href="manager-drive.html" id="nav-analytics" class="tab-3d">&#128200; Assessments Analytics</a>
           <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
         </div>
         <div class="nav-group">
@@ -340,24 +340,38 @@ async function init() {
   document.getElementById("report-year").value = String(yyyy);
   document.getElementById("report-month").value = mm;
 
-  try {
-    allAttendance = await getTeamAttendance();
-    renderTable();
-    if (window.loadPendingLeaves) await window.loadPendingLeaves();
-  } catch(err) {
-    showToast("Error loading data: " + err.message, "info");
+  // Render initial table without blocking init
+  renderTable();
+  if (window.loadPendingLeaves) {
+    window.loadPendingLeaves().catch(e => console.error("Leaves Error:", e));
   }
 }
 
-window.renderTable = function() {
+window.renderTable = async function() {
   const fDate = document.getElementById("filter-date").value;
   const tbody = document.getElementById("att-tbody");
+  
+  // Instantly show skeleton loader
+  tbody.innerHTML = `
+    <tr><td colspan='8'><div class="skeleton skeleton-text" style="height:25px; margin:0.5rem auto;"></div></td></tr>
+    <tr><td colspan='8'><div class="skeleton skeleton-text" style="height:25px; width:80%; margin:0.5rem auto;"></div></td></tr>
+    <tr><td colspan='8'><div class="skeleton skeleton-text" style="height:25px; width:90%; margin:0.5rem auto;"></div></td></tr>
+  `;
+
+  try {
+    // Fetch only the requested date's data instead of entire DB
+    allAttendance = await getTeamAttendance(fDate);
+  } catch(err) {
+    tbody.innerHTML = `<tr><td colspan='8' style='text-align:center; padding:2.5rem; color:#ef4444;'>Error loading data: ${err.message}</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = "";
 
-  const filtered = allAttendance.filter(a => a.date === fDate).sort((a,b) => a.name.localeCompare(b.name));
+  const filtered = allAttendance.sort((a,b) => a.name.localeCompare(b.name));
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan='8' style='text-align:center; padding:2.5rem; color:#94a3b8;'>📭 No attendance records for this date.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan='8' style='text-align:center; padding:2.5rem; color:#94a3b8;'>📋 No attendance records for this date.</td></tr>`;
     return;
   }
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -73,7 +73,7 @@
     <span id="welcome-name" style="font-weight:600; color:#e2e8f0;"></span>
     
       <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode">&#127769;</button>
-      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">🚪 Logout</button>
+      <button class="btn btn-ghost btn-sm" onclick="window.doLogout()" style="color:var(--danger); border-color:var(--danger);">?? Logout</button>
   </div>
 </nav>
 
@@ -97,8 +97,8 @@
         <div class="nav-group">
           <div class="nav-group-label">Academics</div>
           <a href="manager-calls.html" id="nav-calls">&#128222; 15-Days Teacher Calls</a>
-          <a href="manager-assessments.html" id="nav-assessments">&#128197; Assessments Received</a>
-          <a href="manager-drive.html" id="nav-analytics">&#128200; Assessments Analytics</a>
+          <a href="manager-assessments.html" id="nav-assessments" class="tab-3d">&#128197; Assessments Received</a>
+          <a href="manager-drive.html" id="nav-analytics" class="tab-3d">&#128200; Assessments Analytics</a>
           <a href="manager-syllabus.html" id="nav-syllabus">&#128214; Syllabus Registry</a>
         </div>
         <div class="nav-group">
@@ -135,7 +135,7 @@
       </div>
       <div class="stat-card" style="border-left:4px solid #1d4ed8;">
         <h3 id="stat-students" style="color:#1d4ed8;">0</h3>
-        <p>🎓 Student Volunteers</p>
+        <p>?? Student Volunteers</p>
       </div>
     </div>
 
@@ -189,8 +189,8 @@
 
       <!-- Tabs -->
       <div style="display:flex; border-bottom:2px solid var(--border); margin-bottom:1rem; gap:0;">
-        <button id="tab-normal" onclick="switchVolTab('normal')" style="padding:0.6rem 1.5rem; border:none; background:var(--primary); color:white; font-weight:700; cursor:pointer; border-radius:6px 6px 0 0; margin-right:4px;">👤 Normal Volunteers <span id="badge-normal" style="background:rgba(255,255,255,0.3); border-radius:10px; padding:2px 7px; font-size:0.8rem; margin-left:4px;">0</span></button>
-        <button id="tab-student" onclick="switchVolTab('student')" style="padding:0.6rem 1.5rem; border:none; background:var(--bg-alt); color:var(--text-muted); font-weight:600; cursor:pointer; border-radius:6px 6px 0 0;">🎓 Student Volunteers <span id="badge-student" style="background:var(--border); border-radius:10px; padding:2px 7px; font-size:0.8rem; margin-left:4px;">0</span></button>
+        <button id="tab-normal" onclick="switchVolTab('normal')" style="padding:0.6rem 1.5rem; border:none; background:var(--primary); color:white; font-weight:700; cursor:pointer; border-radius:6px 6px 0 0; margin-right:4px;">?? Normal Volunteers <span id="badge-normal" style="background:rgba(255,255,255,0.3); border-radius:10px; padding:2px 7px; font-size:0.8rem; margin-left:4px;">0</span></button>
+        <button id="tab-student" onclick="switchVolTab('student')" style="padding:0.6rem 1.5rem; border:none; background:var(--bg-alt); color:var(--text-muted); font-weight:600; cursor:pointer; border-radius:6px 6px 0 0;">?? Student Volunteers <span id="badge-student" style="background:var(--border); border-radius:10px; padding:2px 7px; font-size:0.8rem; margin-left:4px;">0</span></button>
       </div>
 
       <!-- Normal Volunteers Tab -->
@@ -210,7 +210,7 @@
             </select>
             <input type="text" id="search-text" placeholder="Search name or phone..." onkeyup="renderTable()" />
           </div>
-          <button class="btn btn-outline btn-sm" onclick="exportToExcel('normal')">📥 Export Normal Volunteers</button>
+          <button class="btn btn-outline btn-sm" onclick="exportToExcel('normal')">?? Export Normal Volunteers</button>
         </div>
         <div class="table-responsive">
           <table class="data-table" id="master-table">
@@ -252,7 +252,7 @@
             </select>
             <input type="text" id="search-text-s" placeholder="Search name, phone or college..." onkeyup="renderStudentTable()" />
           </div>
-          <button class="btn btn-outline btn-sm" style="border-color:#1d4ed8; color:#1d4ed8;" onclick="exportToExcel('student')">📥 Export Student Volunteers</button>
+          <button class="btn btn-outline btn-sm" style="border-color:#1d4ed8; color:#1d4ed8;" onclick="exportToExcel('student')">?? Export Student Volunteers</button>
         </div>
         <div class="table-responsive">
           <table class="data-table" id="student-table">
@@ -298,7 +298,7 @@
       </div>
       <!-- Student-only fields in edit modal -->
       <div id="edit-student-fields" style="display:none; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.75rem; margin-bottom:0.75rem;">
-        <p style="font-weight:700; color:#1d4ed8; margin:0 0 0.5rem 0; font-size:0.85rem;">🎓 Student Volunteer Details</p>
+        <p style="font-weight:700; color:#1d4ed8; margin:0 0 0.5rem 0; font-size:0.85rem;">?? Student Volunteer Details</p>
         <div class="form-group" style="margin-bottom:0.5rem;">
           <label>College Name</label>
           <input type="text" id="edit-college" placeholder="e.g. Osmania University" />
@@ -482,7 +482,7 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nonormal volunteers found.</div></div></div></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">??</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">??</div><div class="title">Nothing to see here</div><div class="desc">Nonormal volunteers found.</div></div></div></div></td></tr>`;
       return;
     }
     filtered.sort((a,b) => a.name.localeCompare(b.name));
@@ -507,8 +507,8 @@
         <td><strong>${myHours}</strong></td>
         <td>${callDisplay}</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="openEdit('${v.id}')">✏️</button>
-          <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--danger);" onclick="deleteVol('${v.id}')">🗑️</button>
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${v.id}')">??</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--danger);" onclick="deleteVol('${v.id}')">???</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -534,7 +534,7 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="12" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">📭</div><div class="title">Nothing to see here</div><div class="desc">Nostudent volunteers found.</div></div></div></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="12" class="text-center text-muted"><div class="empty-state" style="border:none; background:transparent;"><div class="icon">??</div><div class="title">Nothing to see here</div><div class="desc"><div class="empty-state"><div class="icon">??</div><div class="title">Nothing to see here</div><div class="desc">Nostudent volunteers found.</div></div></div></div></td></tr>`;
       return;
     }
     filtered.sort((a,b) => a.name.localeCompare(b.name));
@@ -561,8 +561,8 @@
         <td><strong>${myHours}</strong></td>
         <td>${callDisplay}</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="openEdit('${v.id}')">✏️</button>
-          <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--danger);" onclick="deleteVol('${v.id}')">🗑️</button>
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${v.id}')">??</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--danger);" onclick="deleteVol('${v.id}')">???</button>
         </td>
       `;
       tbody.appendChild(tr);
