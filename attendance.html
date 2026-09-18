@@ -40,8 +40,8 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="./js/ui.min.js"></script>
-  <script src="js/face-api.min.js"></script>
+  <script defer src="./js/ui.min.js"></script>
+  <script defer src="js/face-api.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -71,10 +71,15 @@
       
     </div>
   
-  <input type="text" id="search-input" class="search-box" placeholder="Search your name..." oninput="filterUsers()" />
-  
-  <div id="users-list"></div>
-</div>
+    <input type="text" id="search-input" class="search-box" placeholder="Search your name..." oninput="filterUsers()" />
+    
+    <div id="users-list">
+      <div style="padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">
+        <div class="spinner" style="margin: 0 auto 10px; width: 30px; height: 30px; border-width: 3px;"></div>
+        Loading team data...
+      </div>
+    </div>
+  </div>
 
 <div id="loading" class="loading-overlay">
   <div class="spinner"></div>
@@ -348,8 +353,6 @@
   }
 
   init();
-  // Silently preload AI models in background so camera opens instantly
-  setTimeout(() => { loadModels(true).catch(()=>{}); }, 1000);
 
   
   let modelsLoaded = false;
